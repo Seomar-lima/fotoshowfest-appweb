@@ -7,19 +7,24 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
 }
+
 h1, h2 {
   color: #FFD700;
 }
+
 #preview-container {
   position: relative;
   display: inline-block;
   width: 90%;
   max-width: 400px;
+  margin: auto;
 }
+
 #camera {
   width: 100%;
   border-radius: 15px;
 }
+
 #moldura {
   position: absolute;
   top: 0;
@@ -28,6 +33,7 @@ h1, h2 {
   height: 100%;
   pointer-events: none;
 }
+
 .controls {
   margin-top: 1em;
   display: flex;
@@ -35,6 +41,7 @@ h1, h2 {
   gap: 10px;
   flex-wrap: wrap;
 }
+
 button {
   padding: 10px 20px;
   font-size: 1em;
@@ -45,6 +52,7 @@ button {
   cursor: pointer;
   color: black;
 }
+
 #contador {
   position: absolute;
   top: 50%;
@@ -57,6 +65,7 @@ button {
   z-index: 20;
   pointer-events: none;
 }
+
 .qr-download {
   margin-top: 20px;
   background: white;
@@ -64,6 +73,7 @@ button {
   padding: 12px;
   border-radius: 12px;
 }
+
 #galeria {
   margin-top: 20px;
   display: flex;
@@ -71,16 +81,15 @@ button {
   flex-wrap: wrap;
   gap: 15px;
 }
+
 #galeria img {
   width: 100px;
   border-radius: 10px;
   cursor: pointer;
 }
+
 footer {
   margin-top: 2em;
   color: #FFD700;
 }
-#galeria-icon {
-  margin-top: 10px;
-  width: 50px;
-}
+
