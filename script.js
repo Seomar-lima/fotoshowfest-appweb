@@ -11,7 +11,7 @@ const moldura = document.getElementById("moldura");
 let stream;
 
 // Inicializa câmera
-navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: true })
+navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
     video.srcObject = stream;
@@ -21,7 +21,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
-// Tirar Foto com contagem
+// Botão Tirar Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -37,7 +37,6 @@ fotoBtn.onclick = () => {
   }, 1000);
 };
 
-// Função de captura da foto
 function capturarFoto() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -61,7 +60,6 @@ function capturarFoto() {
   }, 300);
 }
 
-// Enviar imagem para o imgbb
 function enviarParaImgbb(imgData) {
   const base64 = imgData.replace(/^data:image\/png;base64,/, "");
   const formData = new FormData();
@@ -75,22 +73,21 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data && data.data && data.data.url) {
-      gerarQRCode(data.data.url);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    qrDiv.innerText = "Erro ao gerar QRCode.";
-    qrDiv.style.color = "red";
-  });
+    .then(response => response.json())
+    .then(data => {
+      if (data && data.data && data.data.url) {
+        gerarQRCode(data.data.url);
+      } else {
+        throw new Error("Resposta inválida do imgbb");
+      }
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerText = "Erro ao gerar QRCode.";
+      qrDiv.style.color = "red";
+    });
 }
 
-// Geração do QR Code
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
   const qrContainer = document.createElement("div");
@@ -108,3 +105,72 @@ function gerarQRCode(link) {
   a.href = link;
   a.innerText = "📥 Baixar";
   a.download = "";
+  a.style.display = "block";
+  a.style.textAlign = "center";
+  a.style.marginTop = "10px";
+  a.style.fontWeight = "bold";
+  qrDiv.appendChild(a);
+}
+
+// Botão Gravar Bumerangue
+bumerangueBtn.onclick = async () => {
+  if (!stream) return alert("Câmera não inicializada.");
+
+  const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp8" });
+  const chunks = [];
+
+  recorder.ondataavailable = e => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+
+  recorder.onstop = async () => {
+    const blob = new Blob(chunks, { type: "video/webm" });
+    const formData = new FormData();
+    formData.append("file", blob, "bumerangue.webm");
+
+    qrDiv.innerHTML = "Enviando vídeo...";
+
+    try {
+      const response = await fetch("https://store1.gofile.io/uploadFile", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.status === "ok") {
+        const link = result.data.downloadPage;
+        const qrContainer = document.createElement("div");
+        qrContainer.style.margin = "10px auto";
+        qrDiv.innerHTML = "";
+        qrDiv.appendChild(qrContainer);
+
+        new QRCode(qrContainer, {
+          text: link,
+          width: 256,
+          height: 256,
+          margin: 4
+        });
+
+        const a = document.createElement("a");
+        a.href = link;
+        a.innerText = "📥 Baixar Vídeo";
+        a.download = "bumerangue.webm";
+        a.style.display = "block";
+        a.style.textAlign = "center";
+        a.style.marginTop = "10px";
+        a.style.fontWeight = "bold";
+        qrDiv.appendChild(a);
+      } else {
+        throw new Error("Erro no retorno da API do GoFile");
+      }
+
+    } catch (err) {
+      console.error("Erro ao enviar vídeo:", err);
+      qrDiv.innerText = "Erro ao enviar vídeo";
+    }
+  };
+
+  recorder.start();
+  setTimeout(() => recorder.stop(), 4000); // grava 2 segundos
+};
