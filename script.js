@@ -145,5 +145,5 @@ bumerangueBtn.onclick = () => {
   };
 
   recorder.start();
-  setTimeout(() => recorder.stop(), 2000); // grava 2 segundos
+  setTimeout(() => recorder.stop(), 4000); // grava 4 segundos
 };
