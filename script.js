@@ -109,6 +109,7 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
+// Botão Bumerangue com contagem e gravação acelerada
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
 
