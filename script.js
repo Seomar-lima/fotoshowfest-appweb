@@ -109,8 +109,9 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Botão Gravar Bumerangue com contagem
-bumerangueBtn.onclick = () => {
+bumerangueBtn.onclick = async () => {
+  if (!stream) return alert("Câmera não inicializada.");
+
   let count = 5;
   contador.innerText = count;
   const interval = setInterval(() => {
@@ -119,15 +120,13 @@ bumerangueBtn.onclick = () => {
     beep.play();
     if (count === 0) {
       clearInterval(interval);
-      contador.innerText = "";
-      iniciarGravacaoBumerangue();
+      contador.innerText = "Gravando...";
+      iniciarBumerangue();
     }
   }, 1000);
 };
 
-contador.innerText = "Gravando...";
-
-async function iniciarGravacaoBumerangue() {
+async function iniciarBumerangue() {
   const canvasVideo = document.createElement("canvas");
   const ctx = canvasVideo.getContext("2d");
 
@@ -149,6 +148,8 @@ async function iniciarGravacaoBumerangue() {
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
 
+  contador.innerText = "Renderizando vídeo...";
+
   const finalFrames = [...frames, ...frames.slice().reverse()];
   const streamOut = canvasVideo.captureStream(fps);
   const recorder = new MediaRecorder(streamOut);
@@ -163,7 +164,8 @@ async function iniciarGravacaoBumerangue() {
     const formData = new FormData();
     formData.append("file", blob, "bumerangue.webm");
 
-    qrDiv.innerHTML = "Enviando vídeo...";
+    contador.innerText = "Enviando vídeo...";
+    qrDiv.innerHTML = "";
 
     fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
@@ -171,6 +173,7 @@ async function iniciarGravacaoBumerangue() {
     })
       .then(r => r.json())
       .then(data => {
+        contador.innerText = "";
         if (data.status === "ok") {
           gerarQRCode(data.data.downloadPage);
         } else {
@@ -178,6 +181,7 @@ async function iniciarGravacaoBumerangue() {
         }
       })
       .catch(err => {
+        contador.innerText = "Erro ao enviar";
         console.error(err);
         qrDiv.innerText = "Erro ao enviar vídeo";
       });
@@ -187,7 +191,7 @@ async function iniciarGravacaoBumerangue() {
 
   for (const frame of finalFrames) {
     ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2))); // aceleração 2x
+    await new Promise(r => setTimeout(r, 1000 / (fps * 2))); // acelera o playback
   }
 
   recorder.stop();
