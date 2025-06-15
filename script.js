@@ -10,7 +10,6 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
-// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -45,6 +44,7 @@ function capturarFoto() {
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
+
   setTimeout(() => {
     const imgData = canvas.toDataURL("image/png");
     const img = new Image();
@@ -72,19 +72,16 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data && data.data && data.data.url) {
-      gerarQRCode(data.data.url);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    qrDiv.innerText = "Erro ao gerar QRCode.";
-    qrDiv.style.color = "red";
-  });
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) gerarQRCode(data.data.url);
+      else throw new Error("Resposta inválida do imgbb");
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerText = "Erro ao gerar QRCode.";
+      qrDiv.style.color = "red";
+    });
 }
 
 function gerarQRCode(link) {
@@ -111,14 +108,42 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Gravar bumerangue
-bumerangueBtn.onclick = () => {
+// Bumerangue
+bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
 
-  const recorder = new MediaRecorder(stream);
+  const canvasVideo = document.createElement("canvas");
+  const ctx = canvasVideo.getContext("2d");
+
+  const fps = 20;
+  const duration = 4;
+  const totalFrames = fps * duration;
+  const frames = [];
+
+  canvasVideo.width = video.videoWidth;
+  canvasVideo.height = video.videoHeight;
+
+  // Captura frames com moldura
+  for (let i = 0; i < totalFrames; i++) {
+    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
+    if (moldura.complete) {
+      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+    }
+    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
+    frames.push(frame);
+    await new Promise(r => setTimeout(r, 1000 / fps));
+  }
+
+  // Converte frames em bumerangue (reverso + original)
+  const finalFrames = [...frames, ...frames.slice().reverse()];
+  const streamOut = canvasVideo.captureStream(fps);
+  const recorder = new MediaRecorder(streamOut);
   const chunks = [];
 
-  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.ondataavailable = e => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+
   recorder.onstop = () => {
     const blob = new Blob(chunks, { type: 'video/webm' });
     const formData = new FormData();
@@ -130,20 +155,26 @@ bumerangueBtn.onclick = () => {
       method: "POST",
       body: formData
     })
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === "ok") {
-        gerarQRCode(data.data.downloadPage);
-      } else {
-        throw new Error("Erro ao enviar vídeo");
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      qrDiv.innerText = "Erro ao enviar vídeo";
-    });
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === "ok") {
+          gerarQRCode(data.data.downloadPage);
+        } else {
+          throw new Error("Erro no envio");
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        qrDiv.innerText = "Erro ao enviar vídeo";
+      });
   };
 
   recorder.start();
-  setTimeout(() => recorder.stop(), 4000); // grava 4 segundos
+
+  for (const frame of finalFrames) {
+    ctx.putImageData(frame, 0, 0);
+    await new Promise(r => setTimeout(r, 1000 / fps));
+  }
+
+  recorder.stop();
 };
