@@ -125,6 +125,8 @@ bumerangueBtn.onclick = () => {
   }, 1000);
 };
 
+contador.innerText = "Gravando...";
+
 async function iniciarGravacaoBumerangue() {
   const canvasVideo = document.createElement("canvas");
   const ctx = canvasVideo.getContext("2d");
