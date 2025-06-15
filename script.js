@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -11,6 +10,7 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
+// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -116,8 +116,8 @@ bumerangueBtn.onclick = async () => {
   const canvasVideo = document.createElement("canvas");
   const ctx = canvasVideo.getContext("2d");
 
-  const fps = 40;
-  const duration = 2;
+  const fps = 60; // aumento da taxa de quadros para acelerar
+  const duration = 2; // duração de captura
   const totalFrames = fps * duration;
   const frames = [];
 
@@ -135,7 +135,7 @@ bumerangueBtn.onclick = async () => {
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
 
-  // Converte frames em bumerangue (reverso + original)
+  // Converte frames em bumerangue (original + reverso)
   const finalFrames = [...frames, ...frames.slice().reverse()];
   const streamOut = canvasVideo.captureStream(fps);
   const recorder = new MediaRecorder(streamOut);
@@ -172,9 +172,10 @@ bumerangueBtn.onclick = async () => {
 
   recorder.start();
 
+  // Renderiza os frames rapidamente para acelerar a reprodução
   for (const frame of finalFrames) {
     ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / fps));
+    await new Promise(r => setTimeout(r, 1000 / (fps * 2))); // 2x mais rápido
   }
 
   recorder.stop();
