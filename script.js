@@ -10,6 +10,7 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
+// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -20,7 +21,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
-// Foto
+// Tirar Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -74,8 +75,11 @@ function enviarParaImgbb(imgData) {
   })
     .then(response => response.json())
     .then(data => {
-      if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
+      if (data && data.data && data.data.url) {
+        gerarQRCode(data.data.url);
+      } else {
+        throw new Error("Resposta inválida do imgbb");
+      }
     })
     .catch(error => {
       console.error("Erro no upload:", error);
@@ -108,73 +112,63 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Bumerangue
-bumerangueBtn.onclick = async () => {
+// Gravar Bumerangue
+bumerangueBtn.onclick = () => {
   if (!stream) return alert("Câmera não inicializada.");
 
-  const canvasVideo = document.createElement("canvas");
-  const ctx = canvasVideo.getContext("2d");
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
-  const fps = 20;
-  const duration = 2;
-  const totalFrames = fps * duration;
   const frames = [];
+  let frameCount = 0;
+  const fps = 20;
+  const totalFrames = fps * 2; // 2 segundos
 
-  canvasVideo.width = video.videoWidth;
-  canvasVideo.height = video.videoHeight;
-
-  // Captura frames com moldura
-  for (let i = 0; i < totalFrames; i++) {
-    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete) {
-      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+  const captureInterval = setInterval(() => {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (moldura.complete && moldura.naturalHeight !== 0) {
+      ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
     }
-    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-    frames.push(frame);
-    await new Promise(r => setTimeout(r, 1000 / fps));
-  }
-
-  // Converte frames em bumerangue (reverso + original)
-  const finalFrames = [...frames, ...frames.slice().reverse()];
-  const streamOut = canvasVideo.captureStream(fps);
-  const recorder = new MediaRecorder(streamOut);
-  const chunks = [];
-
-  recorder.ondataavailable = e => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append("file", blob, "bumerangue.webm");
-
-    qrDiv.innerHTML = "Enviando vídeo...";
-
-    fetch("https://upload.gofile.io/uploadfile", {
-      method: "POST",
-      body: formData
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === "ok") {
-          gerarQRCode(data.data.downloadPage);
-        } else {
-          throw new Error("Erro no envio");
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        qrDiv.innerText = "Erro ao enviar vídeo";
-      });
-  };
-
-  recorder.start();
-
-  for (const frame of finalFrames) {
-    ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / fps));
-  }
-
-  recorder.stop();
+    frames.push(canvas.toDataURL("image/webp"));
+    frameCount++;
+    if (frameCount >= totalFrames) {
+      clearInterval(captureInterval);
+      criarBumerangue(frames);
+    }
+  }, 1000 / fps);
 };
+
+function criarBumerangue(frames) {
+  const allFrames = [...frames, ...frames.slice().reverse()];
+  const encoder = new Whammy.Video(40); // 40fps para efeito acelerado
+  allFrames.forEach(dataURL => {
+    const img = new Image();
+    img.src = dataURL;
+    encoder.add(img);
+  });
+
+  const output = encoder.compile();
+  const blob = new Blob([output], { type: "video/webm" });
+  const formData = new FormData();
+  formData.append("file", blob, "bumerangue.webm");
+
+  qrDiv.innerHTML = "Enviando vídeo...";
+
+  fetch("https://upload.gofile.io/uploadfile", {
+    method: "POST",
+    body: formData
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "ok") {
+        gerarQRCode(data.data.downloadPage);
+      } else {
+        throw new Error("Erro ao enviar vídeo");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      qrDiv.innerText = "Erro ao enviar vídeo";
+    });
+}
