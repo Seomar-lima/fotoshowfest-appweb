@@ -1,0 +1,32 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Foto Show Fest</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Foto Show Fest</h1>
+  <h2>15 anos da Geovanna</h2>
+  <div id="preview-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="moldura" src="moldura-geovanna.png" alt="moldura"/>
+    <canvas id="canvas" style="display:none;"></canvas>
+  </div>
+  <div class="controls">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+    <div id="contador"></div>
+  </div>
+  <div id="qrDownload" class="qr-download"></div>
+  <h3>Galeria de Fotos</h3>
+  <div id="galeria" class="galeria"></div>
+  <img src="galeria-icon.png" alt="galeria" id="galeria-icon"/>
+  <footer>© 2025 - Foto Show Fest</footer>
+  <audio id="beep" src="beep.mp3" preload="auto"></audio>
+  <script src="qrcode.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
