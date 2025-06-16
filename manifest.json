@@ -33,3 +33,11 @@
   },
   "display_override": ["standalone", "browser"]
 }
+"screenshots": [
+  {
+    "src": "screenshot1.jpg",
+    "sizes": "720x1280",
+    "type": "image/jpeg",
+    "form_factor": "narrow"
+  }
+]
