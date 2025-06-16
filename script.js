@@ -161,9 +161,47 @@ async function iniciarBumerangue() {
   };
 
   recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append("file", blob, "bumerangue.webm");
+  const webmBlob = new Blob(chunks, { type: 'video/webm' });
+const webmBuffer = await webmBlob.arrayBuffer();
+
+// Inicia ffmpeg
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ log: false });
+
+contador.innerText = "Convertendo vídeo...";
+
+await ffmpeg.load();
+ffmpeg.FS("writeFile", "input.webm", new Uint8Array(webmBuffer));
+await ffmpeg.run("-i", "input.webm", "-c:v", "libx264", "-crf", "28", "output.mp4");
+
+const mp4Data = ffmpeg.FS("readFile", "output.mp4");
+const mp4Blob = new Blob([mp4Data.buffer], { type: "video/mp4" });
+
+const formData = new FormData();
+formData.append("file", mp4Blob, "bumerangue.mp4");
+
+contador.innerText = "Enviando vídeo...";
+qrDiv.innerHTML = "";
+
+// Envia para GoFile
+fetch("https://upload.gofile.io/uploadfile", {
+  method: "POST",
+  body: formData
+})
+.then(r => r.json())
+.then(data => {
+  contador.innerText = "";
+  if (data.status === "ok") {
+    gerarQRCode(data.data.downloadPage);
+  } else {
+    throw new Error("Erro no envio");
+  }
+})
+.catch(err => {
+  contador.innerText = "Erro ao enviar";
+  console.error(err);
+  qrDiv.innerText = "Erro ao enviar vídeo";
+});
 
     contador.innerText = "Enviando vídeo...";
     qrDiv.innerHTML = "";
