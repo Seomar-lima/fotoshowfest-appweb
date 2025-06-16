@@ -10,7 +10,7 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
-// Inicializa câmera
+// Inicializa a câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -21,7 +21,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
-// Botão Tirar Foto
+// Foto com contagem
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -109,8 +109,8 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Botão Bumerangue com contagem e gravação acelerada
-bumerangueBtn.onclick = async () => {
+// Bumerangue com contagem, moldura e conversão para MP4
+bumerangueBtn.onclick = () => {
   if (!stream) return alert("Câmera não inicializada.");
 
   let count = 5;
@@ -160,70 +160,47 @@ async function iniciarBumerangue() {
     if (e.data.size > 0) chunks.push(e.data);
   };
 
-  recorder.onstop = () => {
-  const webmBlob = new Blob(chunks, { type: 'video/webm' });
-const webmBuffer = await webmBlob.arrayBuffer();
+  recorder.onstop = async () => {
+    const webmBlob = new Blob(chunks, { type: 'video/webm' });
+    const webmBuffer = await webmBlob.arrayBuffer();
 
-// Inicia ffmpeg
-const { createFFmpeg, fetchFile } = FFmpeg;
-const ffmpeg = createFFmpeg({ log: false });
+    // ffmpeg.wasm conversão para MP4
+    contador.innerText = "Convertendo vídeo...";
 
-contador.innerText = "Convertendo vídeo...";
+    const { createFFmpeg, fetchFile } = FFmpeg;
+    const ffmpeg = createFFmpeg({ log: false });
 
-await ffmpeg.load();
-ffmpeg.FS("writeFile", "input.webm", new Uint8Array(webmBuffer));
-await ffmpeg.run("-i", "input.webm", "-c:v", "libx264", "-crf", "28", "output.mp4");
+    await ffmpeg.load();
+    ffmpeg.FS("writeFile", "input.webm", new Uint8Array(webmBuffer));
+    await ffmpeg.run("-i", "input.webm", "-c:v", "libx264", "-crf", "28", "output.mp4");
 
-const mp4Data = ffmpeg.FS("readFile", "output.mp4");
-const mp4Blob = new Blob([mp4Data.buffer], { type: "video/mp4" });
+    const mp4Data = ffmpeg.FS("readFile", "output.mp4");
+    const mp4Blob = new Blob([mp4Data.buffer], { type: "video/mp4" });
 
-const formData = new FormData();
-formData.append("file", mp4Blob, "bumerangue.mp4");
-
-contador.innerText = "Enviando vídeo...";
-qrDiv.innerHTML = "";
-
-// Envia para GoFile
-fetch("https://upload.gofile.io/uploadfile", {
-  method: "POST",
-  body: formData
-})
-.then(r => r.json())
-.then(data => {
-  contador.innerText = "";
-  if (data.status === "ok") {
-    gerarQRCode(data.data.downloadPage);
-  } else {
-    throw new Error("Erro no envio");
-  }
-})
-.catch(err => {
-  contador.innerText = "Erro ao enviar";
-  console.error(err);
-  qrDiv.innerText = "Erro ao enviar vídeo";
-});
+    const formData = new FormData();
+    formData.append("file", mp4Blob, "bumerangue.mp4");
 
     contador.innerText = "Enviando vídeo...";
     qrDiv.innerHTML = "";
 
-    fetch("https://upload.gofile.io/uploadfile", {
-      method: "POST",
-      body: formData
-    })
-      .then(r => r.json())
-      .then(data => {
-        contador.innerText = "";
-        if (data.status === "ok") {
-          gerarQRCode(data.data.downloadPage);
-        } else {
-          throw new Error("Erro no envio");
-        }
-      })
-      .catch(err => {
-        contador.innerText = "Erro ao enviar";
-        console.error(err);
-        qrDiv.innerText = "Erro ao enviar vídeo";
+    try {
+      const response = await fetch("https://upload.gofile.io/uploadfile", {
+        method: "POST",
+        body: formData
       });
+
+      const data = await response.json();
+      contador.innerText = "";
+      if (data.status === "ok") {
+        gerarQRCode(data.data.downloadPage);
+      } else {
+        throw new Error("Erro no envio");
+      }
+    } catch (err) {
+      contador.innerText = "Erro ao enviar";
+      console.error(err);
+      qrDiv.innerText = "Erro ao enviar vídeo";
+    }
   };
 
   recorder.start();
