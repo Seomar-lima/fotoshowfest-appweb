@@ -2,6 +2,7 @@
   "name": "Foto Show Fest",
   "short_name": "FotoFest",
   "id": "/",
+  "lang": "pt-BR",
   "description": "App de fotos e bumerangue para eventos, incluindo QR Code e galeria.",
   "start_url": "/index.html",
   "display": "standalone",
@@ -32,5 +33,27 @@
   "launch_handler": {
     "client_mode": "focus-existing"
   },
-  "display_override": ["standalone", "browser"]
-}
+  "display_override": ["standalone", "browser"],
+  "iarc_rating_id": "FotoFest-G",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://fotoshowfest.vercel.app",
+      "id": "fotoshowfest.vercel.app"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tirar Foto",
+      "short_name": "Foto",
+      "description": "Abra diretamente o modo foto",
+      "url": "/index.html#foto",
+      "icons": [{ "src": "icon_192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Gravar Bumerangue",
+      "short_name": "Bumerangue",
+      "description": "Acesse rapidamente o modo bumerangue",
+      "url": "/index.html#bumerangue",
+      "icons": [{ "src": "icon_192x192.png", "sizes": "192x192" }]
+    },
