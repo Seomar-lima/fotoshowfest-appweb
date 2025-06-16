@@ -25,7 +25,8 @@
     {
       "src": "screenshot1.jpg",
       "sizes": "720x1280",
-      "type": "image/jpeg"
+      "type": "image/jpeg",
+      "form_factor": "narrow"
     }
   ],
   "launch_handler": {
@@ -33,11 +34,3 @@
   },
   "display_override": ["standalone", "browser"]
 }
-"screenshots": [
-  {
-    "src": "screenshot1.jpg",
-    "sizes": "720x1280",
-    "type": "image/jpeg",
-    "form_factor": "narrow"
-  }
-]
