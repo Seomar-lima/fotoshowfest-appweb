@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -161,7 +160,9 @@ async function iniciarBumerangue() {
   recorder.onstop = async () => {
     const blob = new Blob(chunks, { type: 'video/webm' });
 
-    // Upload webm to Gofile
+    // Upload do .webm para o CloudConvert
+    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNDY0NDVmZWFjNDgwNWUwMGZlMjZkMDY5YWUyZGUwNDA4Y2FmYmZhM2QwODc1YTA5MTEwNWIwNjU3NGRhY2VmZmE0ZTYxMzk4NmI1ZjlhZjEiLCJpYXQiOjE3NTAwMzg2NDUuNzMzMDcyLCJuYmYiOjE3NTAwMzg2NDUuNzMzMDc0LCJleHAiOjQ5MDU3MTIyNDUuNzI3NTI0LCJzdWIiOiI3MjIwODAyMyIsInNjb3BlcyI6W119.ogOvB5v5XPJtBtvIGSXgJYwo8EozOtkY_i2wRfKrr5DWrZhtPKVBm5VJ-WjE1qb1SyB2oDXA1CbqszQ4ns-T6_wGJIsu28BeI0UlfrmccOGyYldZNtx00Ux0AA5rQgpEn0NQ4Lj93alHzoRkrWsuC7ZuR8d8X6pP6LPfHdL5y7drItrGupaa27ruTRCrAHtbEL-29f7TCnnJwOdfM0IZk19tenLBVf-mwfdr_svljSdbGBc-BFkwFoQmfbwxFaRoJQNWS2b4oWnJufzIsOJE3r15nubRDB4mL5yrakSkyXZXymQBrauDYBiYtBAMv0xyYd6KwDnEC5OKBqZHAUteQXaiQkLzQrP3w9R_N1tPqhZmAUMYX8cOB43izFdjiUga017imitLUr00kh_cW0rA2I1emWEFLKGDHPdKRtnrfMu3f477P41DLzgTheloHVcuX4zSkM4eH9SFVf8alJL_9cSgALU8OKY2U8xkiepj9fs7sQGWru06SfM9_3Kvnh9pNCIanV8w5rKfwKVFQF74vdyX903YNnjPp0s8SQFnUjz8fYvvRiSSs28b9T_bueQAxDNfJ4HhbxZB4dhBxc_C3M2dYB0Asb8pVReHwYbi_bQaPZClSu2yH47-kzA3HMA9zSnnkZ7S8KPD1swc-1VxAxdZ7gKwCZSNIpi9A8sA2Kc";
+
     const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
       body: (() => {
@@ -173,12 +174,8 @@ async function iniciarBumerangue() {
 
     const fileURL = uploadRes.data.downloadPage;
 
-    contador.innerText = "Convertendo para .mp4...";
-
-    // CloudConvert API
-    const cloudConvertAPI = "INSIRA_SUA_API_KEY";
-
-    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
+    // Criação do job no CloudConvert
+    const job = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + cloudConvertAPI,
@@ -186,26 +183,29 @@ async function iniciarBumerangue() {
       },
       body: JSON.stringify({
         tasks: {
-          import: {
+          import_url: {
             operation: "import/url",
             url: fileURL
           },
           convert: {
             operation: "convert",
-            input: "import",
+            input: "import_url",
             output_format: "mp4"
           },
-          export: {
+          export_url: {
             operation: "export/url",
             input: "convert"
           }
         }
       })
-    }).then(r => r.json());
+    }).then(res => res.json());
 
-    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
-    gerarQRCode(exportURL);
+    const exportTask = job.data.tasks.find(t => t.name === "export_url");
+    const downloadURL = exportTask.result?.files?.[0]?.url;
+
     contador.innerText = "";
+    if (downloadURL) gerarQRCode(downloadURL);
+    else qrDiv.innerText = "Erro ao obter link convertido.";
   };
 
   recorder.start();
