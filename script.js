@@ -217,3 +217,17 @@ async function iniciarBumerangue() {
 
   recorder.stop();
 }
+
+// Botão para limpar cache do PWA
+const limparBtn = document.getElementById("limpar-cache");
+if (limparBtn) {
+  limparBtn.onclick = async () => {
+    const confirmacao = confirm("Tem certeza que deseja limpar os arquivos em cache?");
+    if (!confirmacao) return;
+
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    
+    alert("Cache limpo com sucesso!\nVocê pode atualizar a página agora.");
+  };
+}
