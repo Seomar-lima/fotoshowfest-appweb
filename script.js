@@ -10,6 +10,7 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
+// Iniciar câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -20,6 +21,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
+// Tirar foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -107,6 +109,7 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
+// Gravar Bumerangue
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
 
@@ -138,7 +141,7 @@ async function iniciarBumerangue() {
 
   for (let i = 0; i < totalFrames; i++) {
     ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete) {
+    if (moldura.complete && moldura.naturalHeight !== 0) {
       ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
     }
     const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
@@ -158,22 +161,26 @@ async function iniciarBumerangue() {
   };
 
   recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
+    const blob = new Blob(chunks, { type: "video/webm" });
 
-    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZmJkNmQ0Mzc2MGZjNGMxMzMyY2IxMDA5NTcwMTBiMGYzMmQ4NTFlZTFmOWY0NGY5NmRkZGE1ODJiOGUxZGRkYTg5MDk2MTQ1M2E3M2ZjOWQiLCJpYXQiOjE3NTAwOTcwODUuODMzNjY4LCJuYmYiOjE3NTAwOTcwODUuODMzNjcsImV4cCI6NDkwNTc3MDY4NS44Mjg3MzYsInN1YiI6IjcyMjA4MDIzIiwic2NvcGVzIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0YXNrLnJlYWQiLCJ0YXNrLndyaXRlIiwid2ViaG9vay5yZWFkIiwid2ViaG9vay53cml0ZSIsInByZXNldC5yZWFkIiwicHJlc2V0LndyaXRlIl19.lafmDPVGmFEeadkw56A2aPS7xzM2CD75kXLfn4xkYp0IWc0NSnrcF_4YUOemX-K3u_YcmZFESlFizGCy9u9Sp6yKw9CmlIEUR3SCHmStTnS1h05CeDL0AFSOx7cASS48DvP33XT4GW0bOrqXD6nLZ1lrFZNLSRWMuj2mZz3angQKD6gKbl1IEPFd-PDHsKEtBBYGO6zB4cXkKQf5y1NGiDr-MiPax3JuID7AR_KE78F_TCD6S28UAb8UMc5hGTkjLrkQjMJ3Nx85VGzQu3v4mhA2G0h53hGdPHi43_utOZJLjE7LmdRmPgrc-Bvd8nOZmRBdeIHXx2OgHRtuNMju9ak_julQXKB_X9Fu4SEGXS21FmdrZlfsBvl6mC4sAo6EjkzxMK2WRotqdMjeQokl8Rt4-BL02m3MiBsLoGVjGFp93r6A24Vc95b-DwBwRqC6VqHSjj0PhL1cC4b6yhi7s7gWD3J98D19oXyFES2FcWOE2YiWIj55h6FcZj1JBXMADHnufwgfRCYj_HfyyQfGnrpqM1tKKH7-tz2gHaPyLeuQoczKsDwjHCF3UjmF9Imp5SzZO2lLcRRlr2bHzrht62oEyYSmaiByPliYnkUXQA_Obglqglqfd1DJY3ElkDzUfOGrYvLYE7uFqH5hWwebzbPdf-UAasKsO0R1IOpWj74";
+    contador.innerText = "Enviando vídeo...";
+
+    const form = new FormData();
+    form.append("file", blob, "bumerangue.webm");
 
     const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
-      body: (() => {
-        const form = new FormData();
-        form.append("file", blob, "video.webm");
-        return form;
-      })()
+      body: form
     }).then(r => r.json());
 
-    const fileURL = uploadRes.data.downloadPage;
+    const fileURL = uploadRes.data?.downloadPage;
+    if (!fileURL) return qrDiv.innerText = "Erro ao enviar .webm";
 
-    const job = await fetch("https://api.cloudconvert.com/v2/jobs", {
+    contador.innerText = "Convertendo para .mp4...";
+
+    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZmJkNmQ0Mzc2MGZjNGMxMzMyY2IxMDA5NTcwMTBiMGYzMmQ4NTFlZTFmOWY0NGY5NmRkZGE1ODJiOGUxZGRkYTg5MDk2MTQ1M2E3M2ZjOWQiLCJpYXQiOjE3NTAwOTcwODUuODMzNjY4LCJuYmYiOjE3NTAwOTcwODUuODMzNjcsImV4cCI6NDkwNTc3MDY4NS44Mjg3MzYsInN1YiI6IjcyMjA4MDIzIiwic2NvcGVzIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0YXNrLnJlYWQiLCJ0YXNrLndyaXRlIiwid2ViaG9vay5yZWFkIiwid2ViaG9vay53cml0ZSIsInByZXNldC5yZWFkIiwicHJlc2V0LndyaXRlIl19.lafmDPVGmFEeadkw56A2aPS7xzM2CD75kXLfn4xkYp0IWc0NSnrcF_4YUOemX-K3u_YcmZFESlFizGCy9u9Sp6yKw9CmlIEUR3SCHmStTnS1h05CeDL0AFSOx7cASS48DvP33XT4GW0bOrqXD6nLZ1lrFZNLSRWMuj2mZz3angQKD6gKbl1IEPFd-PDHsKEtBBYGO6zB4cXkKQf5y1NGiDr-MiPax3JuID7AR_KE78F_TCD6S28UAb8UMc5hGTkjLrkQjMJ3Nx85VGzQu3v4mhA2G0h53hGdPHi43_utOZJLjE7LmdRmPgrc-Bvd8nOZmRBdeIHXx2OgHRtuNMju9ak_julQXKB_X9Fu4SEGXS21FmdrZlfsBvl6mC4sAo6EjkzxMK2WRotqdMjeQokl8Rt4-BL02m3MiBsLoGVjGFp93r6A24Vc95b-DwBwRqC6VqHSjj0PhL1cC4b6yhi7s7gWD3J98D19oXyFES2FcWOE2YiWIj55h6FcZj1JBXMADHnufwgfRCYj_HfyyQfGnrpqM1tKKH7-tz2gHaPyLeuQoczKsDwjHCF3UjmF9Imp5SzZO2lLcRRlr2bHzrht62oEyYSmaiByPliYnkUXQA_Obglqglqfd1DJY3ElkDzUfOGrYvLYE7uFqH5hWwebzbPdf-UAasKsO0R1IOpWj74"; // 👈 Substitua aqui
+
+    const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + cloudConvertAPI,
@@ -196,9 +203,9 @@ async function iniciarBumerangue() {
           }
         }
       })
-    }).then(res => res.json());
+    }).then(r => r.json());
 
-    const exportTask = job.data.tasks.find(t => t.name === "export_url");
+    const exportTask = jobRes.data.tasks.find(t => t.name === "export_url");
     const downloadURL = exportTask?.result?.files?.[0]?.url;
 
     contador.innerText = "";
@@ -216,16 +223,14 @@ async function iniciarBumerangue() {
   recorder.stop();
 }
 
-// Botão para limpar cache do PWA
+// Limpar cache PWA (botão opcional)
 const limparBtn = document.getElementById("limpar-cache");
 if (limparBtn) {
   limparBtn.onclick = async () => {
-    const confirmacao = confirm("Tem certeza que deseja limpar os arquivos em cache?");
+    const confirmacao = confirm("Deseja limpar o cache?");
     if (!confirmacao) return;
-
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
-
-    alert("Cache limpo com sucesso!\nVocê pode atualizar a página agora.");
+    alert("Cache limpo. Atualize a página.");
   };
 }
