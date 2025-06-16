@@ -4,13 +4,31 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foto Show Fest</title>
+
+  <!-- Estilos -->
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Manifesto do PWA -->
   <link rel="manifest" href="manifest.json" />
+
+  <!-- Ícones -->
+  <link rel="icon" href="icon_192x192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="icon_512x512.png" />
+
+  <!-- Meta Tags PWA -->
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Foto Show Fest" />
+
+  <!-- QR Code Lib -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
   <h1>Foto Show Fest</h1>
   <h2>15 anos da Geovanna</h2>
+
   <div id="preview-container">
     <video id="camera" autoplay playsinline></video>
     <img id="moldura" src="moldura.png" alt="Moldura" />
@@ -31,8 +49,11 @@
 
   <footer>© 2025 - Foto Show Fest</footer>
 
+  <!-- Recursos -->
   <audio id="beep" src="beep.mp3" preload="auto"></audio>
   <canvas id="canvas" style="display:none;"></canvas>
+
+  <!-- Script Principal -->
   <script src="script.js"></script>
 
   <!-- Registro do Service Worker -->
