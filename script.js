@@ -1,3 +1,4 @@
+
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -10,7 +11,6 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
-// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -21,7 +21,6 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
-// Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -45,6 +44,7 @@ function capturarFoto() {
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
+
   setTimeout(() => {
     const imgData = canvas.toDataURL("image/png");
     const img = new Image();
@@ -72,19 +72,16 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data && data.data && data.data.url) {
-      gerarQRCode(data.data.url);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    qrDiv.innerText = "Erro ao gerar QRCode.";
-    qrDiv.style.color = "red";
-  });
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) gerarQRCode(data.data.url);
+      else throw new Error("Resposta inválida do imgbb");
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerText = "Erro ao gerar QRCode.";
+      qrDiv.style.color = "red";
+    });
 }
 
 function gerarQRCode(link) {
@@ -111,39 +108,112 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Gravar bumerangue
-bumerangueBtn.onclick = () => {
+bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
 
-  const recorder = new MediaRecorder(stream);
+  let count = 5;
+  contador.innerText = count;
+  const interval = setInterval(() => {
+    count--;
+    contador.innerText = count;
+    beep.play();
+    if (count === 0) {
+      clearInterval(interval);
+      contador.innerText = "Gravando...";
+      iniciarBumerangue();
+    }
+  }, 1000);
+};
+
+async function iniciarBumerangue() {
+  const canvasVideo = document.createElement("canvas");
+  const ctx = canvasVideo.getContext("2d");
+
+  const fps = 60;
+  const duration = 2;
+  const totalFrames = fps * duration;
+  const frames = [];
+
+  canvasVideo.width = video.videoWidth;
+  canvasVideo.height = video.videoHeight;
+
+  for (let i = 0; i < totalFrames; i++) {
+    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
+    if (moldura.complete) {
+      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+    }
+    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
+    frames.push(frame);
+    await new Promise(r => setTimeout(r, 1000 / fps));
+  }
+
+  contador.innerText = "Renderizando vídeo...";
+
+  const finalFrames = [...frames, ...frames.slice().reverse()];
+  const streamOut = canvasVideo.captureStream(fps);
+  const recorder = new MediaRecorder(streamOut);
   const chunks = [];
 
-  recorder.ondataavailable = e => chunks.push(e.data);
-  recorder.onstop = () => {
+  recorder.ondataavailable = e => {
+    if (e.data.size > 0) chunks.push(e.data);
+  };
+
+  recorder.onstop = async () => {
     const blob = new Blob(chunks, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append("file", blob, "bumerangue.webm");
 
-    qrDiv.innerHTML = "Enviando vídeo...";
-
-    fetch("https://upload.gofile.io/uploadfile", {
+    // Upload webm to Gofile
+    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
-      body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === "ok") {
-        gerarQRCode(data.data.downloadPage);
-      } else {
-        throw new Error("Erro ao enviar vídeo");
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      qrDiv.innerText = "Erro ao enviar vídeo";
-    });
+      body: (() => {
+        const form = new FormData();
+        form.append("file", blob, "video.webm");
+        return form;
+      })()
+    }).then(r => r.json());
+
+    const fileURL = uploadRes.data.downloadPage;
+
+    contador.innerText = "Convertendo para .mp4...";
+
+    // CloudConvert API
+    const cloudConvertAPI = "INSIRA_SUA_API_KEY";
+
+    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + cloudConvertAPI,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        tasks: {
+          import: {
+            operation: "import/url",
+            url: fileURL
+          },
+          convert: {
+            operation: "convert",
+            input: "import",
+            output_format: "mp4"
+          },
+          export: {
+            operation: "export/url",
+            input: "convert"
+          }
+        }
+      })
+    }).then(r => r.json());
+
+    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
+    gerarQRCode(exportURL);
+    contador.innerText = "";
   };
 
   recorder.start();
-  setTimeout(() => recorder.stop(), 4000); // grava 4 segundos
-};
+
+  for (const frame of finalFrames) {
+    ctx.putImageData(frame, 0, 0);
+    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
+  }
+
+  recorder.stop();
+}
