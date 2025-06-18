@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -11,6 +10,7 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
+// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -21,6 +21,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
+// Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -44,7 +45,6 @@ function capturarFoto() {
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
-
   setTimeout(() => {
     const imgData = canvas.toDataURL("image/png");
     const img = new Image();
@@ -72,16 +72,19 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerText = "Erro ao gerar QRCode.";
-      qrDiv.style.color = "red";
-    });
+  .then(response => response.json())
+  .then(data => {
+    if (data && data.data && data.data.url) {
+      gerarQRCode(data.data.url);
+    } else {
+      throw new Error("Resposta inválida do imgbb");
+    }
+  })
+  .catch(error => {
+    console.error("Erro no upload:", error);
+    qrDiv.innerText = "Erro ao gerar QRCode.";
+    qrDiv.style.color = "red";
+  });
 }
 
 function gerarQRCode(link) {
@@ -108,142 +111,39 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-bumerangueBtn.onclick = async () => {
+// Gravar bumerangue
+bumerangueBtn.onclick = () => {
   if (!stream) return alert("Câmera não inicializada.");
 
-  let count = 5;
-  contador.innerText = count;
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(interval);
-      contador.innerText = "Gravando...";
-      iniciarBumerangue();
-    }
-  }, 1000);
-};
-
-async function iniciarBumerangue() {
-  const canvasVideo = document.createElement("canvas");
-  const ctx = canvasVideo.getContext("2d");
-
-  const fps = 60;
-  const duration = 2;
-  const totalFrames = fps * duration;
-  const frames = [];
-
-  canvasVideo.width = video.videoWidth;
-  canvasVideo.height = video.videoHeight;
-
-  for (let i = 0; i < totalFrames; i++) {
-    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete && moldura.naturalHeight !== 0) {
-      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
-    }
-    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-    frames.push(frame);
-    await new Promise(r => setTimeout(r, 1000 / fps));
-  }
-
-  contador.innerText = "Renderizando vídeo...";
-
-  const finalFrames = [...frames, ...frames.slice().reverse()];
-  const streamOut = canvasVideo.captureStream(fps);
-  const recorder = new MediaRecorder(streamOut);
+  const recorder = new MediaRecorder(stream);
   const chunks = [];
 
-  recorder.ondataavailable = e => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const formData = new FormData();
+    formData.append("file", blob, "bumerangue.webm");
 
-  recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: "video/webm" });
+    qrDiv.innerHTML = "Enviando vídeo...";
 
-    contador.innerText = "Enviando vídeo...";
-
-    const form = new FormData();
-    form.append("file", blob, "bumerangue.webm");
-
-    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
+    fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
-      body: form
-    }).then(r => r.json());
-
-    const fileURL = uploadRes.data?.downloadPage;
-    if (!fileURL) return qrDiv.innerText = "Erro ao enviar .webm";
-
-    contador.innerText = "Convertendo para .mp4...";
-
-    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...";
-
-    const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + cloudConvertAPI,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        tasks: {
-          import_url: {
-            operation: "import/url",
-            url: fileURL
-          },
-          convert: {
-            operation: "convert",
-            input: "import_url",
-            output_format: "mp4"
-          },
-          export_url: {
-            operation: "export/url",
-            input: "convert"
-          }
-        }
-      })
-    }).then(r => r.json());
-
-    const jobId = jobRes.data.id;
-
-    let downloadURL = "";
-    for (let i = 0; i < 20; i++) {
-      await new Promise(r => setTimeout(r, 4000));
-      const statusRes = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
-        headers: { Authorization: "Bearer " + cloudConvertAPI }
-      }).then(r => r.json());
-
-      const exportTask = statusRes.data.tasks.find(t => t.name === "export_url" && t.status === "finished");
-      if (exportTask?.result?.files?.[0]?.url) {
-        downloadURL = exportTask.result.files[0].url;
-        break;
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "ok") {
+        gerarQRCode(data.data.downloadPage);
+      } else {
+        throw new Error("Erro ao enviar vídeo");
       }
-    }
-
-    contador.innerText = "";
-    if (downloadURL) gerarQRCode(downloadURL);
-    else {
-      qrDiv.innerText = "Erro ao obter link convertido.";
-      qrDiv.style.color = "red";
-    }
+    })
+    .catch(err => {
+      console.error(err);
+      qrDiv.innerText = "Erro ao enviar vídeo";
+    });
   };
 
   recorder.start();
-
-  for (const frame of finalFrames) {
-    ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
-  }
-
-  recorder.stop();
-}
-
-const limparBtn = document.getElementById("limpar-cache");
-if (limparBtn) {
-  limparBtn.onclick = async () => {
-    const confirmacao = confirm("Deseja limpar o cache?");
-    if (!confirmacao) return;
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.map(name => caches.delete(name)));
-    alert("Cache limpo. Atualize a página.");
-  };
-}
+  setTimeout(() => recorder.stop(), 4000); // grava 4 segundos
+};
