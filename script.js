@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -11,6 +10,7 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
+// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -21,6 +21,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
+// Botão Tirar Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -158,61 +159,39 @@ async function iniciarBumerangue() {
     if (e.data.size > 0) chunks.push(e.data);
   };
 
-  recorder.onstop = async () => {
+  recorder.onstop = () => {
     const blob = new Blob(chunks, { type: 'video/webm' });
+    const formData = new FormData();
+    formData.append("file", blob, "bumerangue.webm");
 
-    // Upload webm to Gofile
-    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
+    contador.innerText = "Enviando vídeo...";
+    qrDiv.innerHTML = "";
+
+    fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
-      body: (() => {
-        const form = new FormData();
-        form.append("file", blob, "video.webm");
-        return form;
-      })()
-    }).then(r => r.json());
-
-    const fileURL = uploadRes.data.downloadPage;
-
-    contador.innerText = "Convertendo para .mp4...";
-
-    // CloudConvert API
-    const cloudConvertAPI = "INSIRA_SUA_API_KEY";
-
-    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + cloudConvertAPI,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        tasks: {
-          import: {
-            operation: "import/url",
-            url: fileURL
-          },
-          convert: {
-            operation: "convert",
-            input: "import",
-            output_format: "mp4"
-          },
-          export: {
-            operation: "export/url",
-            input: "convert"
-          }
+      body: formData
+    })
+      .then(r => r.json())
+      .then(data => {
+        contador.innerText = "";
+        if (data.status === "ok") {
+          gerarQRCode(data.data.downloadPage);
+        } else {
+          throw new Error("Erro no envio");
         }
       })
-    }).then(r => r.json());
-
-    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
-    gerarQRCode(exportURL);
-    contador.innerText = "";
+      .catch(err => {
+        contador.innerText = "Erro ao enviar";
+        console.error(err);
+        qrDiv.innerText = "Erro ao enviar vídeo";
+      });
   };
 
   recorder.start();
 
   for (const frame of finalFrames) {
     ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
+    await new Promise(r => setTimeout(r, 1000 / (fps * 2))); // acelera o playback
   }
 
   recorder.stop();
