@@ -1,5 +1,5 @@
-const STATIC_CACHE = "foto-showfest-static-v1";
-const DYNAMIC_CACHE = "foto-showfest-dynamic-v1";
+const STATIC_CACHE = "foto-showfest-appweb-static-v1";
+const DYNAMIC_CACHE = "foto-showfest-appweb-dynamic-v1";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
