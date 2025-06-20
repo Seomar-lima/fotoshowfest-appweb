@@ -87,6 +87,7 @@ function enviarParaImgbb(imgData) {
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
+
   const qrContainer = document.createElement("div");
   qrContainer.style.margin = "10px auto";
   qrDiv.appendChild(qrContainer);
@@ -107,6 +108,11 @@ function gerarQRCode(link) {
   a.style.marginTop = "10px";
   a.style.fontWeight = "bold";
   qrDiv.appendChild(a);
+
+  // Scroll suave até o centro da tela
+  setTimeout(() => {
+    qrDiv.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 200);
 }
 
 bumerangueBtn.onclick = async () => {
