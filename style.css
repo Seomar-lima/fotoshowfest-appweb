@@ -61,6 +61,16 @@ button {
   color: black;
 }
 
+#qrDownload {
+  display: none !important;
+}
+
+#galeria-icon,
+#galeria,
+#limpar-cache {
+  display: none !important;
+}
+
 #contador {
   position: absolute;
   top: 50%;
