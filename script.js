@@ -1,3 +1,4 @@
+
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -10,7 +11,6 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
-// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -21,7 +21,6 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     console.error("Erro ao acessar a câmera:", err);
   });
 
-// Botão Tirar Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -87,7 +86,6 @@ function enviarParaImgbb(imgData) {
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
-
   const qrContainer = document.createElement("div");
   qrContainer.style.margin = "10px auto";
   qrDiv.appendChild(qrContainer);
@@ -108,11 +106,6 @@ function gerarQRCode(link) {
   a.style.marginTop = "10px";
   a.style.fontWeight = "bold";
   qrDiv.appendChild(a);
-
-  // Scroll suave até o centro da tela
-  setTimeout(() => {
-    qrDiv.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 200);
 }
 
 bumerangueBtn.onclick = async () => {
@@ -146,7 +139,7 @@ async function iniciarBumerangue() {
 
   for (let i = 0; i < totalFrames; i++) {
     ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete) {
+    if (moldura.complete && moldura.naturalHeight !== 0) {
       ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
     }
     const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
@@ -165,40 +158,92 @@ async function iniciarBumerangue() {
     if (e.data.size > 0) chunks.push(e.data);
   };
 
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append("file", blob, "bumerangue.webm");
+  recorder.onstop = async () => {
+    const blob = new Blob(chunks, { type: "video/webm" });
 
     contador.innerText = "Enviando vídeo...";
-    qrDiv.innerHTML = "";
 
-    fetch("https://upload.gofile.io/uploadfile", {
+    const form = new FormData();
+    form.append("file", blob, "bumerangue.webm");
+
+    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
-      body: formData
-    })
-      .then(r => r.json())
-      .then(data => {
-        contador.innerText = "";
-        if (data.status === "ok") {
-          gerarQRCode(data.data.downloadPage);
-        } else {
-          throw new Error("Erro no envio");
+      body: form
+    }).then(r => r.json());
+
+    const fileURL = uploadRes.data?.downloadPage;
+    if (!fileURL) return qrDiv.innerText = "Erro ao enviar .webm";
+
+    contador.innerText = "Convertendo para .mp4...";
+
+    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...";
+
+    const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + cloudConvertAPI,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        tasks: {
+          import_url: {
+            operation: "import/url",
+            url: fileURL
+          },
+          convert: {
+            operation: "convert",
+            input: "import_url",
+            output_format: "mp4"
+          },
+          export_url: {
+            operation: "export/url",
+            input: "convert"
+          }
         }
       })
-      .catch(err => {
-        contador.innerText = "Erro ao enviar";
-        console.error(err);
-        qrDiv.innerText = "Erro ao enviar vídeo";
-      });
+    }).then(r => r.json());
+
+    const jobId = jobRes.data.id;
+
+    let downloadURL = "";
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 4000));
+      const statusRes = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
+        headers: { Authorization: "Bearer " + cloudConvertAPI }
+      }).then(r => r.json());
+
+      const exportTask = statusRes.data.tasks.find(t => t.name === "export_url" && t.status === "finished");
+      if (exportTask?.result?.files?.[0]?.url) {
+        downloadURL = exportTask.result.files[0].url;
+        break;
+      }
+    }
+
+    contador.innerText = "";
+    if (downloadURL) gerarQRCode(downloadURL);
+    else {
+      qrDiv.innerText = "Erro ao obter link convertido.";
+      qrDiv.style.color = "red";
+    }
   };
 
   recorder.start();
 
   for (const frame of finalFrames) {
     ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2))); // acelera o playback
+    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
   }
 
   recorder.stop();
+}
+
+const limparBtn = document.getElementById("limpar-cache");
+if (limparBtn) {
+  limparBtn.onclick = async () => {
+    const confirmacao = confirm("Deseja limpar o cache?");
+    if (!confirmacao) return;
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    alert("Cache limpo. Atualize a página.");
+  };
 }
