@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -9,8 +8,9 @@ const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 
-let stream;
+let stream = null;
 
+// Iniciar câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -19,29 +19,40 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
+    alert("Não foi possível acessar a câmera.");
   });
 
+// Clique para tirar foto
 fotoBtn.onclick = () => {
+  if (!stream) return alert("Câmera não carregada.");
   let count = 5;
   contador.innerText = count;
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    beep.play();
+    if (beep) beep.play();
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "";
+      console.log("Iniciando captura de foto...");
       capturarFoto();
     }
   }, 1000);
 };
 
 function capturarFoto() {
+  if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+    console.error("Câmera ainda não carregada completamente.");
+    return;
+  }
+
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
+
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  if (moldura.complete && moldura.naturalHeight !== 0) {
+
+  if (moldura && moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
 
@@ -116,7 +127,7 @@ bumerangueBtn.onclick = async () => {
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    beep.play();
+    if (beep) beep.play();
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "Gravando...";
@@ -176,7 +187,7 @@ async function iniciarBumerangue() {
 
     contador.innerText = "Convertendo para .mp4...";
 
-    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...";
+    const cloudConvertAPI = "SUA_API_KEY_CLOUDCONVERT_AQUI"; // 🔁 Coloque sua API correta
 
     const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
@@ -237,6 +248,7 @@ async function iniciarBumerangue() {
   recorder.stop();
 }
 
+// Botão de limpar cache
 const limparBtn = document.getElementById("limpar-cache");
 if (limparBtn) {
   limparBtn.onclick = async () => {
