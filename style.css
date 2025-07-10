@@ -1,14 +1,18 @@
-/* Estilos Gerais */
-body {
+/* Reset e Estilos Gerais */
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
   background-color: #000;
   color: #FFD700;
-  font-family: 'Arial', sans-serif;
-  text-align: center;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  line-height: 1.6;
 }
 
 #app-container {
@@ -16,41 +20,33 @@ body {
   flex-direction: column;
   min-height: 100vh;
   padding: 15px;
-  box-sizing: border-box;
   max-width: 100%;
   margin: 0 auto;
 }
 
 /* Cabeçalho */
 h1 {
+  font-size: 1.8rem;
   margin: 10px 0 5px;
-  font-size: 1.8em;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 h2 {
-  margin: 0 0 15px;
-  font-size: 1.4em;
+  font-size: 1.4rem;
   font-weight: normal;
+  margin-bottom: 15px;
 }
 
-/* Área da Câmera */
-#preview-wrapper {
-  position: relative;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 10px;
-}
-
-#preview-container {
+/* Container da Câmera */
+#camera-container {
   position: relative;
   width: 100%;
   max-width: 500px;
-  margin: 0 auto;
-  flex-grow: 1;
-  overflow: hidden;
+  margin: 0 auto 15px;
+  aspect-ratio: 9/16;
+  background-color: #333;
   border-radius: 10px;
+  overflow: hidden;
   box-shadow: 0 0 20px rgba(255,215,0,0.3);
 }
 
@@ -58,7 +54,6 @@ h2 {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #333;
   display: block;
 }
 
@@ -68,12 +63,11 @@ h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
   object-fit: cover;
+  pointer-events: none;
 }
 
-/* Status Overlay */
-#status-overlay {
+#camera-status {
   position: absolute;
   top: 0;
   left: 0;
@@ -84,18 +78,6 @@ h2 {
   align-items: center;
   pointer-events: none;
   z-index: 10;
-}
-
-#contador {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 3em;
-  font-weight: bold;
-  color: #FFD700;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-  z-index: 20;
 }
 
 /* Controles */
@@ -113,7 +95,7 @@ h2 {
   border: none;
   padding: 12px 20px;
   border-radius: 50px;
-  font-size: 1em;
+  font-size: 1rem;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   transition: all 0.3s;
@@ -122,16 +104,40 @@ h2 {
   font-weight: bold;
 }
 
-.controls button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+.controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.controls button:active {
-  transform: translateY(1px);
+/* Contador e Mensagens */
+#contador {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  z-index: 20;
 }
 
-/* QR Code */
+.status-message {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* QR Code e Galeria */
 .qr-download {
   background: white;
   padding: 15px;
@@ -141,13 +147,6 @@ h2 {
   max-width: 230px;
 }
 
-.qr-download h3 {
-  color: #000 !important;
-  margin: 0 0 10px 0;
-  font-size: 1.1em;
-}
-
-/* Galeria */
 #galeria {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -158,48 +157,23 @@ h2 {
   padding: 10px;
 }
 
-.gallery-item {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  border: 2px solid #FFD700;
-}
-
-.gallery-item img, 
-.gallery-item video {
-  display: block;
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.gallery-item video {
-  background: #000;
-}
-
 /* Rodapé */
 footer {
   margin-top: auto;
   padding: 15px;
   color: #888;
-  font-size: 0.9em;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
-/* Mensagens de Status */
-.status-message {
-  background: rgba(0,0,0,0.8);
-  color: white;
-  padding: 15px 20px;
-  border-radius: 50px;
-  font-size: 1.2em;
-  font-weight: bold;
-  margin: 10px;
-  display: inline-block;
-  animation: fadeIn 0.5s;
+/* Responsividade */
+@media (max-width: 500px) {
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
+  .controls button {
+    width: 80%;
+    max-width: none;
+  }
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to
