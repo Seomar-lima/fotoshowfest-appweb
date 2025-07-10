@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -9,9 +8,26 @@ const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 
-let stream;
+// Configurações otimizadas para o Bumerangue
+const BOOMERANG_SETTINGS = {
+  width: 640,      // Reduzido para melhor performance
+  height: 480,     // Reduzido para melhor performance
+  fps: 30,         // Frame rate reduzido
+  duration: 2      // 2 segundos de gravação
+};
 
-navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
+let stream;
+let cancelRecording = false;
+
+// Inicialização da câmera
+navigator.mediaDevices.getUserMedia({ 
+  video: { 
+    width: { ideal: 1920 }, 
+    height: { ideal: 1080 },
+    facingMode: 'user' 
+  }, 
+  audio: false 
+})
   .then(s => {
     stream = s;
     video.srcObject = stream;
@@ -19,8 +35,10 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
+    alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
   });
 
+// Função para tirar foto (mantida original)
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -108,112 +126,132 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
+// Função do bumerangue otimizada
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
-
-  let count = 5;
-  contador.innerText = count;
-  const interval = setInterval(() => {
-    count--;
+  
+  cancelRecording = false;
+  
+  try {
+    let count = 3; // Contagem regressiva mais curta
     contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(interval);
-      contador.innerText = "Gravando...";
-      iniciarBumerangue();
-    }
-  }, 1000);
+    const interval = setInterval(() => {
+      count--;
+      contador.innerText = count;
+      beep.play();
+      if (count === 0) {
+        clearInterval(interval);
+        contador.innerText = "Gravando...";
+        iniciarBumerangueOtimizado();
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("Erro:", error);
+    contador.innerText = "Erro ao iniciar";
+  }
 };
 
-async function iniciarBumerangue() {
-  const canvasVideo = document.createElement("canvas");
-  const ctx = canvasVideo.getContext("2d");
-
-  const fps = 60;
-  const duration = 2;
-  const totalFrames = fps * duration;
-  const frames = [];
-
-  canvasVideo.width = video.videoWidth;
-  canvasVideo.height = video.videoHeight;
-
-  for (let i = 0; i < totalFrames; i++) {
-    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete) {
-      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+async function iniciarBumerangueOtimizado() {
+  try {
+    const canvasVideo = document.createElement("canvas");
+    const ctx = canvasVideo.getContext("2d");
+    
+    // Define resolução reduzida para melhor performance
+    canvasVideo.width = BOOMERANG_SETTINGS.width;
+    canvasVideo.height = BOOMERANG_SETTINGS.height;
+    
+    const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
+    const frames = [];
+    
+    // 1. Captura os frames
+    for (let i = 0; i < totalFrames; i++) {
+      if (cancelRecording) break;
+      
+      ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
+      
+      if (moldura.complete && moldura.naturalHeight !== 0) {
+        ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+      }
+      
+      const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
+      frames.push(frame);
+      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
     }
-    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-    frames.push(frame);
-    await new Promise(r => setTimeout(r, 1000 / fps));
-  }
-
-  contador.innerText = "Renderizando vídeo...";
-
-  const finalFrames = [...frames, ...frames.slice().reverse()];
-  const streamOut = canvasVideo.captureStream(fps);
-  const recorder = new MediaRecorder(streamOut);
-  const chunks = [];
-
-  recorder.ondataavailable = e => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-
-  recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-
-    // Upload webm to Gofile
-    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
-      method: "POST",
-      body: (() => {
-        const form = new FormData();
-        form.append("file", blob, "video.webm");
-        return form;
-      })()
-    }).then(r => r.json());
-
-    const fileURL = uploadRes.data.downloadPage;
-
-    contador.innerText = "Convertendo para .mp4...";
-
-    // CloudConvert API
-    const cloudConvertAPI = "INSIRA_SUA_API_KEY";
-
-    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + cloudConvertAPI,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        tasks: {
-          import: {
-            operation: "import/url",
-            url: fileURL
-          },
-          convert: {
-            operation: "convert",
-            input: "import",
-            output_format: "mp4"
-          },
-          export: {
-            operation: "export/url",
-            input: "convert"
-          }
+    
+    if (cancelRecording) {
+      contador.innerText = "Cancelado";
+      return;
+    }
+    
+    contador.innerText = "Processando...";
+    
+    // 2. Cria o efeito boomerang (ida e volta)
+    const finalFrames = [...frames, ...frames.slice().reverse()];
+    
+    // 3. Cria o vídeo diretamente em WebM (mais eficiente)
+    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
+    const recorder = new MediaRecorder(streamOut, { 
+      mimeType: 'video/webm;codecs=vp9',
+      videoBitsPerSecond: 1500000 // Bitrate reduzido
+    });
+    
+    const chunks = [];
+    
+    return new Promise((resolve) => {
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const videoUrl = URL.createObjectURL(blob);
+          
+          // Gera QRCode com o vídeo WebM diretamente
+          gerarQRCode(videoUrl);
+          contador.innerText = "Pronto!";
+          
+          // Adiciona link de download
+          const downloadLink = document.createElement("a");
+          downloadLink.href = videoUrl;
+          downloadLink.download = "bumerangue.webm";
+          downloadLink.textContent = "📥 Baixar Vídeo";
+          downloadLink.style.display = "block";
+          downloadLink.style.marginTop = "10px";
+          downloadLink.style.textAlign = "center";
+          qrDiv.appendChild(downloadLink);
+          
+          resolve();
+        } catch (error) {
+          console.error("Erro ao processar vídeo:", error);
+          contador.innerText = "Erro ao finalizar";
+          qrDiv.innerHTML = "Erro ao processar o vídeo. Tente novamente.";
+          qrDiv.style.color = "red";
         }
-      })
-    }).then(r => r.json());
-
-    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
-    gerarQRCode(exportURL);
-    contador.innerText = "";
-  };
-
-  recorder.start();
-
-  for (const frame of finalFrames) {
-    ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
+      };
+      
+      recorder.start();
+      
+      // Renderiza os frames
+      (async () => {
+        for (const frame of finalFrames) {
+          if (cancelRecording) {
+            recorder.stop();
+            return;
+          }
+          ctx.putImageData(frame, 0, 0);
+          await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
+        }
+        recorder.stop();
+      })();
+    });
+    
+  } catch (error) {
+    console.error("Erro no bumerangue:", error);
+    contador.innerText = "Erro no processamento";
+    throw error;
   }
-
-  recorder.stop();
 }
+
+// Adicione este botão no seu HTML:
+// <button id="cancelBtn" style="display:none;">Cancelar Gravação</button>
+document.getElementById('cancelBtn')?.addEventListener('click', () => {
+  cancelRecording = true;
+});
