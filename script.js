@@ -60,7 +60,7 @@ function capturarFoto() {
 }
 
 function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
+  const base64 = imgData.split(',')[1]; // forma mais segura de extrair o base64
   const formData = new FormData();
   formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
   formData.append("image", base64);
@@ -72,18 +72,21 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerText = "Erro ao gerar QRCode.";
-      qrDiv.style.color = "red";
-    });
+  .then(response => response.json())
+  .then(data => {
+    if (data?.data?.url) {
+      console.log("Upload bem-sucedido:", data.data.url);
+      gerarQRCode(data.data.url);
+    } else {
+      throw new Error("Erro na resposta do imgbb");
+    }
+  })
+  .catch(error => {
+    console.error("Erro ao enviar para imgbb:", error);
+    qrDiv.innerText = "Erro ao enviar imagem.";
+    qrDiv.style.color = "red";
+  });
 }
-
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
   const qrContainer = document.createElement("div");
