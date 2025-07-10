@@ -8,10 +8,10 @@ const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 
-// Configurações otimizadas para o Bumerangue
+// Configurações otimizadas para o Bumerangue VERTICAL
 const BOOMERANG_SETTINGS = {
-  width: 640,      // Reduzido para melhor performance
-  height: 480,     // Reduzido para melhor performance
+  width: 540,      // Largura reduzida mantendo proporção vertical
+  height: 960,     // Altura proporcional ao formato 9:16 (vertical)
   fps: 30,         // Frame rate reduzido
   duration: 2      // 2 segundos de gravação
 };
@@ -38,7 +38,7 @@ navigator.mediaDevices.getUserMedia({
     alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
   });
 
-// Função para tirar foto (mantida original)
+// Função para tirar foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
@@ -126,14 +126,17 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Função do bumerangue otimizada
+// Função do bumerangue vertical
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
   
+  // Mostra botão de cancelamento
+  const cancelBtn = document.getElementById('cancelBtn');
+  cancelBtn.style.display = 'block';
   cancelRecording = false;
   
   try {
-    let count = 3; // Contagem regressiva mais curta
+    let count = 3;
     contador.innerText = count;
     const interval = setInterval(() => {
       count--;
@@ -142,32 +145,57 @@ bumerangueBtn.onclick = async () => {
       if (count === 0) {
         clearInterval(interval);
         contador.innerText = "Gravando...";
-        iniciarBumerangueOtimizado();
+        iniciarBumerangueVertical();
       }
     }, 1000);
   } catch (error) {
     console.error("Erro:", error);
     contador.innerText = "Erro ao iniciar";
+    cancelBtn.style.display = 'none';
   }
 };
 
-async function iniciarBumerangueOtimizado() {
+async function iniciarBumerangueVertical() {
+  const cancelBtn = document.getElementById('cancelBtn');
+  
   try {
     const canvasVideo = document.createElement("canvas");
     const ctx = canvasVideo.getContext("2d");
     
-    // Define resolução reduzida para melhor performance
+    // Define a resolução vertical (retrato)
     canvasVideo.width = BOOMERANG_SETTINGS.width;
     canvasVideo.height = BOOMERANG_SETTINGS.height;
     
     const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
     const frames = [];
     
-    // 1. Captura os frames
+    // 1. Captura os frames no formato vertical
     for (let i = 0; i < totalFrames; i++) {
       if (cancelRecording) break;
       
-      ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
+      // Ajusta o desenho para manter proporção vertical
+      const aspectRatio = video.videoWidth / video.videoHeight;
+      let drawWidth, drawHeight, offsetX, offsetY;
+      
+      if (aspectRatio > 1) {
+        // Se a câmera estiver em paisagem, cortamos para ficar vertical
+        drawHeight = video.videoHeight;
+        drawWidth = video.videoHeight * (9/16);
+        offsetX = (video.videoWidth - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        // Já está em retrato
+        drawWidth = video.videoWidth;
+        drawHeight = video.videoHeight;
+        offsetX = 0;
+        offsetY = 0;
+      }
+      
+      // Desenha o frame cortado para formato vertical
+      ctx.drawImage(video, 
+        offsetX, offsetY, drawWidth, drawHeight,
+        0, 0, canvasVideo.width, canvasVideo.height
+      );
       
       if (moldura.complete && moldura.naturalHeight !== 0) {
         ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
@@ -180,6 +208,7 @@ async function iniciarBumerangueOtimizado() {
     
     if (cancelRecording) {
       contador.innerText = "Cancelado";
+      cancelBtn.style.display = 'none';
       return;
     }
     
@@ -188,11 +217,11 @@ async function iniciarBumerangueOtimizado() {
     // 2. Cria o efeito boomerang (ida e volta)
     const finalFrames = [...frames, ...frames.slice().reverse()];
     
-    // 3. Cria o vídeo diretamente em WebM (mais eficiente)
+    // 3. Cria o vídeo em WebM (formato mais leve)
     const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
     const recorder = new MediaRecorder(streamOut, { 
       mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 1500000 // Bitrate reduzido
+      videoBitsPerSecond: 2000000 // 2 Mbps para qualidade balanceada
     });
     
     const chunks = [];
@@ -204,26 +233,28 @@ async function iniciarBumerangueOtimizado() {
           const blob = new Blob(chunks, { type: 'video/webm' });
           const videoUrl = URL.createObjectURL(blob);
           
-          // Gera QRCode com o vídeo WebM diretamente
+          // Gera QRCode com o vídeo
           gerarQRCode(videoUrl);
           contador.innerText = "Pronto!";
           
           // Adiciona link de download
           const downloadLink = document.createElement("a");
           downloadLink.href = videoUrl;
-          downloadLink.download = "bumerangue.webm";
-          downloadLink.textContent = "📥 Baixar Vídeo";
+          downloadLink.download = "bumerangue_vertical.webm";
+          downloadLink.textContent = "📥 Baixar Vídeo (WebM)";
           downloadLink.style.display = "block";
           downloadLink.style.marginTop = "10px";
           downloadLink.style.textAlign = "center";
           qrDiv.appendChild(downloadLink);
           
+          cancelBtn.style.display = 'none';
           resolve();
         } catch (error) {
           console.error("Erro ao processar vídeo:", error);
           contador.innerText = "Erro ao finalizar";
           qrDiv.innerHTML = "Erro ao processar o vídeo. Tente novamente.";
           qrDiv.style.color = "red";
+          cancelBtn.style.display = 'none';
         }
       };
       
@@ -246,12 +277,28 @@ async function iniciarBumerangueOtimizado() {
   } catch (error) {
     console.error("Erro no bumerangue:", error);
     contador.innerText = "Erro no processamento";
+    cancelBtn.style.display = 'none';
     throw error;
   }
 }
 
-// Adicione este botão no seu HTML:
-// <button id="cancelBtn" style="display:none;">Cancelar Gravação</button>
-document.getElementById('cancelBtn')?.addEventListener('click', () => {
-  cancelRecording = true;
+// Configura o botão de cancelamento
+document.addEventListener('DOMContentLoaded', () => {
+  const cancelBtn = document.createElement("button");
+  cancelBtn.id = "cancelBtn";
+  cancelBtn.textContent = "✖ Cancelar Gravação";
+  cancelBtn.style.display = "none";
+  cancelBtn.style.background = "#ff4444";
+  cancelBtn.style.color = "white";
+  cancelBtn.style.border = "none";
+  cancelBtn.style.padding = "10px 15px";
+  cancelBtn.style.borderRadius = "5px";
+  cancelBtn.style.margin = "10px auto";
+  cancelBtn.style.cursor = "pointer";
+  
+  cancelBtn.addEventListener('click', () => {
+    cancelRecording = true;
+  });
+  
+  document.body.appendChild(cancelBtn);
 });
