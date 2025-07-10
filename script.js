@@ -61,12 +61,9 @@ function capturarFoto() {
   }, 300);
 }
 
-function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
+formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
+formData.append("image", base64);
+formData.append("name", "foto_showfest_" + Date.now());
 
   qrDiv.innerHTML = "Enviando imagem...";
 
