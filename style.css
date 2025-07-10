@@ -7,141 +7,25 @@ body {
   text-align: center;
 }
 
-h1 {
-  font-size: 2em;
-  margin: 0.5em 0 0.2em;
-  color: #FFD700;
+/* ... (mantenha todos os outros estilos anteriores) ... */
+
+/* Removemos os estilos dos botões de download */
+.qr-download a {
+  display: none !important;
 }
 
-h2 {
-  font-size: 1.5em;
-  margin-bottom: 1em;
-  color: #FFD700;
-}
-
-#preview-container {
-  position: relative;
-  display: inline-block;
-  width: 90%;
-  max-width: 400px;
-  margin: auto;
-}
-
-#camera {
-  width: 100%;
-  border-radius: 15px;
-}
-
-#moldura {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.controls {
-  margin-top: 1em;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  background-color: #FFD700;
-  border: none;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  color: black;
-  transition: transform 0.2s;
-}
-
-button:hover {
-  transform: scale(1.05);
-}
-
-#contador {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: yellow;
-  font-size: 4rem;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px #000;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.qr-download {
-  margin: 20px auto;
-  background: white;
-  padding: 15px;
-  border-radius: 12px;
-  max-width: 300px;
-}
-
-#galeria {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
-  padding: 10px;
-}
-
-#galeria img {
-  width: 100px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 2px solid #FFD700;
-}
-
-footer {
-  margin-top: 2em;
-  color: #FFD700;
-  padding: 10px;
-}
-
-#galeria-icon {
-  margin-top: 10px;
-  width: 50px;
-}
-
-#cancelBtn {
-  display: none;
-  background: #ff4444;
+/* Novo estilo para mensagens */
+.status-message {
   color: white;
-  border: none;
-  padding: 10px 15px;
+  margin: 10px;
+  padding: 10px;
   border-radius: 5px;
-  margin: 10px auto;
-  cursor: pointer;
-  font-weight: bold;
 }
 
-#qrDownload a {
-  background: #FFD700;
-  color: #000;
-  padding: 8px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: bold;
-  display: inline-block;
-  margin-top: 10px;
+.success {
+  background-color: #4CAF50;
 }
 
-#qrDownload button {
-  background: #ff4444;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 8px;
-  margin-top: 10px;
-  cursor: pointer;
+.error {
+  background-color: #f44336;
 }
