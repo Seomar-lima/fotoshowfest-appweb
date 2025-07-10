@@ -1,4 +1,3 @@
-
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -9,9 +8,24 @@ const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 
+// Configurações otimizadas para o Bumerangue
+const BOOMERANG_SETTINGS = {
+  width: 640,      // Reduzido de 1920 para 640px
+  height: 480,     // Reduzido de 1080 para 480px
+  fps: 30,         // Reduzido de 60 para 30fps
+  duration: 2      // 2 segundos de gravação
+};
+
 let stream;
 
-navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
+navigator.mediaDevices.getUserMedia({ 
+  video: { 
+    width: { ideal: 1920 }, 
+    height: { ideal: 1080 },
+    facingMode: 'user' 
+  }, 
+  audio: false 
+})
   .then(s => {
     stream = s;
     video.srcObject = stream;
@@ -19,201 +33,117 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
+    alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
   });
 
-fotoBtn.onclick = () => {
-  let count = 5;
-  contador.innerText = count;
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(interval);
-      contador.innerText = "";
-      capturarFoto();
-    }
-  }, 1000);
-};
-
-function capturarFoto() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  if (moldura.complete && moldura.naturalHeight !== 0) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-  }
-
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
-    const img = new Image();
-    img.src = imgData;
-    img.style.cursor = "pointer";
-    img.onclick = () => {
-      const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
-    };
-    galeria.appendChild(img);
-    enviarParaImgbb(imgData);
-  }, 300);
-}
-
-function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
-
-  qrDiv.innerHTML = "Enviando imagem...";
-
-  fetch("https://api.imgbb.com/1/upload", {
-    method: "POST",
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerText = "Erro ao gerar QRCode.";
-      qrDiv.style.color = "red";
-    });
-}
-
-function gerarQRCode(link) {
-  qrDiv.innerHTML = "";
-  const qrContainer = document.createElement("div");
-  qrContainer.style.margin = "10px auto";
-  qrDiv.appendChild(qrContainer);
-
-  new QRCode(qrContainer, {
-    text: link,
-    width: 256,
-    height: 256,
-    margin: 4
-  });
-
-  const a = document.createElement("a");
-  a.href = link;
-  a.innerText = "📥 Baixar";
-  a.download = "";
-  a.style.display = "block";
-  a.style.textAlign = "center";
-  a.style.marginTop = "10px";
-  a.style.fontWeight = "bold";
-  qrDiv.appendChild(a);
-}
+// ... (mantenha as funções fotoBtn.onclick, capturarFoto, enviarParaImgbb e gerarQRCode como estão) ...
 
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
-
-  let count = 5;
-  contador.innerText = count;
-  const interval = setInterval(() => {
-    count--;
+  
+  try {
+    let count = 3; // Contagem regressiva mais curta
     contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(interval);
-      contador.innerText = "Gravando...";
-      iniciarBumerangue();
-    }
-  }, 1000);
+    const interval = setInterval(() => {
+      count--;
+      contador.innerText = count;
+      beep.play();
+      if (count === 0) {
+        clearInterval(interval);
+        contador.innerText = "Gravando...";
+        iniciarBumerangueOtimizado();
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("Erro:", error);
+    contador.innerText = "Erro ao iniciar";
+  }
 };
 
-async function iniciarBumerangue() {
-  const canvasVideo = document.createElement("canvas");
-  const ctx = canvasVideo.getContext("2d");
-
-  const fps = 60;
-  const duration = 2;
-  const totalFrames = fps * duration;
-  const frames = [];
-
-  canvasVideo.width = video.videoWidth;
-  canvasVideo.height = video.videoHeight;
-
-  for (let i = 0; i < totalFrames; i++) {
-    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete) {
-      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+async function iniciarBumerangueOtimizado() {
+  try {
+    const canvasVideo = document.createElement("canvas");
+    const ctx = canvasVideo.getContext("2d");
+    
+    // Define a resolução reduzida
+    canvasVideo.width = BOOMERANG_SETTINGS.width;
+    canvasVideo.height = BOOMERANG_SETTINGS.height;
+    
+    const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
+    const frames = [];
+    
+    // 1. Captura os frames (resolução reduzida)
+    for (let i = 0; i < totalFrames; i++) {
+      ctx.drawImage(video, 0, 0, BOOMERANG_SETTINGS.width, BOOMERANG_SETTINGS.height);
+      
+      if (moldura.complete && moldura.naturalHeight !== 0) {
+        ctx.drawImage(moldura, 0, 0, BOOMERANG_SETTINGS.width, BOOMERANG_SETTINGS.height);
+      }
+      
+      const frame = ctx.getImageData(0, 0, BOOMERANG_SETTINGS.width, BOOMERANG_SETTINGS.height);
+      frames.push(frame);
+      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
     }
-    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-    frames.push(frame);
-    await new Promise(r => setTimeout(r, 1000 / fps));
-  }
-
-  contador.innerText = "Renderizando vídeo...";
-
-  const finalFrames = [...frames, ...frames.slice().reverse()];
-  const streamOut = canvasVideo.captureStream(fps);
-  const recorder = new MediaRecorder(streamOut);
-  const chunks = [];
-
-  recorder.ondataavailable = e => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-
-  recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-
-    // Upload webm to Gofile
-    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
-      method: "POST",
-      body: (() => {
-        const form = new FormData();
-        form.append("file", blob, "video.webm");
-        return form;
-      })()
-    }).then(r => r.json());
-
-    const fileURL = uploadRes.data.downloadPage;
-
-    contador.innerText = "Convertendo para .mp4...";
-
-    // CloudConvert API
-    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNmRjYmE4ZWJhZjk5MmMxOTYxMTdkYzUyZmJjNmJkMzVkNTI5ZjQ0NzdhMzRkZDQ4YzA3YjU0YmY3YzA4NWE2MWYwMjJhYzI1MzFkYTk0YjkiLCJpYXQiOjE3NTIxMDcxMTQuNTE2MTI3LCJuYmYiOjE3NTIxMDcxMTQuNTE2MTI4LCJleHAiOjQ5MDc3ODA3MTQuNTExNjcsInN1YiI6IjcyMjA4MDIzIiwic2NvcGVzIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0YXNrLnJlYWQiLCJ0YXNrLndyaXRlIiwid2ViaG9vay53cml0ZSIsIndlYmhvb2sucmVhZCIsInByZXNldC5yZWFkIiwicHJlc2V0LndyaXRlIl19.LHX9u69IcYbJqijxBEv3mWT-7YLH_NkaY42DZWjqEha-_t9hLsnHD4-5yCHSdSJzcJ_ELi-TOjqqI3U2k2lfilqZuFks9LvN5GDEfd_J7nxSUeBJgnocoWebARtGEJlcl1z_PaZRn44MiwUgin1af1o66_1ikXP2jgJG45ichB6Buot1ee7MGfZ_EDW47tVKlrsLJ4yuwV4G1UX_ucb1_MJHnHJq_BpEINn0qw0F0Hv9H0689qGv-Wd3SA2jvI6nfbhXddtwM_3ovAfLRzRXGGMi9ogD9pAjmB-IcMKvEqRqfRlqCUrt93yFTlWW1D1mByvZ5jQBj66Hlj_Q7sDExwIE6gRbkzifMLV78V0toGljjml6H0rnObf2D96jvwawI7xAU2oY4Vdyrc5AqyQD_m4Gb7EJVxaDCZXqYotWGRwuSZoBS5z1licbbNWuAFibiAceX6zqlVYdCw0uvPG7lyDwEw1KXm0ooUShfj65VaV-tizcwFsve4f43rO7CT_xR3X3RzJS8cT6SL5h9uAhSa3GjdNxhcykSBcPrF2NqYwmaqWzkZ1YHyOvVAcbskwmqveMj6Uf0aWdPdiKpDCxnNa4XG9ad715JO4agxiNV16KsclsPwE0CStWuCjphp6YT_2QiW1IPLpguZWE4Tase784DocFaTY2EN1da1rNWqI";
-
-    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + cloudConvertAPI,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        tasks: {
-          import: {
-            operation: "import/url",
-            url: fileURL
-          },
-          convert: {
-            operation: "convert",
-            input: "import",
-            output_format: "mp4"
-          },
-          export: {
-            operation: "export/url",
-            input: "convert"
-          }
+    
+    contador.innerText = "Processando...";
+    
+    // 2. Cria o efeito boomerang (ida e volta)
+    const finalFrames = [...frames, ...frames.slice().reverse()];
+    
+    // 3. Cria o vídeo diretamente em WebM (mais leve)
+    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
+    const recorder = new MediaRecorder(streamOut, { 
+      mimeType: 'video/webm;codecs=vp9',
+      videoBitsPerSecond: 2500000 // 2.5 Mbps - qualidade balanceada
+    });
+    
+    const chunks = [];
+    
+    return new Promise((resolve) => {
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const videoUrl = URL.createObjectURL(blob);
+          
+          // Gera QRCode com o vídeo WebM diretamente
+          gerarQRCode(videoUrl);
+          contador.innerText = "Pronto!";
+          
+          // Adiciona link de download
+          const downloadLink = document.createElement("a");
+          downloadLink.href = videoUrl;
+          downloadLink.download = "bumerangue.webm";
+          downloadLink.textContent = "📥 Baixar Vídeo";
+          downloadLink.style.display = "block";
+          downloadLink.style.marginTop = "10px";
+          downloadLink.style.textAlign = "center";
+          qrDiv.appendChild(downloadLink);
+          
+          resolve();
+        } catch (error) {
+          console.error("Erro ao processar vídeo:", error);
+          contador.innerText = "Erro ao finalizar";
+          qrDiv.innerHTML = "Erro ao processar o vídeo. Tente novamente.";
+          qrDiv.style.color = "red";
         }
-      })
-    }).then(r => r.json());
-
-    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
-    gerarQRCode(exportURL);
-    contador.innerText = "";
-  };
-
-  recorder.start();
-
-  for (const frame of finalFrames) {
-    ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
+      };
+      
+      recorder.start();
+      
+      // Renderiza os frames
+      (async () => {
+        for (const frame of finalFrames) {
+          ctx.putImageData(frame, 0, 0);
+          await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
+        }
+        recorder.stop();
+      })();
+    });
+    
+  } catch (error) {
+    console.error("Erro no bumerangue:", error);
+    contador.innerText = "Erro no processamento";
+    throw error;
   }
-
-  recorder.stop();
 }
