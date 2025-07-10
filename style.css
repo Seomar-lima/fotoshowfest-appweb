@@ -71,6 +71,7 @@ h1, h2, h3 {
 #contador {
   font-size: 24px;
   margin: 10px;
+  color: #FFD700;
 }
 
 #galeria {
@@ -82,17 +83,46 @@ h1, h2, h3 {
   margin: 20px auto;
 }
 
+/* QR Code - Correção do fundo transparente */
 .qr-download {
-  margin: 20px;
+  background: white;
   padding: 15px;
-  background: rgba(255,255,255,0.1);
   border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  margin: 20px auto;
+  max-width: 230px;
 }
 
-footer {
-  margin-top: auto;
-  padding: 20px;
-  color: #888;
+.qr-download h3 {
+  color: #000 !important;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.qr-download img {
+  background: white;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+/* Galeria */
+.gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 2px solid #FFD700;
+}
+
+.gallery-item img, .gallery-item video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.gallery-item video {
+  background: #000;
 }
 
 .status-message {
@@ -110,7 +140,12 @@ footer {
   background-color: #f44336;
 }
 
-/* Esconde links de download do QR */
-.qr-download a {
-  display: none !important;
+#cancelBtn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  margin-top: 10px;
+  cursor: pointer;
 }
