@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
   <title>Foto Show Fest - 15 Anos Geovanna</title>
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
+  <!-- Ícones PWA -->
+  <link rel="icon" href="icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 </head>
 <body>
   <div id="app">
@@ -15,23 +20,23 @@
 
     <div id="camera-container">
       <video id="camera" autoplay playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura">
-      <div id="camera-overlay"></div>
-      <div id="counter">5</div>
+      <img id="frame" src="frame.png" alt="Moldura" crossorigin="anonymous">
+      <div id="counter"></div>
+      <div id="status"></div>
     </div>
 
     <div class="controls">
-      <button id="capture-btn" class="btn">
-        <span class="icon">📸</span> Tirar Foto
+      <button id="capture-btn">
+        <span>📸</span> Tirar Foto
       </button>
-      <button id="boomerang-btn" class="btn">
-        <span class="icon">🎞️</span> Bumerangue
+      <button id="boomerang-btn">
+        <span>🎞️</span> Bumerangue
       </button>
     </div>
 
-    <div id="gallery-container">
-      <h3>📸 Galeria de Fotos</h3>
-      <div id="gallery"></div>
+    <div id="gallery">
+      <h3>📸 Galeria</h3>
+      <div id="gallery-items"></div>
     </div>
 
     <footer>
@@ -40,12 +45,11 @@
 
     <!-- Elementos ocultos -->
     <canvas id="canvas"></canvas>
-    <audio id="shutter-sound" src="shutter.mp3" preload="auto"></audio>
+    <audio id="shutter-sound" src="sounds/shutter.mp3" preload="auto"></audio>
   </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg-core.js"></script>
-  <script src="script.js"></script>
+  <script src="script.js" type="module"></script>
 </body>
 </html>
