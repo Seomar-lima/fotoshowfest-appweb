@@ -1,75 +1,135 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Foto Show Fest</title>
+const video = document.getElementById("camera");
+const canvas = document.getElementById("canvas");
+const fotoBtn = document.getElementById("foto");
+const bumerangueBtn = document.getElementById("bumerangue");
+const beep = document.getElementById("beep");
+const contador = document.getElementById("contador");
+const galeria = document.getElementById("galeria");
+const qrDiv = document.getElementById("qrDownload");
+const moldura = document.getElementById("moldura");
 
-  <!-- Base para URLs relativas (importante para PWAs instalados) -->
-  <base href="/" />
+let stream;
 
-  <!-- Estilos -->
-  <link rel="stylesheet" href="style.css" />
+navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
+  .then(s => {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+  })
+  .catch(err => {
+    console.error("Erro ao acessar a câmera:", err);
+    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
+  });
 
-  <!-- Manifesto do PWA -->
-  <link rel="manifest" href="manifest.json" />
+fotoBtn.onclick = () => {
+  let count = 5;
+  contador.innerText = count;
 
-  <!-- Ícones -->
-  <link rel="icon" href="icon_192x192.png" type="image/png" sizes="192x192" />
-  <link rel="apple-touch-icon" href="icon_512x512.png" />
+  const interval = setInterval(() => {
+    count--;
+    contador.innerText = count;
 
-  <!-- Meta Tags PWA -->
-  <meta name="theme-color" content="#000000" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="apple-mobile-web-app-title" content="Foto Show Fest" />
-
-  <!-- QR Code Lib -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-</head>
-<body>
-  <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
-
-  <div id="preview-container">
-    <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-  </div>
-
-  <div id="contador"></div>
-
-  <div class="controls">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
-  </div>
-
-  <div class="qr-download" id="qrDownload"></div>
-
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
-  <div id="galeria"></div>
-
- <button id="limpar-cache">🧹 Limpar Cache</button>
-  
-  <footer>© 2025 - Foto Show Fest</footer>
-
-  <!-- Recursos -->
-  <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <canvas id="canvas" style="display:none;"></canvas>
-
-  <!-- Script Principal -->
-  <script src="script.js"></script>
-
-  <!-- Registro do Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js')
-          .then(reg => console.log('Service Worker registrado com sucesso:', reg.scope))
-          .catch(err => console.error('Erro ao registrar o Service Worker:', err));
-      });
+    try {
+      beep.play();
+    } catch (err) {
+      console.warn("Erro ao tocar o beep:", err);
     }
-  </script>
-</body>
-</html>
+
+    if (count === 0) {
+      clearInterval(interval);
+      contador.innerText = "";
+      console.log("Contagem finalizada. Capturando foto...");
+      capturarFoto();
+    }
+  }, 1000);
+};
+
+function capturarFoto() {
+  console.log("Iniciando captura da foto...");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  if (moldura.complete && moldura.naturalHeight !== 0) {
+    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+  }
+
+  setTimeout(() => {
+    const imgData = canvas.toDataURL("image/png");
+    const img = new Image();
+    img.src = imgData;
+    img.style.cursor = "pointer";
+    img.onclick = () => {
+      const novaJanela = window.open();
+      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
+    };
+    galeria.appendChild(img);
+    enviarParaImgbb(imgData);
+  }, 300);
+}
+
+function enviarParaImgbb(imgData) {
+  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
+  const formData = new FormData();
+  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
+  formData.append("image", base64);
+  formData.append("name", "foto_showfest_" + Date.now());
+
+  qrDiv.innerHTML = "Enviando imagem...";
+
+  fetch("https://api.imgbb.com/1/upload", {
+    method: "POST",
+    body: formData
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) {
+        console.log("Imagem enviada com sucesso:", data.data.url);
+        gerarQRCode(data.data.url);
+      } else {
+        throw new Error("Resposta inválida do imgbb");
+      }
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerText = "Erro ao gerar QRCode.";
+      qrDiv.style.color = "red";
+    });
+}
+
+function gerarQRCode(link) {
+  qrDiv.innerHTML = "";
+  const qrContainer = document.createElement("div");
+  qrContainer.style.margin = "10px auto";
+  qrDiv.appendChild(qrContainer);
+
+  new QRCode(qrContainer, {
+    text: link,
+    width: 256,
+    height: 256,
+    margin: 4
+  });
+
+  const a = document.createElement("a");
+  a.href = link;
+  a.innerText = "📥 Baixar";
+  a.download = "";
+  a.style.display = "block";
+  a.style.textAlign = "center";
+  a.style.marginTop = "10px";
+  a.style.fontWeight = "bold";
+  qrDiv.appendChild(a);
+}
+
+const limparBtn = document.getElementById("limpar-cache");
+if (limparBtn) {
+  limparBtn.onclick = async () => {
+    const confirmacao = confirm("Deseja limpar o cache?");
+    if (!confirmacao) return;
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    alert("Cache limpo. Atualize a página.");
+  };
+}
