@@ -1,7 +1,6 @@
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
-const bumerangueBtn = document.getElementById("bumerangue");
 const beep = document.getElementById("beep");
 const contador = document.getElementById("contador");
 const galeria = document.getElementById("galeria");
@@ -10,7 +9,6 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
-// Inicializa câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -19,16 +17,16 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
+    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
   });
 
-// Foto
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    beep.play();
+    try { beep.play(); } catch (err) {}
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "";
@@ -45,6 +43,7 @@ function capturarFoto() {
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
+
   setTimeout(() => {
     const imgData = canvas.toDataURL("image/png");
     const img = new Image();
@@ -52,7 +51,7 @@ function capturarFoto() {
     img.style.cursor = "pointer";
     img.onclick = () => {
       const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
+      novaJanela.document.write(`<img src="\${imgData}" style="width: 100%">`);
     };
     galeria.appendChild(img);
     enviarParaImgbb(imgData);
@@ -72,19 +71,16 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data && data.data && data.data.url) {
-      gerarQRCode(data.data.url);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    qrDiv.innerText = "Erro ao gerar QRCode.";
-    qrDiv.style.color = "red";
-  });
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) gerarQRCode(data.data.url);
+      else throw new Error("Resposta inválida do imgbb");
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerText = "Erro ao gerar QRCode.";
+      qrDiv.style.color = "red";
+    });
 }
 
 function gerarQRCode(link) {
@@ -111,39 +107,13 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Gravar bumerangue
-bumerangueBtn.onclick = () => {
-  if (!stream) return alert("Câmera não inicializada.");
-
-  const recorder = new MediaRecorder(stream);
-  const chunks = [];
-
-  recorder.ondataavailable = e => chunks.push(e.data);
-  recorder.onstop = () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const formData = new FormData();
-    formData.append("file", blob, "bumerangue.webm");
-
-    qrDiv.innerHTML = "Enviando vídeo...";
-
-    fetch("https://upload.gofile.io/uploadfile", {
-      method: "POST",
-      body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.status === "ok") {
-        gerarQRCode(data.data.downloadPage);
-      } else {
-        throw new Error("Erro ao enviar vídeo");
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      qrDiv.innerText = "Erro ao enviar vídeo";
-    });
+const limparBtn = document.getElementById("limpar-cache");
+if (limparBtn) {
+  limparBtn.onclick = async () => {
+    const confirmacao = confirm("Deseja limpar o cache?");
+    if (!confirmacao) return;
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    alert("Cache limpo. Atualize a página.");
   };
-
-  recorder.start();
-  setTimeout(() => recorder.stop(), 4000); // grava 4 segundos
-};
+}

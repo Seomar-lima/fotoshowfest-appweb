@@ -2,46 +2,55 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #111;
+      color: white;
+    }
+    video, canvas {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 10px;
+    }
+    #galeria img {
+      width: 80px;
+      margin: 5px;
+      border: 2px solid white;
+    }
+    #qrDownload {
+      margin-top: 20px;
+    }
+    #contador {
+      font-size: 2em;
+      margin: 10px;
+      color: yellow;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+    #moldura {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
-
-  <!-- Área de visualização da câmera com moldura -->
-  <div id="preview-container">
-    <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-  </div>
-
-  <!-- Contador de regressiva -->
+  <h1>Foto Show Fest 📸</h1>
+  <video id="camera" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <img id="moldura" src="moldura.png" />
   <div id="contador"></div>
-
-  <!-- Botões de ação -->
-  <div class="controls">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
-  </div>
-
-  <!-- QR Code gerado -->
-  <div class="qr-download" id="qrDownload"></div>
-
-  <!-- Galeria de fotos tiradas -->
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
+  <button id="foto">Tirar Foto</button>
+  <button id="limpar-cache">Limpar Cache</button>
   <div id="galeria"></div>
-
-  <!-- Rodapé -->
-  <footer>© 2025 - Foto Show Fest</footer>
-
-  <!-- Sons e elementos invisíveis -->
+  <div id="qrDownload"></div>
   <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <canvas id="canvas" style="display: none;"></canvas>
-
-  <!-- Script principal -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
