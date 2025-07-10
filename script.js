@@ -8,9 +8,9 @@ const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 
-let stream = null;
+let stream;
 
-// Iniciar câmera
+// Ativa a câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -18,41 +18,32 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     video.play();
   })
   .catch(err => {
+    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
     console.error("Erro ao acessar a câmera:", err);
-    alert("Não foi possível acessar a câmera.");
   });
 
-// Clique para tirar foto
+// Tirar foto com contagem regressiva
 fotoBtn.onclick = () => {
-  if (!stream) return alert("Câmera não carregada.");
   let count = 5;
   contador.innerText = count;
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    if (beep) beep.play();
+    try { beep.play(); } catch (e) {}
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "";
-      console.log("Iniciando captura de foto...");
       capturarFoto();
     }
   }, 1000);
 };
 
 function capturarFoto() {
-  if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
-    console.error("Câmera ainda não carregada completamente.");
-    return;
-  }
-
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
-
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  if (moldura && moldura.complete && moldura.naturalHeight !== 0) {
+  if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
 
@@ -62,8 +53,8 @@ function capturarFoto() {
     img.src = imgData;
     img.style.cursor = "pointer";
     img.onclick = () => {
-      const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
+      const win = window.open();
+      win.document.write(`<img src="${imgData}" style="width: 100%">`);
     };
     galeria.appendChild(img);
     enviarParaImgbb(imgData);
@@ -83,13 +74,16 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-      if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
+      if (data?.data?.url) {
+        gerarQRCode(data.data.url);
+      } else {
+        throw new Error("Erro na resposta do imgbb");
+      }
     })
     .catch(error => {
-      console.error("Erro no upload:", error);
+      console.error(error);
       qrDiv.innerText = "Erro ao gerar QRCode.";
       qrDiv.style.color = "red";
     });
@@ -119,6 +113,7 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
+// Botão do bumerangue
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
 
@@ -127,7 +122,7 @@ bumerangueBtn.onclick = async () => {
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    if (beep) beep.play();
+    try { beep.play(); } catch (e) {}
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "Gravando...";
@@ -141,7 +136,7 @@ async function iniciarBumerangue() {
   const ctx = canvasVideo.getContext("2d");
 
   const fps = 60;
-  const duration = 2;
+  const duration = 2; // segundos
   const totalFrames = fps * duration;
   const frames = [];
 
@@ -187,7 +182,7 @@ async function iniciarBumerangue() {
 
     contador.innerText = "Convertendo para .mp4...";
 
-    const cloudConvertAPI = "SUA_API_KEY_CLOUDCONVERT_AQUI"; // 🔁 Coloque sua API correta
+    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNmRjYmE4ZWJhZjk5..."; // sua chave completa
 
     const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
@@ -246,16 +241,4 @@ async function iniciarBumerangue() {
   }
 
   recorder.stop();
-}
-
-// Botão de limpar cache
-const limparBtn = document.getElementById("limpar-cache");
-if (limparBtn) {
-  limparBtn.onclick = async () => {
-    const confirmacao = confirm("Deseja limpar o cache?");
-    if (!confirmacao) return;
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.map(name => caches.delete(name)));
-    alert("Cache limpo. Atualize a página.");
-  };
 }
