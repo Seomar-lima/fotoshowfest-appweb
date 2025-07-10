@@ -1,20 +1,100 @@
 body {
   margin: 0;
-  padding: 0;
+  padding: 20px;
   background-color: #000;
   color: #FFD700;
   font-family: Arial, sans-serif;
   text-align: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* ... (mantenha todos os outros estilos anteriores) ... */
-
-/* Removemos os estilos dos botões de download */
-.qr-download a {
-  display: none !important;
+h1, h2, h3 {
+  margin: 10px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* Novo estilo para mensagens */
+#preview-container {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(255,215,0,0.3);
+}
+
+#camera {
+  width: 100%;
+  display: block;
+  background: #333;
+}
+
+#moldura {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.controls button {
+  background: linear-gradient(to bottom, #FFD700, #FFA500);
+  color: #000;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 50px;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: all 0.3s;
+  min-width: 200px;
+}
+
+.controls button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+#contador {
+  font-size: 24px;
+  margin: 10px;
+}
+
+#galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.qr-download {
+  margin: 20px;
+  padding: 15px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+
+footer {
+  margin-top: auto;
+  padding: 20px;
+  color: #888;
+}
+
 .status-message {
   color: white;
   margin: 10px;
@@ -28,4 +108,9 @@ body {
 
 .error {
   background-color: #f44336;
+}
+
+/* Esconde links de download do QR */
+.qr-download a {
+  display: none !important;
 }
