@@ -1,34 +1,59 @@
-body {
-  margin: 0;
-  padding: 20px;
-  background-color: #000;
-  color: #FFD700;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  min-height: 100vh;
+/* Reset e Estilos Gerais */
+* {
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  margin: 0;
+  padding: 0;
 }
 
-h1, h2, h3 {
-  margin: 10px 0;
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #000;
+  color: #FFD700;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 15px;
+}
+
+#app-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  margin: 0 auto;
+  width: 100%;
+  flex-grow: 1;
+}
+
+/* Cabeçalho */
+h1 {
+  font-size: 1.8rem;
+  margin: 10px 0 5px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
+h2 {
+  font-size: 1.4rem;
+  font-weight: normal;
+  margin-bottom: 15px;
+}
+
+/* Área da Câmera */
 #preview-container {
   position: relative;
   width: 100%;
   max-width: 500px;
-  margin: 20px auto;
-  overflow: hidden;
+  margin: 0 auto 15px;
+  aspect-ratio: 9/16;
+  background-color: #000;
   border-radius: 10px;
+  overflow: hidden;
   box-shadow: 0 0 20px rgba(255,215,0,0.3);
 }
 
 #camera {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
   background: #333;
 }
@@ -39,15 +64,43 @@ h1, h2, h3 {
   left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   pointer-events: none;
 }
 
+#camera-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Contador */
+#contador {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  z-index: 20;
+}
+
+/* Controles */
 .controls {
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin: 20px 0;
-  flex-wrap: wrap;
+  margin: 15px 0;
+  padding: 0 10px;
 }
 
 .controls button {
@@ -56,72 +109,82 @@ h1, h2, h3 {
   border: none;
   padding: 12px 20px;
   border-radius: 50px;
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   transition: all 0.3s;
-  min-width: 200px;
+  min-width: 45%;
+  max-width: 200px;
+  font-weight: bold;
 }
 
-.controls button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+.controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-#contador {
-  font-size: 24px;
-  margin: 10px;
+/* QR Code */
+.qr-download {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  margin: 15px auto;
+  max-width: 230px;
 }
 
+.qr-download h3 {
+  color: #000 !important;
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+}
+
+/* Galeria */
 #galeria {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   width: 100%;
   max-width: 800px;
-  margin: 20px auto;
+  margin: 10px auto;
+  padding: 10px;
 }
 
-.qr-download {
-  margin: 20px auto;
-  padding: 15px;
-  background: rgba(255,215,0,0.1);
-  border-radius: 10px;
-  max-width: 200px;
+.gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 2px solid #FFD700;
 }
 
-.qr-download img {
+.gallery-item img,
+.gallery-item video {
   display: block;
-  margin: 0 auto;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
-footer {
-  margin-top: auto;
-  padding: 20px;
-  color: #888;
+.gallery-item video {
+  background: #000;
+}
+
+/* Mensagens de Status */
+#global-status {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
 }
 
 .status-message {
+  background: rgba(0,0,0,0.9);
   color: white;
-  margin: 10px;
-  padding: 10px;
-  border-radius: 5px;
-}
-
-.success {
-  background-color: #4CAF50;
-}
-
-.error {
-  background-color: #f44336;
-}
-
-#cancelBtn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  margin-top: 10px;
-  cursor: pointer;
-}
+  padding: 20px 30px;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text
