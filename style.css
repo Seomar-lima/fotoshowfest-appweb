@@ -124,24 +124,3 @@ footer {
   cursor: pointer;
   font-weight: bold;
 }
-
-#qrDownload a {
-  background: #FFD700;
-  color: #000;
-  padding: 8px 12px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: bold;
-  display: inline-block;
-  margin-top: 10px;
-}
-
-#qrDownload button {
-  background: #ff4444;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 8px;
-  margin-top: 10px;
-  cursor: pointer;
-}
