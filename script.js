@@ -50,6 +50,17 @@ function showStatus(message, isError = false) {
   setTimeout(() => statusDiv.remove(), 3000);
 }
 
+function adicionarNaGaleria(url) {
+  const imgElement = document.createElement('img');
+  imgElement.src = url;
+  imgElement.style.maxWidth = '150px';
+  imgElement.style.margin = '5px';
+  imgElement.style.borderRadius = '5px';
+  imgElement.style.border = '2px solid #FFD700';
+  galeria.appendChild(imgElement);
+  scrollToElement(imgElement);
+}
+
 // Inicialização da câmera
 async function initCamera() {
   try {
@@ -91,18 +102,19 @@ async function saveToGallery(blob, fileName, type) {
       }, 100);
     }
     
+    const itemUrl = URL.createObjectURL(blob);
     savedItems.push({ 
-      url: URL.createObjectURL(blob),
+      url: itemUrl,
       fileName,
       type,
       timestamp: Date.now()
     });
     localStorage.setItem('savedItems', JSON.stringify(savedItems));
     
-    return true;
+    return itemUrl;
   } catch (error) {
     console.error("Erro ao salvar:", error);
-    return false;
+    return null;
   }
 }
 
@@ -137,7 +149,10 @@ async function convertToMP4(webmBlob) {
 
 // Função do bumerangue
 async function iniciarBumerangue() {
-  if (!stream) return alert("Câmera não inicializada.");
+  if (!stream) {
+    showStatus("Câmera não inicializada", true);
+    return;
+  }
   
   resetView();
   cancelRecording = false;
@@ -145,6 +160,7 @@ async function iniciarBumerangue() {
   try {
     let count = 3;
     contador.innerText = count;
+    document.getElementById('cancelBtn').style.display = 'block';
     
     recordingInterval = setInterval(() => {
       count--;
@@ -187,6 +203,7 @@ async function gravarBumerangue() {
   
   if (cancelRecording) {
     contador.innerText = "";
+    document.getElementById('cancelBtn').style.display = 'none';
     return;
   }
   
@@ -201,9 +218,8 @@ async function gravarBumerangue() {
   });
   
   const chunks = [];
-  
   mediaRecorder.ondataavailable = e => chunks.push(e.data);
-  mediaRecorder.onstop = processarVideo;
+  mediaRecorder.onstop = () => processarVideo(chunks);
   mediaRecorder.start();
   
   // Renderiza os frames
@@ -219,28 +235,31 @@ async function gravarBumerangue() {
   mediaRecorder.stop();
 }
 
-async function processarVideo(e) {
+async function processarVideo(chunks) {
   try {
     const webmBlob = new Blob(chunks, { type: 'video/webm' });
     const mp4Blob = await convertToMP4(webmBlob);
     
     if (!mp4Blob) throw new Error("Conversão falhou");
     
-    const saved = await saveToGallery(
+    const url = await saveToGallery(
       mp4Blob, 
       `bumerangue_${Date.now()}.mp4`, 
       'video/mp4'
     );
     
-    if (!saved) throw new Error("Falha ao salvar");
+    if (!url) throw new Error("Falha ao salvar");
     
-    gerarQRCode(URL.createObjectURL(mp4Blob));
+    gerarQRCode(url);
+    adicionarNaGaleria(url);
     contador.innerText = "";
+    document.getElementById('cancelBtn').style.display = 'none';
     showStatus("Bumerangue salvo na galeria!", false);
   } catch (error) {
     console.error("Erro:", error);
     showStatus("Erro ao processar vídeo", true);
     contador.innerText = "";
+    document.getElementById('cancelBtn').style.display = 'none';
   }
 }
 
@@ -264,30 +283,34 @@ fotoBtn.addEventListener('click', () => {
 });
 
 async function capturarFoto() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  if (moldura.complete) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-  }
-  
-  setTimeout(async () => {
+  try {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (moldura.complete) {
+      ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+    }
+    
     const imgData = canvas.toDataURL("image/jpeg", 0.9);
     const blob = await (await fetch(imgData)).blob();
     
-    const saved = await saveToGallery(
+    const url = await saveToGallery(
       blob,
       `foto_${Date.now()}.jpg`,
       'image/jpeg'
     );
     
-    if (saved) {
-      enviarParaImgbb(imgData);
+    if (url) {
+      const shareUrl = await enviarParaImgbb(imgData);
+      adicionarNaGaleria(shareUrl || url);
       showStatus("Foto salva na galeria!", false);
     }
-  }, 300);
+  } catch (error) {
+    console.error("Erro ao capturar foto:", error);
+    showStatus("Erro ao capturar foto", true);
+  }
 }
 
 async function enviarParaImgbb(imgData) {
@@ -303,11 +326,12 @@ async function enviarParaImgbb(imgData) {
     
     const data = await response.json();
     if (data.data?.url) {
-      gerarQRCode(data.data.url);
+      return data.data.url;
     }
+    throw new Error('URL não recebida do ImgBB');
   } catch (error) {
     console.error("Upload falhou:", error);
-    gerarQRCode(imgData); // Fallback para URL local
+    return null;
   }
 }
 
@@ -327,6 +351,11 @@ function gerarQRCode(link) {
 document.addEventListener('DOMContentLoaded', async () => {
   await initCamera();
   
+  // Carrega itens salvos na galeria
+  savedItems.forEach(item => {
+    adicionarNaGaleria(item.url);
+  });
+  
   // Botão de cancelamento
   const cancelBtn = document.createElement('button');
   cancelBtn.id = 'cancelBtn';
@@ -339,6 +368,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     clearInterval(recordingInterval);
     contador.innerText = "";
+    cancelBtn.style.display = 'none';
   });
   document.body.appendChild(cancelBtn);
   
