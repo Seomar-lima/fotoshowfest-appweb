@@ -1,142 +1,124 @@
 // Elementos DOM
-const elements = {
-  video: document.getElementById("camera"),
-  canvas: document.getElementById("canvas"),
-  fotoBtn: document.getElementById("foto"),
-  bumerangueBtn: document.getElementById("bumerangue"),
-  beep: document.getElementById("beep"),
-  contador: document.getElementById("contador"),
-  galeria: document.getElementById("galeria"),
-  qrDiv: document.getElementById("qrDownload"),
-  moldura: document.getElementById("moldura"),
-  statusOverlay: document.getElementById("status-overlay"),
-  previewContainer: document.getElementById("preview-container")
-};
+const video = document.getElementById("camera");
+const cameraContainer = document.getElementById("camera-container");
+const cameraStatus = document.getElementById("camera-status");
+const fotoBtn = document.getElementById("foto");
+const bumerangueBtn = document.getElementById("bumerangue");
+const beep = document.getElementById("beep");
+const contador = document.getElementById("contador");
 
-// Configurações
-const CONFIG = {
-  boomerang: {
-    width: 540,
-    height: 960,
-    fps: 30,
-    duration: 2
-  },
-  ffmpeg: {
-    corePath: 'https://unpkg.com/@ffmpeg/core@0.10.1/dist/ffmpeg-core.js'
-  }
-};
+// Estado da Câmera
+let cameraStream = null;
 
-// Estado do aplicativo
-const state = {
-  stream: null,
-  cancelRecording: false,
-  mediaRecorder: null,
-  recordingInterval: null,
-  savedItems: JSON.parse(localStorage.getItem('savedItems')) || [],
-  ffmpegLoaded: false
-};
-
-// Inicialização do FFmpeg
-const ffmpeg = createFFmpeg({ 
-  log: true,
-  corePath: CONFIG.ffmpeg.corePath
-});
-
-// Funções Auxiliares
-function showStatus(message, isError = false) {
-  elements.statusOverlay.innerHTML = '';
-  const statusDiv = document.createElement('div');
-  statusDiv.className = `status-message ${isError ? 'error' : 'success'}`;
-  statusDiv.textContent = message;
-  elements.statusOverlay.appendChild(statusDiv);
-  
-  setTimeout(() => {
-    statusDiv.classList.add('fade-out');
-    setTimeout(() => elements.statusOverlay.removeChild(statusDiv), 500);
-  }, 3000);
-}
-
-function resetView() {
-  elements.contador.textContent = '';
-  elements.statusOverlay.innerHTML = '';
-}
-
+// Inicialização da Câmera
 async function initCamera() {
   try {
-    state.stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
+    // Mostra status enquanto carrega
+    showCameraStatus("Inicializando câmera...");
+    
+    // Solicita permissão da câmera
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
         facingMode: 'user'
       },
       audio: false
     });
-    elements.video.srcObject = state.stream;
-    await elements.video.play();
-  } catch (err) {
-    console.error("Erro na câmera:", err);
-    showStatus("Erro ao acessar a câmera", true);
+    
+    // Configura o elemento de vídeo
+    video.srcObject = cameraStream;
+    
+    // Espera o vídeo estar pronto
+    await new Promise((resolve) => {
+      video.onloadedmetadata = () => {
+        video.play();
+        resolve();
+      };
+    });
+    
+    // Esconde a mensagem de status
+    clearCameraStatus();
+    
+  } catch (error) {
+    console.error("Erro ao acessar câmera:", error);
+    showCameraStatus("Erro ao acessar câmera", true);
+    
+    // Desativa os botões
+    fotoBtn.disabled = true;
+    bumerangueBtn.disabled = true;
+    
+    // Mostra mensagem de erro permanente
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'status-message error';
+    errorMsg.textContent = "Câmera não disponível";
+    cameraStatus.appendChild(errorMsg);
   }
 }
 
-// Função para Fotografar
+// Funções auxiliares para status da câmera
+function showCameraStatus(message, isError = false) {
+  cameraStatus.innerHTML = '';
+  const statusDiv = document.createElement('div');
+  statusDiv.className = `status-message ${isError ? 'error' : ''}`;
+  statusDiv.textContent = message;
+  cameraStatus.appendChild(statusDiv);
+}
+
+function clearCameraStatus() {
+  cameraStatus.innerHTML = '';
+}
+
+// Função para capturar foto
 async function capturarFoto() {
   try {
-    elements.canvas.width = elements.video.videoWidth;
-    elements.canvas.height = elements.video.videoHeight;
-    const ctx = elements.canvas.getContext("2d");
+    // Cria canvas temporário
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
     
-    ctx.drawImage(elements.video, 0, 0, elements.canvas.width, elements.canvas.height);
-    if (elements.moldura.complete) {
-      ctx.drawImage(elements.moldura, 0, 0, elements.canvas.width, elements.canvas.height);
+    // Captura frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Adiciona moldura se disponível
+    if (moldura.complete) {
+      ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
     }
     
-    const imgData = elements.canvas.toDataURL("image/jpeg", 0.9);
-    const blob = await (await fetch(imgData)).blob();
+    // Converte para imagem
+    const imageData = canvas.toDataURL('image/jpeg');
     
-    const url = await saveToGallery(blob, `foto_${Date.now()}.jpg`, 'image/jpeg');
+    // Aqui você pode adicionar o código para salvar/compartilhar
+    console.log("Foto capturada:", imageData);
     
-    if (url) {
-      adicionarNaGaleria(url);
-      gerarQRCode(url);
-      showStatus("Foto salva com sucesso!", false);
-    }
+    showCameraStatus("Foto capturada!", false);
+    
   } catch (error) {
-    console.error("Erro na captura:", error);
-    showStatus("Erro ao capturar foto", true);
+    console.error("Erro ao capturar foto:", error);
+    showCameraStatus("Erro ao capturar foto", true);
   }
 }
 
-// Função do Bumerangue (completa no arquivo original)
-// ... [Todo o restante do código JavaScript permanece igual ao anterior]
-// (Incluindo todas as funções de bumerangue, galeria, etc.)
-
-// Inicialização
-document.addEventListener('DOMContentLoaded', async () => {
-  await initCamera();
+// Event Listeners
+fotoBtn.addEventListener('click', () => {
+  // Contagem regressiva antes de capturar
+  let count = 3;
+  contador.textContent = count;
+  contador.style.display = 'block';
   
-  // Carrega itens salvos
-  state.savedItems.forEach(item => {
-    adicionarNaGaleria(item.url, item.type.includes('video'));
-  });
-
-  // Event Listeners
-  elements.fotoBtn.addEventListener('click', () => {
-    let count = 5;
-    elements.contador.textContent = count;
+  const countdown = setInterval(() => {
+    count--;
+    contador.textContent = count;
+    beep.play();
     
-    state.recordingInterval = setInterval(() => {
-      count--;
-      elements.contador.textContent = count;
-      elements.beep.play();
-      
-      if (count === 0) {
-        clearInterval(state.recordingInterval);
-        elements.contador.textContent = "";
-        capturarFoto();
-      }
-    }, 1000);
-  });
-
-  elements.bumerangueBtn.addEventListener('click', iniciarBumerangue);
+    if (count <= 0) {
+      clearInterval(countdown);
+      contador.style.display = 'none';
+      capturarFoto();
+    }
+  }, 1000);
 });
+
+// Inicializa a câmera quando a página carrega
+window.addEventListener('DOMContentLoaded', initCamera);
