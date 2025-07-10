@@ -277,46 +277,24 @@ async function iniciarBumerangueVertical() {
       mediaRecorder.onstop = async () => {
         try {
           const blob = new Blob(chunks, { type: 'video/webm' });
+          const videoUrl = URL.createObjectURL(blob);
           
-          // 1. Cria um FormData para upload
-          const formData = new FormData();
-          formData.append('file', blob, 'bumerangue.webm');
+          // Gera QRCode com o vídeo
+          gerarQRCode(videoUrl);
           
-          // 2. Faz upload para um servidor temporário
-          contador.innerText = "Enviando vídeo...";
-          const uploadResponse = await fetch('https://file.io/?expires=1d', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const { link } = await uploadResponse.json();
-          
-          if (!link) throw new Error("Falha no upload");
-          
-          // 3. Gera QR code com link permanente
-          gerarQRCode(link);
           contador.innerText = "Pronto!";
+          cancelBtn.style.display = 'none';
           
-          // 4. Adiciona link de fallback
-          const downloadLink = document.createElement("a");
-          downloadLink.href = link;
-          downloadLink.textContent = "📥 Baixar Vídeo";
-          downloadLink.style.display = "block";
-          downloadLink.style.marginTop = "10px";
-          qrDiv.appendChild(downloadLink);
-
           // Centraliza o QR code na tela
           setTimeout(() => scrollToElement(qrDiv), 500);
           
+          // Mantém a referência do blob
+          window.lastVideoBlob = blob;
           resolve();
         } catch (error) {
-          console.error("Erro:", error);
-          qrDiv.innerHTML = `
-            <p style="color:red">Erro ao gerar link.</p>
-            <button onclick="location.reload()">Tentar novamente</button>
-          `;
+          console.error("Erro ao processar vídeo:", error);
           contador.innerText = "Erro ao finalizar";
-        } finally {
+          qrDiv.innerHTML = "<p style='color:red'>Erro ao processar o vídeo. Tente novamente.</p>";
           cancelBtn.style.display = 'none';
         }
       };
@@ -336,6 +314,7 @@ async function iniciarBumerangueVertical() {
         mediaRecorder.stop();
       })();
     });
+    
   } catch (error) {
     console.error("Erro no bumerangue:", error);
     contador.innerText = "Erro no processamento";
