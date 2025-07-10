@@ -1,3 +1,4 @@
+// Elementos DOM
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -9,346 +10,337 @@ const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 const previewContainer = document.getElementById("preview-container");
 
-// Configurações otimizadas para o Bumerangue VERTICAL
+// Configurações
 const BOOMERANG_SETTINGS = {
-  width: 540,      // Largura reduzida mantendo proporção vertical
-  height: 960,     // Altura proporcional ao formato 9:16 (vertical)
-  fps: 30,         // Frame rate reduzido
-  duration: 2      // 2 segundos de gravação
+  width: 540,
+  height: 960,
+  fps: 30,
+  duration: 2
 };
 
+// FFmpeg setup
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ 
+  log: true,
+  corePath: 'https://unpkg.com/@ffmpeg/core@0.10.1/dist/ffmpeg-core.js'
+});
+let ffmpegLoaded = false;
+
+// Estado do aplicativo
 let stream;
 let cancelRecording = false;
 let mediaRecorder = null;
 let recordingInterval = null;
+let savedItems = JSON.parse(localStorage.getItem('savedItems')) || [];
 
-// Função para rolar até o elemento
+// Funções auxiliares
 function scrollToElement(element) {
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// Função para resetar a visualização
 function resetView() {
   scrollToElement(previewContainer);
 }
 
-// Inicialização da câmera
-navigator.mediaDevices.getUserMedia({ 
-  video: { 
-    width: { ideal: 1920 }, 
-    height: { ideal: 1080 },
-    facingMode: 'user' 
-  }, 
-  audio: false 
-})
-  .then(s => {
-    stream = s;
-    video.srcObject = stream;
-    video.play();
-    // Centraliza a câmera ao carregar
-    resetView();
-  })
-  .catch(err => {
-    console.error("Erro ao acessar a câmera:", err);
-    alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
-  });
+function showStatus(message, isError = false) {
+  const statusDiv = document.createElement('div');
+  statusDiv.className = `status-message ${isError ? 'error' : 'success'}`;
+  statusDiv.textContent = message;
+  document.body.appendChild(statusDiv);
+  setTimeout(() => statusDiv.remove(), 3000);
+}
 
-// Função para tirar foto
-fotoBtn.onclick = () => {
-  resetView(); // Centraliza a câmera antes de começar
+// Inicialização da câmera
+async function initCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { 
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        facingMode: 'user'
+      },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    resetView();
+  } catch (err) {
+    console.error("Erro na câmera:", err);
+    showStatus("Erro ao acessar a câmera", true);
+  }
+}
+
+// Função para salvar na galeria
+async function saveToGallery(blob, fileName, type) {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        files: [new File([blob], fileName, { type })],
+        title: 'Foto Show Fest'
+      });
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      }, 100);
+    }
+    
+    savedItems.push({ 
+      url: URL.createObjectURL(blob),
+      fileName,
+      type,
+      timestamp: Date.now()
+    });
+    localStorage.setItem('savedItems', JSON.stringify(savedItems));
+    
+    return true;
+  } catch (error) {
+    console.error("Erro ao salvar:", error);
+    return false;
+  }
+}
+
+// Função para converter WebM para MP4
+async function convertToMP4(webmBlob) {
+  if (!ffmpegLoaded) {
+    showStatus("Carregando conversor...", false);
+    await ffmpeg.load();
+    ffmpegLoaded = true;
+  }
+
+  try {
+    showStatus("Convertendo para MP4...", false);
+    ffmpeg.FS('writeFile', 'input.webm', await fetchFile(webmBlob));
+    await ffmpeg.run(
+      '-i', 'input.webm',
+      '-c:v', 'libx264',
+      '-preset', 'fast',
+      '-crf', '28',
+      '-movflags', '+faststart',
+      '-an',
+      'output.mp4'
+    );
+    const data = ffmpeg.FS('readFile', 'output.mp4');
+    return new Blob([data.buffer], { type: 'video/mp4' });
+  } catch (error) {
+    console.error("Erro na conversão:", error);
+    showStatus("Erro na conversão", true);
+    return null;
+  }
+}
+
+// Função do bumerangue
+async function iniciarBumerangue() {
+  if (!stream) return alert("Câmera não inicializada.");
   
+  resetView();
+  cancelRecording = false;
+  
+  try {
+    let count = 3;
+    contador.innerText = count;
+    
+    recordingInterval = setInterval(() => {
+      count--;
+      contador.innerText = count;
+      beep.play();
+      
+      if (count === 0) {
+        clearInterval(recordingInterval);
+        contador.innerText = "Gravando...";
+        gravarBumerangue();
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("Erro:", error);
+    showStatus("Erro ao iniciar gravação", true);
+  }
+}
+
+async function gravarBumerangue() {
+  const canvasVideo = document.createElement("canvas");
+  const ctx = canvasVideo.getContext("2d");
+  canvasVideo.width = BOOMERANG_SETTINGS.width;
+  canvasVideo.height = BOOMERANG_SETTINGS.height;
+  
+  const frames = [];
+  const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
+  
+  // Captura os frames
+  for (let i = 0; i < totalFrames; i++) {
+    if (cancelRecording) break;
+    
+    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
+    if (moldura.complete) {
+      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+    }
+    
+    frames.push(ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height));
+    await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
+  }
+  
+  if (cancelRecording) {
+    contador.innerText = "";
+    return;
+  }
+  
+  contador.innerText = "Processando...";
+  const finalFrames = [...frames, ...frames.slice().reverse()];
+  
+  // Cria o vídeo
+  const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
+  mediaRecorder = new MediaRecorder(streamOut, {
+    mimeType: 'video/webm;codecs=vp9',
+    videoBitsPerSecond: 2500000
+  });
+  
+  const chunks = [];
+  
+  mediaRecorder.ondataavailable = e => chunks.push(e.data);
+  mediaRecorder.onstop = processarVideo;
+  mediaRecorder.start();
+  
+  // Renderiza os frames
+  for (const frame of finalFrames) {
+    if (cancelRecording) {
+      mediaRecorder.stop();
+      return;
+    }
+    ctx.putImageData(frame, 0, 0);
+    await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
+  }
+  
+  mediaRecorder.stop();
+}
+
+async function processarVideo(e) {
+  try {
+    const webmBlob = new Blob(chunks, { type: 'video/webm' });
+    const mp4Blob = await convertToMP4(webmBlob);
+    
+    if (!mp4Blob) throw new Error("Conversão falhou");
+    
+    const saved = await saveToGallery(
+      mp4Blob, 
+      `bumerangue_${Date.now()}.mp4`, 
+      'video/mp4'
+    );
+    
+    if (!saved) throw new Error("Falha ao salvar");
+    
+    gerarQRCode(URL.createObjectURL(mp4Blob));
+    contador.innerText = "";
+    showStatus("Bumerangue salvo na galeria!", false);
+  } catch (error) {
+    console.error("Erro:", error);
+    showStatus("Erro ao processar vídeo", true);
+    contador.innerText = "";
+  }
+}
+
+// Função para fotos
+fotoBtn.addEventListener('click', () => {
+  resetView();
   let count = 5;
   contador.innerText = count;
-  
-  // Limpa qualquer intervalo anterior
-  if (recordingInterval) clearInterval(recordingInterval);
   
   recordingInterval = setInterval(() => {
     count--;
     contador.innerText = count;
     beep.play();
+    
     if (count === 0) {
       clearInterval(recordingInterval);
       contador.innerText = "";
       capturarFoto();
     }
   }, 1000);
-};
+});
 
-function capturarFoto() {
+async function capturarFoto() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   
-  if (moldura.complete && moldura.naturalHeight !== 0) {
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  if (moldura.complete) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
-
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
-    const img = new Image();
-    img.src = imgData;
-    img.style.cursor = "pointer";
-    img.onclick = () => {
-      const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
-    };
-    galeria.appendChild(img);
-    enviarParaImgbb(imgData);
+  
+  setTimeout(async () => {
+    const imgData = canvas.toDataURL("image/jpeg", 0.9);
+    const blob = await (await fetch(imgData)).blob();
+    
+    const saved = await saveToGallery(
+      blob,
+      `foto_${Date.now()}.jpg`,
+      'image/jpeg'
+    );
+    
+    if (saved) {
+      enviarParaImgbb(imgData);
+      showStatus("Foto salva na galeria!", false);
+    }
   }, 300);
 }
 
-function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
-
-  qrDiv.innerHTML = "Enviando imagem...";
-
-  fetch("https://api.imgbb.com/1/upload", {
-    method: "POST",
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) {
-        gerarQRCode(data.data.url);
-        // Centraliza o QR code quando estiver pronto
-        setTimeout(() => scrollToElement(qrDiv), 500);
-      } else {
-        throw new Error("Resposta inválida do imgbb");
-      }
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
+async function enviarParaImgbb(imgData) {
+  try {
+    const base64 = imgData.split(',')[1];
+    const formData = new FormData();
+    formData.append('image', base64);
+    
+    const response = await fetch('https://api.imgbb.com/1/upload?key=586fe56b6fe8223c90078eae64e1d678', {
+      method: 'POST',
+      body: formData
     });
+    
+    const data = await response.json();
+    if (data.data?.url) {
+      gerarQRCode(data.data.url);
+    }
+  } catch (error) {
+    console.error("Upload falhou:", error);
+    gerarQRCode(imgData); // Fallback para URL local
+  }
 }
 
 function gerarQRCode(link) {
-  qrDiv.innerHTML = "";
-  
-  // Adiciona título explicativo
-  const title = document.createElement("h3");
-  title.textContent = "Escaneie para baixar:";
-  title.style.color = "#FFD700";
-  title.style.marginBottom = "10px";
-  qrDiv.appendChild(title);
-
-  const qrContainer = document.createElement("div");
-  qrContainer.style.margin = "0 auto";
-  qrContainer.style.width = "256px";
-  qrDiv.appendChild(qrContainer);
-
-  new QRCode(qrContainer, {
+  qrDiv.innerHTML = '<h3 style="color:#FFD700">Escaneie para compartilhar</h3>';
+  new QRCode(qrDiv, {
     text: link,
-    width: 256,
-    height: 256,
+    width: 200,
+    height: 200,
     colorDark: "#000000",
-    colorLight: "#ffffff",
+    colorLight: "rgba(255, 255, 255, 0.1)",
     correctLevel: QRCode.CorrectLevel.H
   });
-
-  const downloadLink = document.createElement("a");
-  downloadLink.href = link;
-  downloadLink.textContent = "📥 Clique aqui se não conseguir escanear";
-  downloadLink.download = "";
-  downloadLink.style.display = "block";
-  downloadLink.style.margin = "15px auto";
-  downloadLink.style.padding = "10px";
-  downloadLink.style.background = "#FFD700";
-  downloadLink.style.color = "#000";
-  downloadLink.style.borderRadius = "8px";
-  downloadLink.style.textAlign = "center";
-  downloadLink.style.textDecoration = "none";
-  downloadLink.style.fontWeight = "bold";
-  qrDiv.appendChild(downloadLink);
 }
 
-// Função do bumerangue vertical
-bumerangueBtn.onclick = async () => {
-  if (!stream) return alert("Câmera não inicializada.");
+// Inicialização
+document.addEventListener('DOMContentLoaded', async () => {
+  await initCamera();
   
-  resetView(); // Centraliza a câmera antes de começar
-  
-  // Mostra botão de cancelamento
-  const cancelBtn = document.getElementById('cancelBtn');
-  cancelBtn.style.display = 'block';
-  cancelRecording = false;
-  if (mediaRecorder) mediaRecorder = null;
-  if (recordingInterval) clearInterval(recordingInterval);
-  
-  try {
-    let count = 3;
-    contador.innerText = count;
-    recordingInterval = setInterval(() => {
-      count--;
-      contador.innerText = count;
-      beep.play();
-      if (count === 0) {
-        clearInterval(recordingInterval);
-        contador.innerText = "Gravando...";
-        iniciarBumerangueVertical();
-      }
-    }, 1000);
-  } catch (error) {
-    console.error("Erro:", error);
-    contador.innerText = "Erro ao iniciar";
-    cancelBtn.style.display = 'none';
-  }
-};
-
-async function iniciarBumerangueVertical() {
-  const cancelBtn = document.getElementById('cancelBtn');
-  
-  try {
-    const canvasVideo = document.createElement("canvas");
-    const ctx = canvasVideo.getContext("2d");
-    
-    // Define a resolução vertical (retrato)
-    canvasVideo.width = BOOMERANG_SETTINGS.width;
-    canvasVideo.height = BOOMERANG_SETTINGS.height;
-    
-    const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
-    const frames = [];
-    
-    // 1. Captura os frames no formato vertical
-    for (let i = 0; i < totalFrames; i++) {
-      if (cancelRecording) break;
-      
-      // Ajusta o desenho para manter proporção vertical
-      const aspectRatio = video.videoWidth / video.videoHeight;
-      let drawWidth, drawHeight, offsetX, offsetY;
-      
-      if (aspectRatio > 1) {
-        // Se a câmera estiver em paisagem, cortamos para ficar vertical
-        drawHeight = video.videoHeight;
-        drawWidth = video.videoHeight * (9/16);
-        offsetX = (video.videoWidth - drawWidth) / 2;
-        offsetY = 0;
-      } else {
-        // Já está em retrato
-        drawWidth = video.videoWidth;
-        drawHeight = video.videoHeight;
-        offsetX = 0;
-        offsetY = 0;
-      }
-      
-      // Desenha o frame cortado para formato vertical
-      ctx.drawImage(video, 
-        offsetX, offsetY, drawWidth, drawHeight,
-        0, 0, canvasVideo.width, canvasVideo.height
-      );
-      
-      if (moldura.complete && moldura.naturalHeight !== 0) {
-        ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
-      }
-      
-      const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-      frames.push(frame);
-      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-    }
-    
-    if (cancelRecording) {
-      contador.innerText = "Cancelado";
-      cancelBtn.style.display = 'none';
-      return;
-    }
-    
-    contador.innerText = "Processando...";
-    
-    // 2. Cria o efeito boomerang (ida e volta)
-    const finalFrames = [...frames, ...frames.slice().reverse()];
-    
-    // 3. Cria o vídeo em WebM (formato mais leve)
-    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
-    mediaRecorder = new MediaRecorder(streamOut, { 
-      mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 2000000 // 2 Mbps para qualidade balanceada
-    });
-    
-    const chunks = [];
-    
-    return new Promise((resolve) => {
-      mediaRecorder.ondataavailable = e => chunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        try {
-          const blob = new Blob(chunks, { type: 'video/webm' });
-          const videoUrl = URL.createObjectURL(blob);
-          
-          // Gera QRCode com o vídeo
-          gerarQRCode(videoUrl);
-          
-          contador.innerText = "Pronto!";
-          cancelBtn.style.display = 'none';
-          
-          // Centraliza o QR code na tela
-          setTimeout(() => scrollToElement(qrDiv), 500);
-          
-          // Mantém a referência do blob
-          window.lastVideoBlob = blob;
-          resolve();
-        } catch (error) {
-          console.error("Erro ao processar vídeo:", error);
-          contador.innerText = "Erro ao finalizar";
-          qrDiv.innerHTML = "<p style='color:red'>Erro ao processar o vídeo. Tente novamente.</p>";
-          cancelBtn.style.display = 'none';
-        }
-      };
-      
-      mediaRecorder.start();
-      
-      // Renderiza os frames
-      (async () => {
-        for (const frame of finalFrames) {
-          if (cancelRecording) {
-            mediaRecorder.stop();
-            return;
-          }
-          ctx.putImageData(frame, 0, 0);
-          await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-        }
-        mediaRecorder.stop();
-      })();
-    });
-    
-  } catch (error) {
-    console.error("Erro no bumerangue:", error);
-    contador.innerText = "Erro no processamento";
-    cancelBtn.style.display = 'none';
-    throw error;
-  }
-}
-
-// Configura o botão de cancelamento
-document.addEventListener('DOMContentLoaded', () => {
-  const cancelBtn = document.createElement("button");
-  cancelBtn.id = "cancelBtn";
-  cancelBtn.textContent = "✖ Cancelar Gravação";
-  cancelBtn.style.display = "none";
-  cancelBtn.style.background = "#ff4444";
-  cancelBtn.style.color = "white";
-  cancelBtn.style.border = "none";
-  cancelBtn.style.padding = "10px 15px";
-  cancelBtn.style.borderRadius = "5px";
-  cancelBtn.style.margin = "10px auto";
-  cancelBtn.style.cursor = "pointer";
-  cancelBtn.style.fontWeight = "bold";
-  
+  // Botão de cancelamento
+  const cancelBtn = document.createElement('button');
+  cancelBtn.id = 'cancelBtn';
+  cancelBtn.textContent = '✖ Cancelar';
+  cancelBtn.style.display = 'none';
   cancelBtn.addEventListener('click', () => {
     cancelRecording = true;
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    if (mediaRecorder?.state !== 'inactive') {
       mediaRecorder.stop();
     }
-    if (recordingInterval) clearInterval(recordingInterval);
-    contador.innerText = "Cancelado";
-    setTimeout(() => {
-      document.getElementById('cancelBtn').style.display = 'none';
-    }, 2000);
+    clearInterval(recordingInterval);
+    contador.innerText = "";
   });
-  
   document.body.appendChild(cancelBtn);
+  
+  bumerangueBtn.addEventListener('click', iniciarBumerangue);
 });
