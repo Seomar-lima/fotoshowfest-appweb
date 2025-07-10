@@ -1,3 +1,4 @@
+
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
@@ -10,7 +11,6 @@ const moldura = document.getElementById("moldura");
 
 let stream;
 
-// Ativa a câmera
 navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
   .then(s => {
     stream = s;
@@ -18,18 +18,16 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
     video.play();
   })
   .catch(err => {
-    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
     console.error("Erro ao acessar a câmera:", err);
   });
 
-// Tirar foto com contagem regressiva
 fotoBtn.onclick = () => {
   let count = 5;
   contador.innerText = count;
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    try { beep.play(); } catch (e) {}
+    beep.play();
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "";
@@ -53,8 +51,8 @@ function capturarFoto() {
     img.src = imgData;
     img.style.cursor = "pointer";
     img.onclick = () => {
-      const win = window.open();
-      win.document.write(`<img src="${imgData}" style="width: 100%">`);
+      const novaJanela = window.open();
+      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
     };
     galeria.appendChild(img);
     enviarParaImgbb(imgData);
@@ -74,16 +72,13 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
-      if (data?.data?.url) {
-        gerarQRCode(data.data.url);
-      } else {
-        throw new Error("Erro na resposta do imgbb");
-      }
+      if (data?.data?.url) gerarQRCode(data.data.url);
+      else throw new Error("Resposta inválida do imgbb");
     })
     .catch(error => {
-      console.error(error);
+      console.error("Erro no upload:", error);
       qrDiv.innerText = "Erro ao gerar QRCode.";
       qrDiv.style.color = "red";
     });
@@ -113,7 +108,6 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-// Botão do bumerangue
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
 
@@ -122,7 +116,7 @@ bumerangueBtn.onclick = async () => {
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    try { beep.play(); } catch (e) {}
+    beep.play();
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "Gravando...";
@@ -136,7 +130,7 @@ async function iniciarBumerangue() {
   const ctx = canvasVideo.getContext("2d");
 
   const fps = 60;
-  const duration = 2; // segundos
+  const duration = 2;
   const totalFrames = fps * duration;
   const frames = [];
 
@@ -145,7 +139,7 @@ async function iniciarBumerangue() {
 
   for (let i = 0; i < totalFrames; i++) {
     ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete && moldura.naturalHeight !== 0) {
+    if (moldura.complete) {
       ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
     }
     const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
@@ -165,26 +159,26 @@ async function iniciarBumerangue() {
   };
 
   recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: "video/webm" });
+    const blob = new Blob(chunks, { type: 'video/webm' });
 
-    contador.innerText = "Enviando vídeo...";
-
-    const form = new FormData();
-    form.append("file", blob, "bumerangue.webm");
-
+    // Upload webm to Gofile
     const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
       method: "POST",
-      body: form
+      body: (() => {
+        const form = new FormData();
+        form.append("file", blob, "video.webm");
+        return form;
+      })()
     }).then(r => r.json());
 
-    const fileURL = uploadRes.data?.downloadPage;
-    if (!fileURL) return qrDiv.innerText = "Erro ao enviar .webm";
+    const fileURL = uploadRes.data.downloadPage;
 
     contador.innerText = "Convertendo para .mp4...";
 
-    const cloudConvertAPI = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNmRjYmE4ZWJhZjk5..."; // sua chave completa
+    // CloudConvert API
+    const cloudConvertAPI = "INSIRA_SUA_API_KEY";
 
-    const jobRes = await fetch("https://api.cloudconvert.com/v2/jobs", {
+    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + cloudConvertAPI,
@@ -192,16 +186,16 @@ async function iniciarBumerangue() {
       },
       body: JSON.stringify({
         tasks: {
-          import_url: {
+          import: {
             operation: "import/url",
             url: fileURL
           },
           convert: {
             operation: "convert",
-            input: "import_url",
+            input: "import",
             output_format: "mp4"
           },
-          export_url: {
+          export: {
             operation: "export/url",
             input: "convert"
           }
@@ -209,28 +203,9 @@ async function iniciarBumerangue() {
       })
     }).then(r => r.json());
 
-    const jobId = jobRes.data.id;
-
-    let downloadURL = "";
-    for (let i = 0; i < 20; i++) {
-      await new Promise(r => setTimeout(r, 4000));
-      const statusRes = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
-        headers: { Authorization: "Bearer " + cloudConvertAPI }
-      }).then(r => r.json());
-
-      const exportTask = statusRes.data.tasks.find(t => t.name === "export_url" && t.status === "finished");
-      if (exportTask?.result?.files?.[0]?.url) {
-        downloadURL = exportTask.result.files[0].url;
-        break;
-      }
-    }
-
+    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
+    gerarQRCode(exportURL);
     contador.innerText = "";
-    if (downloadURL) gerarQRCode(downloadURL);
-    else {
-      qrDiv.innerText = "Erro ao obter link convertido.";
-      qrDiv.style.color = "red";
-    }
   };
 
   recorder.start();
