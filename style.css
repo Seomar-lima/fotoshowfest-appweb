@@ -61,16 +61,6 @@ button {
   color: black;
 }
 
-#qrDownload {
-  display: none !important;
-}
-
-#galeria-icon,
-#galeria,
-#limpar-cache {
-  display: none !important;
-}
-
 #contador {
   position: absolute;
   top: 50%;
@@ -115,15 +105,4 @@ footer {
 #galeria-icon {
   margin-top: 10px;
   width: 50px;
-}
-
-#limpar-cache {
-  margin-top: 20px;
-  padding: 10px 16px;
-  background: #FFD700;
-  color: black;
-  font-weight: bold;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
 }

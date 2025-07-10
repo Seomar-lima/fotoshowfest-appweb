@@ -1,56 +1,38 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foto Show Fest</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      background: #111;
-      color: white;
-    }
-    video, canvas {
-      width: 100%;
-      max-width: 480px;
-      margin-top: 10px;
-    }
-    #galeria img {
-      width: 80px;
-      margin: 5px;
-      border: 2px solid white;
-    }
-    #qrDownload {
-      margin-top: 20px;
-    }
-    #contador {
-      font-size: 2em;
-      margin: 10px;
-      color: yellow;
-    }
-    button {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 1em;
-    }
-    #moldura {
-      display: none;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <h1>Foto Show Fest 📸</h1>
-  <video id="camera" autoplay playsinline></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-  <img id="moldura" src="moldura.png" />
+  <h1>Foto Show Fest</h1>
+  <h2>15 anos da Geovanna</h2>
+  <div id="preview-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="moldura" src="moldura.png" alt="Moldura" />
+  </div>
+
   <div id="contador"></div>
-  <button id="foto">Tirar Foto</button>
-  <button id="limpar-cache">Limpar Cache</button>
+
+  <div class="controls">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+  </div>
+
+  <div class="qr-download" id="qrDownload"></div>
+
+  <h3>📸 Galeria de Fotos</h3>
+  <img id="galeria-icon" src="galeria.png" alt="Galeria">
   <div id="galeria"></div>
-  <div id="qrDownload"></div>
+
+  <footer>© 2025 - Foto Show Fest</footer>
+
   <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <canvas id="canvas" style="display:none;"></canvas>
   <script src="script.js"></script>
 </body>
 </html>
