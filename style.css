@@ -1,4 +1,10 @@
-/* Reset e Estilos Base */
+:root {
+  --gold: #FFD700;
+  --dark-gold: #FFA500;
+  --black: #000000;
+  --white: #FFFFFF;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -8,8 +14,8 @@
 
 body {
   font-family: 'Arial', sans-serif;
-  background-color: #000;
-  color: #FFD700;
+  background-color: var(--black);
+  color: var(--gold);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -29,16 +35,17 @@ body {
 header {
   text-align: center;
   padding: 10px 0;
+  margin-bottom: 15px;
 }
 
 h1 {
-  font-size: 1.8rem;
+  font-size: clamp(1.5rem, 6vw, 2rem);
   margin-bottom: 5px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 h2 {
-  font-size: 1.4rem;
+  font-size: clamp(1.2rem, 5vw, 1.5rem);
   font-weight: normal;
 }
 
@@ -47,21 +54,22 @@ h2 {
   position: relative;
   width: 100%;
   max-width: 100%;
-  margin: 15px auto;
+  margin: 0 auto 20px;
   aspect-ratio: 9/16;
   overflow: hidden;
   border-radius: 10px;
-  background-color: #000;
+  background-color: var(--black);
+  border: 2px solid var(--gold);
 }
 
 #camera {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1); /* Espelha a câmera frontal */
+  transform: scaleX(-1);
 }
 
-#moldura {
+#frame {
   position: absolute;
   top: 0;
   left: 0;
@@ -79,11 +87,12 @@ h2 {
   gap: 15px;
   margin: 20px 0;
   width: 100%;
+  flex-wrap: wrap;
 }
 
-.btn {
-  background: linear-gradient(to bottom, #FFD700, #FFA500);
-  color: #000;
+.controls button {
+  background: linear-gradient(to bottom, var(--gold), var(--dark-gold));
+  color: var(--black);
   border: none;
   padding: 12px 20px;
   border-radius: 50px;
@@ -97,27 +106,32 @@ h2 {
   min-width: 140px;
   justify-content: center;
   transition: all 0.2s;
+  flex: 1;
 }
 
-.btn:active {
+.controls button:active {
   transform: scale(0.95);
 }
 
-.btn .icon {
+.controls button span {
   font-size: 1.2rem;
 }
 
 /* Galeria */
-#gallery-container {
+#gallery {
   margin-top: 20px;
   width: 100%;
 }
 
-#gallery {
+#gallery h3 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#gallery-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
-  margin-top: 10px;
 }
 
 .gallery-item {
@@ -125,7 +139,7 @@ h2 {
   aspect-ratio: 1;
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #FFD700;
+  border: 2px solid var(--gold);
 }
 
 .gallery-item img,
@@ -135,15 +149,28 @@ h2 {
   object-fit: cover;
 }
 
-/* Contador */
+/* Contador e Status */
 #counter {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 4rem;
-  color: #FFD700;
+  color: var(--gold);
   text-shadow: 0 0 10px rgba(0,0,0,0.8);
+  z-index: 3;
+  display: none;
+}
+
+#status {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: var(--white);
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
   z-index: 3;
   display: none;
 }
@@ -158,5 +185,19 @@ footer {
 
 /* Elementos ocultos */
 #canvas {
+  display: none;
+}
+
+/* PWA Install Prompt */
+#install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gold);
+  color: var(--black);
+  padding: 10px 20px;
+  border-radius: 50px;
+  z-index: 100;
   display: none;
 }
