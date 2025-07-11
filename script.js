@@ -150,6 +150,7 @@ function gerarQRCode(link) {
     colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
+}
 
   const downloadLink = document.createElement("a");
   downloadLink.href = link;
