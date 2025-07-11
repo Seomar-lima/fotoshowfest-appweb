@@ -41,6 +41,22 @@ h2 {
   pointer-events: none;
 }
 
+#statusUpload {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 215, 0, 0.9); /* amarelo com transparência */
+  color: black;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 20;
+  display: none;
+  font-size: 1rem;
+  box-shadow: 0 0 10px #FFD700;
+}
+
 .controls {
   margin-top: 1em;
   display: flex;
