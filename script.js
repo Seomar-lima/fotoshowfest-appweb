@@ -131,12 +131,14 @@ function enviarParaImgbb(imgData) {
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
 
+  // Título
   const title = document.createElement("h3");
   title.textContent = "Escaneie para baixar:";
   title.style.color = "#FFD700";
   title.style.marginBottom = "10px";
   qrDiv.appendChild(title);
 
+  // QR Code
   const qrContainer = document.createElement("div");
   qrContainer.style.margin = "0 auto";
   qrContainer.style.width = "256px";
@@ -150,8 +152,19 @@ function gerarQRCode(link) {
     colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
-}
 
+  // ✅ Download automático para imagem ou vídeo
+  const isImage = link.includes("ibb.co") || link.includes("image");
+  const fileName = isImage ? "foto_showfest.png" : "bumerangue_showfest.webm";
+
+  const a = document.createElement("a");
+  a.href = link;
+  a.download = fileName;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
   const downloadLink = document.createElement("a");
   downloadLink.href = link;
   downloadLink.textContent = "📥 Clique aqui se não conseguir escanear";
