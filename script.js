@@ -50,19 +50,15 @@ function showStatus(message, isError = false) {
   setTimeout(() => statusDiv.remove(), 3000);
 }
 
-function adicionarNaGaleria(url, isVideo = false) {
-  const galleryItem = document.createElement('div');
-  galleryItem.className = 'gallery-item';
-  
-  const mediaElement = isVideo ? document.createElement('video') : document.createElement('img');
-  mediaElement.src = url;
-  if (isVideo) {
-    mediaElement.controls = true;
-    mediaElement.loop = true;
-  }
-  
-  galleryItem.appendChild(mediaElement);
-  galeria.insertBefore(galleryItem, galeria.firstChild);
+function adicionarNaGaleria(url) {
+  const imgElement = document.createElement('img');
+  imgElement.src = url;
+  imgElement.style.maxWidth = '150px';
+  imgElement.style.margin = '5px';
+  imgElement.style.borderRadius = '5px';
+  imgElement.style.border = '2px solid #FFD700';
+  galeria.appendChild(imgElement);
+  scrollToElement(imgElement);
 }
 
 // Inicialização da câmera
@@ -88,6 +84,20 @@ async function initCamera() {
 // Função para salvar na galeria
 async function saveToGallery(blob, fileName, type) {
   try {
+    let shareSuccess = false;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          files: [new File([blob], fileName, { type })],
+          title: 'Foto Show Fest'
+        });
+        shareSuccess = true;
+      } catch (shareError) {
+        console.log("Compartilhamento cancelado:", shareError);
+      }
+    }
+
     const itemUrl = URL.createObjectURL(blob);
     savedItems.push({ 
       url: itemUrl,
@@ -96,6 +106,7 @@ async function saveToGallery(blob, fileName, type) {
       timestamp: Date.now()
     });
     localStorage.setItem('savedItems', JSON.stringify(savedItems));
+    
     return itemUrl;
   } catch (error) {
     console.error("Erro ao salvar:", error);
@@ -235,13 +246,14 @@ async function processarVideo(chunks) {
     
     if (!url) throw new Error("Falha ao salvar");
     
-    adicionarNaGaleria(url, true);
     gerarQRCode(url);
-    showStatus("Bumerangue pronto!", false);
+    adicionarNaGaleria(url);
+    contador.innerText = "";
+    document.getElementById('cancelBtn').style.display = 'none';
+    showStatus("Bumerangue salvo na galeria!", false);
   } catch (error) {
     console.error("Erro:", error);
     showStatus("Erro ao processar vídeo", true);
-  } finally {
     contador.innerText = "";
     document.getElementById('cancelBtn').style.display = 'none';
   }
@@ -287,9 +299,17 @@ async function capturarFoto() {
     );
     
     if (url) {
-      adicionarNaGaleria(url);
-      gerarQRCode(url);
-      showStatus("Foto salva com sucesso!", false);
+      try {
+        const publicUrl = await enviarParaImgbb(imgData);
+        gerarQRCode(publicUrl || url);
+        adicionarNaGaleria(publicUrl || url);
+        showStatus("Foto salva com sucesso!", false);
+      } catch (uploadError) {
+        console.log("Usando URL local:", uploadError);
+        gerarQRCode(url);
+        adicionarNaGaleria(url);
+        showStatus("Foto salva (offline)!", false);
+      }
     }
   } catch (error) {
     console.error("Erro na captura:", error);
@@ -297,24 +317,34 @@ async function capturarFoto() {
   }
 }
 
+async function enviarParaImgbb(imgData) {
+  try {
+    const formData = new FormData();
+    formData.append('image', imgData.split(',')[1]);
+    
+    const response = await fetch('https://api.imgbb.com/1/upload?key=586fe56b6fe8223c90078eae64e1d678', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await response.json();
+    return data.data?.url || null;
+  } catch (error) {
+    console.error("Erro no upload:", error);
+    throw error; // Propaga o erro para tratamento externo
+  }
+}
+
 function gerarQRCode(link) {
-  qrDiv.innerHTML = `
-    <h3>Escaneie para compartilhar</h3>
-    <div id="qrcode-container"></div>
-  `;
-  
-  new QRCode(document.getElementById('qrcode-container'), {
+  qrDiv.innerHTML = '<h3 style="color:#FFD700">Escaneie para compartilhar</h3>';
+  new QRCode(qrDiv, {
     text: link,
-    width: 180,
-    height: 180,
+    width: 200,
+    height: 200,
     colorDark: "#000000",
-    colorLight: "#FFFFFF",
+    colorLight: "rgba(255, 255, 255, 0.1)",
     correctLevel: QRCode.CorrectLevel.H
   });
-  
-  setTimeout(() => {
-    qrDiv.scrollIntoView({ behavior: 'smooth' });
-  }, 300);
 }
 
 // Inicialização
@@ -323,7 +353,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Carrega itens salvos na galeria
   savedItems.forEach(item => {
-    adicionarNaGaleria(item.url, item.type.includes('video'));
+    adicionarNaGaleria(item.url);
   });
   
   // Botão de cancelamento
