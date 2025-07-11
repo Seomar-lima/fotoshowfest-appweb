@@ -1,60 +1,36 @@
-/* Reset e Estilos Gerais */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
-  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 20px;
   background-color: #000;
   color: #FFD700;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  min-height: 100vh;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  line-height: 1.6;
+  align-items: center;
 }
 
-#app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: 15px;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-/* Cabeçalho */
-h1 {
-  font-size: 1.8rem;
-  margin: 10px 0 5px;
+h1, h2, h3 {
+  margin: 10px 0;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-h2 {
-  font-size: 1.4rem;
-  font-weight: normal;
-  margin-bottom: 15px;
-}
-
-/* Container da Câmera */
-#camera-container {
+#preview-container {
   position: relative;
   width: 100%;
   max-width: 500px;
-  margin: 0 auto 15px;
-  aspect-ratio: 9/16;
-  background-color: #333;
-  border-radius: 10px;
+  margin: 20px auto;
   overflow: hidden;
+  border-radius: 10px;
   box-shadow: 0 0 20px rgba(255,215,0,0.3);
 }
 
 #camera {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
   display: block;
+  background: #333;
 }
 
 #moldura {
@@ -63,30 +39,15 @@ h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   pointer-events: none;
 }
 
-#camera-status {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* Controles */
 .controls {
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin: 15px 0;
-  padding: 0 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;
 }
 
 .controls button {
@@ -95,56 +56,22 @@ h2 {
   border: none;
   padding: 12px 20px;
   border-radius: 50px;
-  font-size: 1rem;
+  font-size: 16px;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   transition: all 0.3s;
-  min-width: 45%;
-  max-width: 200px;
-  font-weight: bold;
+  min-width: 200px;
 }
 
-.controls button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.controls button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
 }
 
-/* Contador e Mensagens */
 #contador {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 3rem;
-  font-weight: bold;
+  font-size: 24px;
+  margin: 10px;
   color: #FFD700;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-  z-index: 20;
-}
-
-.status-message {
-  background: rgba(0,0,0,0.8);
-  color: white;
-  padding: 15px 25px;
-  border-radius: 50px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* QR Code e Galeria */
-.qr-download {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  margin: 15px auto;
-  max-width: 230px;
 }
 
 #galeria {
@@ -153,27 +80,72 @@ h2 {
   gap: 10px;
   width: 100%;
   max-width: 800px;
-  margin: 10px auto;
-  padding: 10px;
+  margin: 20px auto;
 }
 
-/* Rodapé */
-footer {
-  margin-top: auto;
+/* QR Code - Correção do fundo transparente */
+.qr-download {
+  background: white;
   padding: 15px;
-  color: #888;
-  font-size: 0.9rem;
-  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  margin: 20px auto;
+  max-width: 230px;
 }
 
-/* Responsividade */
-@media (max-width: 500px) {
-  .controls {
-    flex-direction: column;
-    align-items: center;
-  }
-  .controls button {
-    width: 80%;
-    max-width: none;
-  }
+.qr-download h3 {
+  color: #000 !important;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.qr-download img {
+  background: white;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+/* Galeria */
+.gallery-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 2px solid #FFD700;
+}
+
+.gallery-item img, .gallery-item video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.gallery-item video {
+  background: #000;
+}
+
+.status-message {
+  color: white;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.success {
+  background-color: #4CAF50;
+}
+
+.error {
+  background-color: #f44336;
+}
+
+#cancelBtn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  margin-top: 10px;
+  cursor: pointer;
 }
