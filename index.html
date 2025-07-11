@@ -8,35 +8,32 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <div id="app-container">
-    <h1>Foto Show Fest</h1>
-    <h2>15 anos da Geovanna</h2>
-    
-    <div id="camera-container">
-      <video id="camera" autoplay playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura" />
-      <div id="camera-status"></div>
-    </div>
-
-    <div id="contador"></div>
-
-    <div class="controls">
-      <button id="foto">📸 Tirar Foto</button>
-      <button id="bumerangue">🎞️ Bumerangue</button>
-    </div>
-
-    <div class="qr-download" id="qrDownload"></div>
-
-    <h3>📸 Galeria de Fotos</h3>
-    <div id="galeria"></div>
-
-    <footer>© 2025 - Foto Show Fest</footer>
-
-    <audio id="beep" src="beep.mp3" preload="auto"></audio>
-    <canvas id="canvas" style="display:none;"></canvas>
+  <h1>Foto Show Fest</h1>
+  <h2>15 anos da Geovanna</h2>
+  
+  <div id="preview-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="moldura" src="moldura.png" alt="Moldura" />
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg-core.js"></script>
+  <div id="contador"></div>
+
+  <div class="controls">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+  </div>
+
+  <div class="qr-download" id="qrDownload"></div>
+
+  <h3>📸 Galeria de Fotos</h3>
+  <div id="galeria"></div>
+
+  <footer>© 2025 - Foto Show Fest</footer>
+
+  <audio id="beep" src="beep.mp3" preload="auto"></audio>
+  <canvas id="canvas" style="display:none;"></canvas>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
