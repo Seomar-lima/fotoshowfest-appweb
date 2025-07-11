@@ -361,14 +361,8 @@ function baixarVideo(blob) {
 
       if (!mp4Url) throw new Error("A conversão não foi finalizada a tempo.");
 
-      // 5. Download automático
-      const a = document.createElement("a");
-      a.href = mp4Url;
-     const uniqueName = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.mp4`;
+    const uniqueName = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.mp4`;
 a.download = uniqueName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
 
     // Encurtar o link antes de gerar o QR Code
 try {
