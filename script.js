@@ -9,12 +9,11 @@ const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 const previewContainer = document.getElementById("preview-container");
 
-// Configurações otimizadas para o Bumerangue VERTICAL
 const BOOMERANG_SETTINGS = {
-  width: 540,      // Largura reduzida mantendo proporção vertical
-  height: 960,     // Altura proporcional ao formato 9:16 (vertical)
-  fps: 30,         // Frame rate reduzido
-  duration: 2      // 2 segundos de gravação
+  width: 540,
+  height: 960,
+  fps: 30,
+  duration: 2
 };
 
 let stream;
@@ -22,30 +21,26 @@ let cancelRecording = false;
 let mediaRecorder = null;
 let recordingInterval = null;
 
-// Função para rolar até o elemento
 function scrollToElement(element) {
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// Função para resetar a visualização
 function resetView() {
   scrollToElement(previewContainer);
 }
 
-// Inicialização da câmera
-navigator.mediaDevices.getUserMedia({ 
-  video: { 
-    width: { ideal: 1920 }, 
+navigator.mediaDevices.getUserMedia({
+  video: {
+    width: { ideal: 1920 },
     height: { ideal: 1080 },
-    facingMode: 'user' 
-  }, 
-  audio: false 
+    facingMode: 'user'
+  },
+  audio: false
 })
   .then(s => {
     stream = s;
     video.srcObject = stream;
     video.play();
-    // Centraliza a câmera ao carregar
     resetView();
   })
   .catch(err => {
@@ -53,16 +48,14 @@ navigator.mediaDevices.getUserMedia({
     alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
   });
 
-// Função para tirar foto
 fotoBtn.onclick = () => {
-  resetView(); // Centraliza a câmera antes de começar
-  
+  resetView();
+
   let count = 5;
   contador.innerText = count;
-  
-  // Limpa qualquer intervalo anterior
+
   if (recordingInterval) clearInterval(recordingInterval);
-  
+
   recordingInterval = setInterval(() => {
     count--;
     contador.innerText = count;
@@ -80,7 +73,7 @@ function capturarFoto() {
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
+
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
@@ -116,7 +109,6 @@ function enviarParaImgbb(imgData) {
     .then(data => {
       if (data?.data?.url) {
         gerarQRCode(data.data.url);
-        // Centraliza o QR code quando estiver pronto
         setTimeout(() => scrollToElement(qrDiv), 500);
       } else {
         throw new Error("Resposta inválida do imgbb");
@@ -130,8 +122,7 @@ function enviarParaImgbb(imgData) {
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
-  
-  // Adiciona título explicativo
+
   const title = document.createElement("h3");
   title.textContent = "Escaneie para baixar:";
   title.style.color = "#FFD700";
@@ -157,7 +148,7 @@ function gerarQRCode(link) {
   downloadLink.textContent = "📥 Clique aqui se não conseguir escanear";
   downloadLink.download = "";
   downloadLink.style.display = "block";
-  downloadLink.style.margin = "15px auto";
+  downloadLink.style.marginTop = "15px";
   downloadLink.style.padding = "10px";
   downloadLink.style.background = "#FFD700";
   downloadLink.style.color = "#000";
@@ -168,19 +159,17 @@ function gerarQRCode(link) {
   qrDiv.appendChild(downloadLink);
 }
 
-// Função do bumerangue vertical
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
-  
-  resetView(); // Centraliza a câmera antes de começar
-  
-  // Mostra botão de cancelamento
+
+  resetView();
+
   const cancelBtn = document.getElementById('cancelBtn');
   cancelBtn.style.display = 'block';
   cancelRecording = false;
   if (mediaRecorder) mediaRecorder = null;
   if (recordingInterval) clearInterval(recordingInterval);
-  
+
   try {
     let count = 3;
     contador.innerText = count;
@@ -203,101 +192,97 @@ bumerangueBtn.onclick = async () => {
 
 async function iniciarBumerangueVertical() {
   const cancelBtn = document.getElementById('cancelBtn');
-  
+
   try {
     const canvasVideo = document.createElement("canvas");
     const ctx = canvasVideo.getContext("2d");
-    
-    // Define a resolução vertical (retrato)
+
     canvasVideo.width = BOOMERANG_SETTINGS.width;
     canvasVideo.height = BOOMERANG_SETTINGS.height;
-    
+
     const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
     const frames = [];
-    
-    // 1. Captura os frames no formato vertical
+
     for (let i = 0; i < totalFrames; i++) {
       if (cancelRecording) break;
-      
-      // Ajusta o desenho para manter proporção vertical
+
       const aspectRatio = video.videoWidth / video.videoHeight;
       let drawWidth, drawHeight, offsetX, offsetY;
-      
+
       if (aspectRatio > 1) {
-        // Se a câmera estiver em paisagem, cortamos para ficar vertical
         drawHeight = video.videoHeight;
-        drawWidth = video.videoHeight * (9/16);
+        drawWidth = video.videoHeight * (9 / 16);
         offsetX = (video.videoWidth - drawWidth) / 2;
         offsetY = 0;
       } else {
-        // Já está em retrato
         drawWidth = video.videoWidth;
         drawHeight = video.videoHeight;
         offsetX = 0;
         offsetY = 0;
       }
-      
-      // Desenha o frame cortado para formato vertical
-      ctx.drawImage(video, 
+
+      ctx.drawImage(video,
         offsetX, offsetY, drawWidth, drawHeight,
         0, 0, canvasVideo.width, canvasVideo.height
       );
-      
+
       if (moldura.complete && moldura.naturalHeight !== 0) {
         ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
       }
-      
+
       const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
       frames.push(frame);
       await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
     }
-    
+
     if (cancelRecording) {
       contador.innerText = "Cancelado";
       cancelBtn.style.display = 'none';
       return;
     }
-    
+
     contador.innerText = "Processando...";
-    
-    // 2. Cria o efeito boomerang (ida e volta)
+
     const finalFrames = [...frames, ...frames.slice().reverse()];
-    
-    // 3. Cria o vídeo em WebM (formato mais leve)
+
     const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
-    mediaRecorder = new MediaRecorder(streamOut, { 
+    mediaRecorder = new MediaRecorder(streamOut, {
       mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 2000000 // 2 Mbps para qualidade balanceada
+      videoBitsPerSecond: 2000000
     });
-    
+
     const chunks = [];
-    
+
     return new Promise((resolve) => {
       mediaRecorder.ondataavailable = e => chunks.push(e.data);
       mediaRecorder.onstop = async () => {
         try {
           const blob = new Blob(chunks, { type: 'video/webm' });
-          
-          // 1. Cria um FormData para upload
-          const formData = new FormData();
-          formData.append('file', blob, 'bumerangue.webm');
-          
-          // 2. Faz upload para um servidor temporário
+
           contador.innerText = "Enviando vídeo...";
-          const uploadResponse = await fetch('https://file.io/?expires=1d', {
-            method: 'POST',
+
+          // Passo 1: Obtem servidor de upload GoFile
+          const serverResp = await fetch("https://api.gofile.io/getServer");
+          const serverData = await serverResp.json();
+          const uploadServer = serverData.data.server;
+
+          // Passo 2: Envia o arquivo
+          const formData = new FormData();
+          formData.append("file", blob, "bumerangue.webm");
+
+          const uploadResp = await fetch(`https://${uploadServer}.gofile.io/uploadFile`, {
+            method: "POST",
             body: formData
           });
-          
-          const { link } = await uploadResponse.json();
-          
-          if (!link) throw new Error("Falha no upload");
-          
-          // 3. Gera QR code com link permanente
+
+          const uploadJson = await uploadResp.json();
+          const link = uploadJson?.data?.downloadPage;
+
+          if (!link) throw new Error("Erro no retorno da GoFile");
+
           gerarQRCode(link);
           contador.innerText = "Pronto!";
-          
-          // 4. Adiciona link de fallback
+
           const downloadLink = document.createElement("a");
           downloadLink.href = link;
           downloadLink.textContent = "📥 Baixar Vídeo";
@@ -305,12 +290,10 @@ async function iniciarBumerangueVertical() {
           downloadLink.style.marginTop = "10px";
           qrDiv.appendChild(downloadLink);
 
-          // Centraliza o QR code na tela
           setTimeout(() => scrollToElement(qrDiv), 500);
-          
           resolve();
         } catch (error) {
-          console.error("Erro:", error);
+          console.error("Erro no upload para GoFile:", error);
           qrDiv.innerHTML = `
             <p style="color:red">Erro ao gerar link.</p>
             <button onclick="location.reload()">Tentar novamente</button>
@@ -320,10 +303,9 @@ async function iniciarBumerangueVertical() {
           cancelBtn.style.display = 'none';
         }
       };
-      
+
       mediaRecorder.start();
-      
-      // Renderiza os frames
+
       (async () => {
         for (const frame of finalFrames) {
           if (cancelRecording) {
@@ -344,7 +326,6 @@ async function iniciarBumerangueVertical() {
   }
 }
 
-// Configura o botão de cancelamento
 document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.createElement("button");
   cancelBtn.id = "cancelBtn";
@@ -358,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelBtn.style.margin = "10px auto";
   cancelBtn.style.cursor = "pointer";
   cancelBtn.style.fontWeight = "bold";
-  
+
   cancelBtn.addEventListener('click', () => {
     cancelRecording = true;
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
@@ -370,6 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('cancelBtn').style.display = 'none';
     }, 2000);
   });
-  
+
   document.body.appendChild(cancelBtn);
 });
