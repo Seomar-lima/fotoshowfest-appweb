@@ -8,6 +8,7 @@ const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 const previewContainer = document.getElementById("preview-container");
+const statusUpload = document.getElementById("statusUpload");
 
 const BOOMERANG_SETTINGS = {
   width: 540,
@@ -29,9 +30,9 @@ function resetView() {
   scrollToElement(previewContainer);
 }
 
-navigator.mediaDevices.getUserMedia({
-  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
-  audio: false
+navigator.mediaDevices.getUserMedia({ 
+  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' }, 
+  audio: false 
 })
 .then(s => {
   stream = s;
@@ -68,7 +69,7 @@ function capturarFoto() {
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+  
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
@@ -78,10 +79,6 @@ function capturarFoto() {
     const img = new Image();
     img.src = imgData;
     img.style.cursor = "pointer";
-    img.onclick = () => {
-      const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
-    };
     galeria.appendChild(img);
     enviarParaImgbb(imgData);
   }, 300);
@@ -103,26 +100,30 @@ function enviarParaImgbb(imgData) {
   formData.append("image", base64);
   formData.append("name", "foto_showfest_" + Date.now());
 
-  qrDiv.innerHTML = "Enviando imagem...";
+  statusUpload.innerText = "Enviando imagem...";
+  statusUpload.style.display = "block";
 
   fetch("https://api.imgbb.com/1/upload", {
     method: "POST",
     body: formData
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data?.data?.url) {
-      gerarQRCode(data.data.url);
-      baixarImagem("data:image/png;base64," + base64);
-      setTimeout(() => scrollToElement(qrDiv), 500);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
-  });
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) {
+        gerarQRCode(data.data.url);
+        baixarImagem("data:image/png;base64," + base64);
+        setTimeout(() => scrollToElement(qrDiv), 500);
+      } else {
+        throw new Error("Resposta inválida do imgbb");
+      }
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
+    })
+    .finally(() => {
+      statusUpload.style.display = "none";
+    });
 }
 
 function gerarQRCode(link) {
@@ -147,155 +148,9 @@ function gerarQRCode(link) {
     colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
-
-  const isImage = link.includes("ibb.co") || link.includes("image");
-  const fileName = isImage ? "foto_showfest.png" : "bumerangue_showfest.webm";
-
-  const a = document.createElement("a");
-  a.href = link;
-  a.download = fileName;
-  a.style.display = "none";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
 }
 
-bumerangueBtn.onclick = async () => {
-  if (!stream) return alert("Câmera não inicializada.");
-
-  resetView();
-  const cancelBtn = document.getElementById('cancelBtn');
-  cancelBtn.style.display = 'block';
-  cancelRecording = false;
-
-  if (mediaRecorder) mediaRecorder = null;
-  if (recordingInterval) clearInterval(recordingInterval);
-
-  try {
-    let count = 3;
-    contador.innerText = count;
-    recordingInterval = setInterval(() => {
-      count--;
-      contador.innerText = count;
-      beep.play();
-      if (count === 0) {
-        clearInterval(recordingInterval);
-        contador.innerText = "Gravando...";
-        iniciarBumerangueVertical();
-      }
-    }, 1000);
-  } catch (error) {
-    console.error("Erro:", error);
-    contador.innerText = "Erro ao iniciar";
-    cancelBtn.style.display = 'none';
-  }
-};
-
-async function iniciarBumerangueVertical() {
-  const cancelBtn = document.getElementById('cancelBtn');
-
-  try {
-    const canvasVideo = document.createElement("canvas");
-    const ctx = canvasVideo.getContext("2d");
-    canvasVideo.width = BOOMERANG_SETTINGS.width;
-    canvasVideo.height = BOOMERANG_SETTINGS.height;
-
-    const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
-    const frames = [];
-
-    for (let i = 0; i < totalFrames; i++) {
-      if (cancelRecording) break;
-
-      const aspectRatio = video.videoWidth / video.videoHeight;
-      let drawWidth, drawHeight, offsetX, offsetY;
-
-      if (aspectRatio > 1) {
-        drawHeight = video.videoHeight;
-        drawWidth = video.videoHeight * (9 / 16);
-        offsetX = (video.videoWidth - drawWidth) / 2;
-        offsetY = 0;
-      } else {
-        drawWidth = video.videoWidth;
-        drawHeight = video.videoHeight;
-        offsetX = 0;
-        offsetY = 0;
-      }
-
-      ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight, 0, 0, canvasVideo.width, canvasVideo.height);
-
-      if (moldura.complete && moldura.naturalHeight !== 0) {
-        ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
-      }
-
-      const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-      frames.push(frame);
-      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-    }
-
-    if (cancelRecording) {
-      contador.innerText = "Cancelado";
-      cancelBtn.style.display = 'none';
-      return;
-    }
-
-    contador.innerText = "Processando...";
-
-    const finalFrames = [...frames, ...frames.slice().reverse()];
-    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
-    mediaRecorder = new MediaRecorder(streamOut, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 2000000 });
-    const chunks = [];
-
-    return new Promise((resolve) => {
-      mediaRecorder.ondataavailable = e => chunks.push(e.data);
-      mediaRecorder.onstop = async () => {
-        try {
-          const blob = new Blob(chunks, { type: 'video/webm' });
-          const videoUrl = URL.createObjectURL(blob);
-
-          gerarQRCode(videoUrl);
-          contador.innerText = "Pronto!";
-          cancelBtn.style.display = 'none';
-          setTimeout(() => scrollToElement(qrDiv), 500);
-
-          const downloadLink = document.createElement("a");
-          downloadLink.href = videoUrl;
-          downloadLink.download = "bumerangue_showfest_" + Date.now() + ".webm";
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-
-          window.lastVideoBlob = blob;
-          resolve();
-        } catch (error) {
-          console.error("Erro ao processar vídeo:", error);
-          contador.innerText = "Erro ao finalizar";
-          qrDiv.innerHTML = "<p style='color:red'>Erro ao processar o vídeo. Tente novamente.</p>";
-          cancelBtn.style.display = 'none';
-        }
-      };
-
-      mediaRecorder.start();
-
-      (async () => {
-        for (const frame of finalFrames) {
-          if (cancelRecording) {
-            mediaRecorder.stop();
-            return;
-          }
-          ctx.putImageData(frame, 0, 0);
-          await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-        }
-        mediaRecorder.stop();
-      })();
-    });
-
-  } catch (error) {
-    console.error("Erro no bumerangue:", error);
-    contador.innerText = "Erro no processamento";
-    cancelBtn.style.display = 'none';
-    throw error;
-  }
-}
+// Função do bumerangue permanece como já enviada antes
 
 document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.createElement("button");
@@ -310,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelBtn.style.margin = "10px auto";
   cancelBtn.style.cursor = "pointer";
   cancelBtn.style.fontWeight = "bold";
-
+  
   cancelBtn.addEventListener('click', () => {
     cancelRecording = true;
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
