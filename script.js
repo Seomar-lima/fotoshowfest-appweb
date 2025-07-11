@@ -87,7 +87,8 @@ function capturarFoto() {
 function baixarImagem(imgData) {
   const link = document.createElement("a");
   link.href = imgData;
-  link.download = "foto_showfest_" + Date.now() + ".png";
+ const uniqueName = `foto_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.png`;
+link.download = uniqueName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
