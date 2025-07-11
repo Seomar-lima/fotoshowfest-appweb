@@ -100,10 +100,10 @@ function enviarParaImgbb(imgData) {
   formData.append("image", base64);
   formData.append("name", "foto_showfest_" + Date.now());
 
-contador.innerText = "";
-statusUpload.innerText = "Enviando imagem...";
-statusUpload.style.display = "block";
-  
+  contador.innerText = "";
+  statusUpload.innerText = "Enviando imagem...";
+  statusUpload.style.display = "block";
+
   fetch("https://api.imgbb.com/1/upload", {
     method: "POST",
     body: formData
@@ -129,7 +129,6 @@ statusUpload.style.display = "block";
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
-
   const title = document.createElement("h3");
   title.textContent = "Escaneie para baixar:";
   title.style.color = "#FFD700";
@@ -196,13 +195,10 @@ async function iniciarBumerangueVertical() {
 
     for (let i = 0; i < totalFrames; i++) {
       if (cancelRecording) break;
-
       ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-
       if (moldura.complete && moldura.naturalHeight !== 0) {
         ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
       }
-
       const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
       frames.push(frame);
       await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
@@ -226,9 +222,6 @@ async function iniciarBumerangueVertical() {
       mediaRecorder.onstop = async () => {
         try {
           const blob = new Blob(chunks, { type: 'video/webm' });
-          const videoUrl = URL.createObjectURL(blob);
-
-          gerarQRCode(videoUrl);
           baixarVideo(blob);
           contador.innerText = "Pronto!";
           cancelBtn.style.display = 'none';
@@ -294,10 +287,67 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function baixarVideo(blob) {
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "bumerangue_showfest_" + Date.now() + ".webm";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const apiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNmRjYmE4ZWJhZjk5MmMxOTYxMTdkYzUyZmJjNmJkMzVkNTI5ZjQ0NzdhMzRkZDQ4YzA3YjU0YmY3YzA4NWE2MWYwMjJhYzI1MzFkYTk0YjkiLCJpYXQiOjE3NTIxMDcxMTQuNTE2MTI3LCJuYmYiOjE3NTIxMDcxMTQuNTE2MTI4LCJleHAiOjQ5MDc3ODA3MTQuNTExNjcsInN1YiI6IjcyMjA4MDIzIiwic2NvcGVzIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0YXNrLnJlYWQiLCJ0YXNrLndyaXRlIiwid2ViaG9vay53cml0ZSIsIndlYmhvb2sucmVhZCIsInByZXNldC5yZWFkIiwicHJlc2V0LndyaXRlIl19.LHX9u69IcYbJqijxBEv3mWT-7YLH_NkaY42DZWjqEha-_t9hLsnHD4-5yCHSdSJzcJ_ELi-TOjqqI3U2k2lfilqZuFks9LvN5GDEfd_J7nxSUeBJgnocoWebARtGEJlcl1z_PaZRn44MiwUgin1af1o66_1ikXP2jgJG45ichB6Buot1ee7MGfZ_EDW47tVKlrsLJ4yuwV4G1UX_ucb1_MJHnHJq_BpEINn0qw0F0Hv9H0689qGv-Wd3SA2jvI6nfbhXddtwM_3ovAfLRzRXGGMi9ogD9pAjmB-IcMKvEqRqfRlqCUrt93yFTlWW1D1mByvZ5jQBj66Hlj_Q7sDExwIE6gRbkzifMLV78V0toGljjml6H0rnObf2D96jvwawI7xAU2oY4Vdyrc5AqyQD_m4Gb7EJVxaDCZXqYotWGRwuSZoBS5z1licbbNWuAFibiAceX6zqlVYdCw0uvPG7lyDwEw1KXm0ooUShfj65VaV-tizcwFsve4f43rO7CT_xR3X3RzJS8cT6SL5h9uAhSa3GjdNxhcykSBcPrF2NqYwmaqWzkZ1YHyOvVAcbskwmqveMj6Uf0aWdPdiKpDCxnNa4XG9ad715JO4agxiNV16KsclsPwE0CStWuCjphp6YT_2QiW1IPLpguZWE4Tase784DocFaTY2EN1da1rNWqI";
+
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+  reader.onloadend = async () => {
+    const base64Data = reader.result.split(',')[1];
+    statusUpload.innerText = "Convertendo para MP4...";
+    statusUpload.style.display = "block";
+
+    try {
+      const importRes = await fetch("https://api.cloudconvert.com/v2/import/base64", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          file: base64Data,
+          filename: "bumerangue.webm"
+        })
+      });
+      const importTask = await importRes.json();
+
+      const convertRes = await fetch("https://api.cloudconvert.com/v2/convert", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          input: importTask.data.id,
+          output_format: "mp4"
+        })
+      });
+      const convertTask = await convertRes.json();
+
+      const exportRes = await fetch("https://api.cloudconvert.com/v2/export/url", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          input: convertTask.data.id
+        })
+      });
+      const exportTask = await exportRes.json();
+      const mp4Url = exportTask.data.result.files[0].url;
+
+      const a = document.createElement("a");
+      a.href = mp4Url;
+      a.download = "bumerangue_showfest_" + Date.now() + ".mp4";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      gerarQRCode(mp4Url);
+      statusUpload.style.display = "none";
+    } catch (err) {
+      console.error("Erro ao converter vídeo:", err);
+      statusUpload.innerText = "Erro ao converter vídeo.";
+    }
+  };
 }
