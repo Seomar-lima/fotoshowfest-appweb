@@ -228,12 +228,10 @@ async function iniciarBumerangueVertical() {
           const videoUrl = URL.createObjectURL(blob);
 
           gerarQRCode(videoUrl);
+          baixarVideo(blob);
           contador.innerText = "Pronto!";
           cancelBtn.style.display = 'none';
           setTimeout(() => scrollToElement(qrDiv), 500);
-
-          // Sem abrir o vídeo automaticamente
-          // Se quiser salvar, pode adicionar isso aqui
         } catch (error) {
           console.error("Erro ao processar vídeo:", error);
           contador.innerText = "Erro ao finalizar";
@@ -293,3 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.body.appendChild(cancelBtn);
 });
+
+function baixarVideo(blob) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "bumerangue_showfest_" + Date.now() + ".webm";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
