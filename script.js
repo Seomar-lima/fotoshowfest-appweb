@@ -1,219 +1,312 @@
-
-const video = document.getElementById("camera");
-const canvas = document.getElementById("canvas");
-const fotoBtn = document.getElementById("foto");
-const bumerangueBtn = document.getElementById("bumerangue");
-const beep = document.getElementById("beep");
-const contador = document.getElementById("contador");
-const galeria = document.getElementById("galeria");
-const qrDiv = document.getElementById("qrDownload");
-const moldura = document.getElementById("moldura");
-
-let stream;
-
-navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
-  .then(s => {
-    stream = s;
-    video.srcObject = stream;
-    video.play();
-  })
-  .catch(err => {
-    console.error("Erro ao acessar a câmera:", err);
-  });
-
-fotoBtn.onclick = () => {
-  let count = 5;
-  contador.innerText = count;
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(interval);
-      contador.innerText = "";
-      capturarFoto();
-    }
-  }, 1000);
+// Configurações
+const CONFIG = {
+  boomerang: {
+    duration: 3,
+    fps: 30
+  }
 };
 
-function capturarFoto() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  if (moldura.complete && moldura.naturalHeight !== 0) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-  }
-
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
-    const img = new Image();
-    img.src = imgData;
-    img.style.cursor = "pointer";
-    img.onclick = () => {
-      const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
-    };
-    galeria.appendChild(img);
-    enviarParaImgbb(imgData);
-  }, 300);
-}
-
-function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
-
-  qrDiv.innerHTML = "Enviando imagem...";
-
-  fetch("https://api.imgbb.com/1/upload", {
-    method: "POST",
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerText = "Erro ao gerar QRCode.";
-      qrDiv.style.color = "red";
-    });
-}
-
-function gerarQRCode(link) {
-  qrDiv.innerHTML = "";
-  const qrContainer = document.createElement("div");
-  qrContainer.style.margin = "10px auto";
-  qrDiv.appendChild(qrContainer);
-
-  new QRCode(qrContainer, {
-    text: link,
-    width: 256,
-    height: 256,
-    margin: 4
-  });
-
-  const a = document.createElement("a");
-  a.href = link;
-  a.innerText = "📥 Baixar";
-  a.download = "";
-  a.style.display = "block";
-  a.style.textAlign = "center";
-  a.style.marginTop = "10px";
-  a.style.fontWeight = "bold";
-  qrDiv.appendChild(a);
-}
-
-bumerangueBtn.onclick = async () => {
-  if (!stream) return alert("Câmera não inicializada.");
-
-  let count = 5;
-  contador.innerText = count;
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(interval);
-      contador.innerText = "Gravando...";
-      iniciarBumerangue();
-    }
-  }, 1000);
+// Estado do App
+const AppState = {
+  cameraStream: null,
+  isProcessing: false,
+  savedItems: JSON.parse(localStorage.getItem('photos')) || []
 };
 
-async function iniciarBumerangue() {
-  const canvasVideo = document.createElement("canvas");
-  const ctx = canvasVideo.getContext("2d");
+// Elementos DOM
+const DOM = {
+  camera: document.getElementById('camera'),
+  frame: document.getElementById('frame'),
+  captureBtn: document.getElementById('capture-btn'),
+  boomerangBtn: document.getElementById('boomerang-btn'),
+  gallery: document.getElementById('gallery-items'),
+  counter: document.getElementById('counter'),
+  status: document.getElementById('status'),
+  shutterSound: document.getElementById('shutter-sound'),
+  canvas: document.getElementById('canvas'),
+  ctx: document.getElementById('canvas').getContext('2d')
+};
 
-  const fps = 60;
-  const duration = 2;
-  const totalFrames = fps * duration;
-  const frames = [];
-
-  canvasVideo.width = video.videoWidth;
-  canvasVideo.height = video.videoHeight;
-
-  for (let i = 0; i < totalFrames; i++) {
-    ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-    if (moldura.complete) {
-      ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
-    }
-    const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
-    frames.push(frame);
-    await new Promise(r => setTimeout(r, 1000 / fps));
-  }
-
-  contador.innerText = "Renderizando vídeo...";
-
-  const finalFrames = [...frames, ...frames.slice().reverse()];
-  const streamOut = canvasVideo.captureStream(fps);
-  const recorder = new MediaRecorder(streamOut);
-  const chunks = [];
-
-  recorder.ondataavailable = e => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-
-  recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-
-    // Upload webm to Gofile
-    const uploadRes = await fetch("https://upload.gofile.io/uploadfile", {
-      method: "POST",
-      body: (() => {
-        const form = new FormData();
-        form.append("file", blob, "video.webm");
-        return form;
-      })()
-    }).then(r => r.json());
-
-    const fileURL = uploadRes.data.downloadPage;
-
-    contador.innerText = "Convertendo para .mp4...";
-
-    // CloudConvert API
-    const cloudConvertAPI = "INSIRA_SUA_API_KEY";
-
-    const cloudConvertJob = await fetch("https://api.cloudconvert.com/v2/jobs", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + cloudConvertAPI,
-        "Content-Type": "application/json"
+// Inicialização da Câmera (Modo Retrato)
+async function initCamera() {
+  try {
+    showStatus("Iniciando câmera...");
+    
+    const constraints = {
+      video: {
+        facingMode: 'user',
+        width: { ideal: 1080 },
+        height: { ideal: 1920 }
       },
-      body: JSON.stringify({
-        tasks: {
-          import: {
-            operation: "import/url",
-            url: fileURL
-          },
-          convert: {
-            operation: "convert",
-            input: "import",
-            output_format: "mp4"
-          },
-          export: {
-            operation: "export/url",
-            input: "convert"
-          }
-        }
-      })
-    }).then(r => r.json());
+      audio: false
+    };
 
-    const exportURL = cloudConvertJob.data.tasks.find(t => t.name === "export").result.files[0].url;
-    gerarQRCode(exportURL);
-    contador.innerText = "";
-  };
-
-  recorder.start();
-
-  for (const frame of finalFrames) {
-    ctx.putImageData(frame, 0, 0);
-    await new Promise(r => setTimeout(r, 1000 / (fps * 2)));
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    DOM.camera.srcObject = stream;
+    AppState.cameraStream = stream;
+    
+    // Ajusta a moldura após a câmera carregar
+    DOM.camera.onloadedmetadata = () => {
+      adjustFrameSize();
+      hideStatus();
+    };
+    
+  } catch (error) {
+    console.error('Erro na câmera:', error);
+    showStatus("Erro ao acessar a câmera", true);
+    disableButtons();
   }
-
-  recorder.stop();
 }
+
+// Ajusta o tamanho da moldura
+function adjustFrameSize() {
+  const cameraRatio = DOM.camera.videoWidth / DOM.camera.videoHeight;
+  const frameRatio = 9/16; // Proporção da moldura
+  
+  if (cameraRatio > frameRatio) {
+    // Câmera mais larga que a moldura
+    DOM.frame.style.width = '100%';
+    DOM.frame.style.height = 'auto';
+  } else {
+    // Câmera mais estreita que a moldura
+    DOM.frame.style.width = 'auto';
+    DOM.frame.style.height = '100%';
+  }
+}
+
+// Captura de Foto
+function setupPhotoCapture() {
+  DOM.captureBtn.addEventListener('click', async () => {
+    if (AppState.isProcessing) return;
+    
+    AppState.isProcessing = true;
+    let count = 3;
+    
+    showCounter(count);
+    
+    const countdown = setInterval(() => {
+      count--;
+      updateCounter(count);
+      DOM.shutterSound.play();
+      
+      if (count <= 0) {
+        clearInterval(countdown);
+        hideCounter();
+        takePhoto();
+      }
+    }, 1000);
+  });
+}
+
+function takePhoto() {
+  // Configura o canvas com a orientação correta
+  DOM.canvas.width = DOM.camera.videoWidth;
+  DOM.canvas.height = DOM.camera.videoHeight;
+  
+  // Espelha a imagem (para câmera frontal)
+  DOM.ctx.save();
+  DOM.ctx.translate(DOM.canvas.width, 0);
+  DOM.ctx.scale(-1, 1);
+  DOM.ctx.drawImage(DOM.camera, 0, 0, DOM.canvas.width, DOM.canvas.height);
+  DOM.ctx.restore();
+  
+  // Adiciona moldura
+  if (DOM.frame.complete) {
+    DOM.ctx.drawImage(DOM.frame, 0, 0, DOM.canvas.width, DOM.canvas.height);
+  }
+  
+  const imageData = DOM.canvas.toDataURL('image/jpeg', 0.9);
+  saveToGallery(imageData, 'photo');
+  AppState.isProcessing = false;
+}
+
+// Bumerangue
+function setupBoomerang() {
+  DOM.boomerangBtn.addEventListener('click', async () => {
+    if (AppState.isProcessing) return;
+    
+    AppState.isProcessing = true;
+    let count = 3;
+    
+    showCounter(count);
+    showStatus("Preparando bumerangue...");
+    
+    const countdown = setInterval(() => {
+      count--;
+      updateCounter(count);
+      DOM.shutterSound.play();
+      
+      if (count <= 0) {
+        clearInterval(countdown);
+        hideCounter();
+        recordBoomerang();
+      }
+    }, 1000);
+  });
+}
+
+async function recordBoomerang() {
+  showStatus("Gravando...");
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = DOM.camera.videoWidth;
+  canvas.height = DOM.camera.videoHeight;
+  const ctx = canvas.getContext('2d');
+  
+  const frames = [];
+  const frameCount = CONFIG.boomerang.duration * CONFIG.boomerang.fps;
+  
+  let framesCaptured = 0;
+  const captureInterval = setInterval(() => {
+    // Captura frame
+    ctx.save();
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(DOM.camera, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    
+    // Adiciona moldura
+    if (DOM.frame.complete) {
+      ctx.drawImage(DOM.frame, 0, 0, canvas.width, canvas.height);
+    }
+    
+    frames.push(canvas.toDataURL('image/jpeg'));
+    framesCaptured++;
+    
+    if (framesCaptured >= frameCount) {
+      clearInterval(captureInterval);
+      processBoomerang(frames);
+    }
+  }, 1000 / CONFIG.boomerang.fps);
+}
+
+function processBoomerang(frames) {
+  showStatus("Processando...");
+  
+  // Simula processamento (substitua pelo FFmpeg real)
+  setTimeout(() => {
+    const reversedFrames = [...frames].reverse();
+    const allFrames = [...frames, ...reversedFrames];
+    
+    // Cria um GIF simples (substitua por vídeo real)
+    const gifUrl = allFrames[0]; // Apenas para demonstração
+    saveToGallery(gifUrl, 'boomerang');
+    
+    hideStatus();
+    AppState.isProcessing = false;
+  }, 2000);
+}
+
+// Galeria
+function saveToGallery(data, type) {
+  const item = {
+    id: Date.now(),
+    type,
+    data,
+    date: new Date().toLocaleString()
+  };
+  
+  AppState.savedItems.unshift(item);
+  localStorage.setItem('photos', JSON.stringify(AppState.savedItems));
+  updateGallery();
+}
+
+function updateGallery() {
+  DOM.gallery.innerHTML = '';
+  
+  AppState.savedItems.forEach(item => {
+    const itemElement = document.createElement('div');
+    itemElement.className = 'gallery-item';
+    
+    if (item.type === 'photo') {
+      const img = document.createElement('img');
+      img.src = item.data;
+      img.alt = 'Foto capturada';
+      itemElement.appendChild(img);
+    } else {
+      const video = document.createElement('video');
+      video.src = item.data;
+      video.controls = true;
+      video.loop = true;
+      itemElement.appendChild(video);
+    }
+    
+    DOM.gallery.appendChild(itemElement);
+  });
+}
+
+// Helpers
+function showStatus(message, isError = false) {
+  DOM.status.textContent = message;
+  DOM.status.style.display = 'block';
+  DOM.status.style.background = isError ? 'rgba(255,0,0,0.7)' : 'rgba(0,0,0,0.7)';
+}
+
+function hideStatus() {
+  DOM.status.style.display = 'none';
+}
+
+function showCounter(value) {
+  DOM.counter.textContent = value;
+  DOM.counter.style.display = 'block';
+}
+
+function updateCounter(value) {
+  DOM.counter.textContent = value;
+}
+
+function hideCounter() {
+  DOM.counter.style.display = 'none';
+}
+
+function disableButtons() {
+  DOM.captureBtn.disabled = true;
+  DOM.boomerangBtn.disabled = true;
+}
+
+// PWA Installation
+function setupPWA() {
+  let deferredPrompt;
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallPrompt();
+  });
+  
+  function showInstallPrompt() {
+    const prompt = document.createElement('div');
+    prompt.id = 'install-prompt';
+    prompt.innerHTML = `
+      <p>Instalar App?</p>
+      <button id="install-btn">Instalar</button>
+      <button id="dismiss-btn">Depois</button>
+    `;
+    document.body.appendChild(prompt);
+    
+    document.getElementById('install-btn').addEventListener('click', installApp);
+    document.getElementById('dismiss-btn').addEventListener('click', () => {
+      prompt.remove();
+    });
+  }
+  
+  function installApp() {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choiceResult => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('Usuário aceitou instalação');
+      }
+      deferredPrompt = null;
+      document.getElementById('install-prompt').remove();
+    });
+  }
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  initCamera();
+  setupPhotoCapture();
+  setupBoomerang();
+  updateGallery();
+  setupPWA();
+});
