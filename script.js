@@ -182,85 +182,12 @@ bumerangueBtn.onclick = () => {
 };
 
 // === GRAVAÇÃO E PROCESSAMENTO DO BUMERANGUE ===
-async function iniciarBumerangueVertical() {
-  const cancelBtn = document.getElementById('cancelBtn');
-  try {
-    const canvasVideo = document.createElement("canvas");
-    const ctx = canvasVideo.getContext("2d");
-    canvasVideo.width = BOOMERANG_SETTINGS.width;
-    canvasVideo.height = BOOMERANG_SETTINGS.height;
-
-    const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
-    const frames = [];
-
-    for (let i = 0; i < totalFrames; i++) {
-      if (cancelRecording) break;
-      ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-      if (moldura.complete && moldura.naturalHeight !== 0) {
-        ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
-      }
-      frames.push(ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height));
-      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-    }
-
-    if (cancelRecording) {
-      contador.innerText = "Cancelado";
-      cancelBtn.style.display = 'none';
-      return;
-    }
-
-    contador.innerText = "Processando...";
-    const finalFrames = [...frames, ...frames.slice().reverse()];
-    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
-    mediaRecorder = new MediaRecorder(streamOut, { mimeType: 'video/webm;codecs=vp9' });
-    const chunks = [];
-
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      baixarVideo(blob);
-    };
-
-    mediaRecorder.start();
-    for (const frame of finalFrames) {
-      if (cancelRecording) {
-        mediaRecorder.stop();
-        return;
-      }
-      ctx.putImageData(frame, 0, 0);
-      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-    }
-    mediaRecorder.stop();
-    cancelBtn.style.display = 'none';
-  } catch (err) {
-    console.error("Erro no bumerangue:", err);
-    contador.innerText = "Erro ao processar";
-    cancelBtn.style.display = 'none';
-  }
-}
-
-// === BOTÃO CANCELAR ===
-document.addEventListener('DOMContentLoaded', () => {
-  const cancelBtn = document.createElement("button");
-  cancelBtn.id = "cancelBtn";
-  cancelBtn.textContent = "✖ Cancelar Gravação";
-  cancelBtn.style = "display:none;background:#f44;color:white;border:none;padding:10px 15px;border-radius:5px;margin:10px auto;cursor:pointer;font-weight:bold;";
-  cancelBtn.onclick = () => {
-    cancelRecording = true;
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-    if (recordingInterval) clearInterval(recordingInterval);
-    contador.innerText = "Cancelado";
-    setTimeout(() => { cancelBtn.style.display = 'none'; }, 2000);
-  };
-  document.body.appendChild(cancelBtn);
-});
-
-// === CONVERSÃO WEBM → MP4 + QR CODE ===
-function baixarVideo(blob) {
+async function converterParaMP4(blob) {
   const apiKey = "SUA_CLOUDCONVERT_API_KEY_AQUI";
-
   const reader = new FileReader();
+
   reader.readAsDataURL(blob);
+
   reader.onloadend = async () => {
     const base64Data = reader.result.split(',')[1];
     statusUpload.innerText = "Convertendo para MP4...";
@@ -268,6 +195,7 @@ function baixarVideo(blob) {
     contador.innerText = "";
 
     try {
+      // 1. Upload base64
       const importRes = await fetch("https://api.cloudconvert.com/v2/import/base64", {
         method: "POST",
         headers: {
@@ -276,11 +204,12 @@ function baixarVideo(blob) {
         },
         body: JSON.stringify({
           file: base64Data,
-          filename: "bumerangue.webm"
+          filename: `bumerangue_${Date.now()}.webm`
         })
       });
       const importTask = await importRes.json();
 
+      // 2. Conversão
       const convertRes = await fetch("https://api.cloudconvert.com/v2/convert", {
         method: "POST",
         headers: {
@@ -294,6 +223,7 @@ function baixarVideo(blob) {
       });
       const convertTask = await convertRes.json();
 
+      // 3. Exportar para link público
       const exportRes = await fetch("https://api.cloudconvert.com/v2/export/url", {
         method: "POST",
         headers: {
@@ -307,55 +237,42 @@ function baixarVideo(blob) {
       const exportTask = await exportRes.json();
       const exportTaskId = exportTask.data.id;
 
+      // 4. Aguardar status "finished"
       let mp4Url = null;
       for (let i = 0; i < 10; i++) {
         const statusRes = await fetch(`https://api.cloudconvert.com/v2/tasks/${exportTaskId}`, {
-          headers: { Authorization: `Bearer ${apiKey}` }
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          }
         });
         const statusJson = await statusRes.json();
         if (statusJson.data.status === "finished" && statusJson.data.result?.files?.[0]?.url) {
           mp4Url = statusJson.data.result.files[0].url;
           break;
         }
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 2000)); // espera 2 segundos
       }
 
-      if (!mp4Url) throw new Error("Conversão falhou.");
+      if (!mp4Url) throw new Error("Conversão não completada a tempo.");
 
-      // Baixar localmente com nome único
-      const videoBlob = await fetch(mp4Url).then(r => r.blob());
-      const blobUrl = URL.createObjectURL(videoBlob);
+      // 5. Baixar o arquivo convertido com nome único
       const a = document.createElement("a");
-      a.href = blobUrl;
+      a.href = mp4Url;
       a.download = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.mp4`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
 
-      // Encurtar link
-      let shortLink = mp4Url;
-      try {
-        const shortRes = await fetch("https://cleanuri.com/api/v1/shorten", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ url: mp4Url })
-        });
-        const shortData = await shortRes.json();
-        shortLink = shortData.result_url || mp4Url;
-      } catch (e) {
-        console.warn("Erro ao encurtar link:", e);
-      }
-
-      gerarQRCode(shortLink);
+      // 6. Gerar QR code
+      gerarQRCode(mp4Url);
       contador.innerText = "Pronto!";
       statusUpload.style.display = "none";
 
     } catch (err) {
       console.error("Erro ao converter vídeo:", err);
-      contador.innerText = "Erro ao finalizar";
       statusUpload.innerText = "Erro ao converter vídeo.";
-      qrDiv.innerHTML = "<p style='color:red'>Erro ao converter vídeo. Tente novamente.</p>";
+      contador.innerText = "Erro ao finalizar";
+      qrDiv.innerHTML = "<p style='color:red'>Erro ao converter o vídeo. Tente novamente.</p>";
     }
   };
 }
