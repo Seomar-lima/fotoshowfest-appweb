@@ -364,7 +364,8 @@ function baixarVideo(blob) {
       // 5. Download automático
       const a = document.createElement("a");
       a.href = mp4Url;
-      a.download = "bumerangue_showfest_" + Date.now() + ".mp4";
+     const uniqueName = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.mp4`;
+a.download = uniqueName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
