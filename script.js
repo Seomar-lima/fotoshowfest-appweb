@@ -11,7 +11,9 @@ const AppState = {
   cameraStream: null,
   isProcessing: false,
   mediaRecorder: null,
-  boomerangFrames: []
+  boomerangFrames: [],
+  captureInterval: null,
+  isPortraitMode: true // Forçar modo retrato
 };
 
 // Elementos DOM
@@ -27,17 +29,22 @@ const DOM = {
   cancelBtn: document.getElementById('cancel-btn'),
   canvas: document.getElementById('canvas'),
   ctx: document.getElementById('canvas').getContext('2d'),
-  processingIndicator: document.getElementById('processing-indicator')
+  processingIndicator: document.getElementById('processing-indicator'),
+  cameraContainer: document.getElementById('camera-container')
 };
 
 // Inicialização da Câmera
 async function initCamera() {
   try {
+    // Verificar se é um dispositivo móvel
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     const constraints = {
       video: {
-        width: { ideal: 1080 },
-        height: { ideal: 1920 },
-        facingMode: 'user'
+        width: { ideal: isMobile ? 720 : 1080 },
+        height: { ideal: isMobile ? 1280 : 1920 },
+        facingMode: 'user',
+        resizeMode: 'crop-and-scale'
       },
       audio: false
     };
@@ -46,8 +53,8 @@ async function initCamera() {
     DOM.camera.srcObject = stream;
     AppState.cameraStream = stream;
     
-    // Ajusta a moldura quando a câmera carregar
     DOM.camera.onloadedmetadata = () => {
+      forcePortraitMode();
       adjustFrameSize();
     };
     
@@ -57,18 +64,40 @@ async function initCamera() {
   }
 }
 
-// Ajusta o tamanho da moldura
-function adjustFrameSize() {
-  const cameraRatio = DOM.camera.videoWidth / DOM.camera.videoHeight;
-  const frameRatio = 9/16; // Proporção vertical
+// Forçar modo retrato
+function forcePortraitMode() {
+  // Aplicar transformações CSS para manter orientação vertical
+  DOM.camera.style.transform = 'scaleX(-1)'; // Espelhar para câmera frontal
+  DOM.camera.style.width = '100%';
+  DOM.camera.style.height = 'auto';
   
-  if (cameraRatio > frameRatio) {
-    DOM.frame.style.width = 'auto';
-    DOM.frame.style.height = '100%';
-  } else {
-    DOM.frame.style.width = '100%';
-    DOM.frame.style.height = 'auto';
+  // Se estiver em um dispositivo móvel, tentar bloquear orientação
+  if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('portrait').catch(() => {});
+      }
+    } catch (e) {
+      console.log('Não foi possível bloquear orientação:', e);
+    }
   }
+}
+
+// Ajustar tamanho do frame
+function adjustFrameSize() {
+  // Forçar proporção 9:16 (vertical)
+  const targetRatio = 9/16;
+  const containerWidth = DOM.cameraContainer.clientWidth;
+  const containerHeight = DOM.cameraContainer.clientHeight;
+  
+  // Ajustar moldura para manter proporção vertical
+  DOM.frame.style.width = '100%';
+  DOM.frame.style.height = 'auto';
+  
+  // Centralizar verticalmente
+  DOM.camera.style.position = 'absolute';
+  DOM.camera.style.left = '50%';
+  DOM.camera.style.transform = 'translateX(-50%) scaleX(-1)';
 }
 
 // Captura de Foto
@@ -84,18 +113,31 @@ function setupPhotoCapture() {
 
 function takePhoto() {
   try {
-    // Configura o canvas
-    DOM.canvas.width = DOM.camera.videoWidth;
-    DOM.canvas.height = DOM.camera.videoHeight;
+    // Definir tamanho do canvas com proporção vertical
+    const targetHeight = Math.min(DOM.camera.videoHeight, DOM.camera.videoWidth * (16/9));
+    const targetWidth = targetHeight * (9/16);
     
-    // Espelha a imagem (para câmera frontal)
+    DOM.canvas.width = targetWidth;
+    DOM.canvas.height = targetHeight;
+    
+    // Calcular área de recorte para manter o retrato
+    const sourceX = (DOM.camera.videoWidth - (DOM.camera.videoHeight * (9/16))) / 2;
+    const sourceY = 0;
+    const sourceWidth = DOM.camera.videoHeight * (9/16);
+    const sourceHeight = DOM.camera.videoHeight;
+    
+    // Desenhar imagem no canvas (com espelhamento para câmera frontal)
     DOM.ctx.save();
     DOM.ctx.translate(DOM.canvas.width, 0);
     DOM.ctx.scale(-1, 1);
-    DOM.ctx.drawImage(DOM.camera, 0, 0, DOM.canvas.width, DOM.canvas.height);
+    DOM.ctx.drawImage(
+      DOM.camera,
+      sourceX, sourceY, sourceWidth, sourceHeight,
+      0, 0, DOM.canvas.width, DOM.canvas.height
+    );
     DOM.ctx.restore();
     
-    // Adiciona moldura
+    // Adicionar moldura
     if (DOM.frame.complete) {
       DOM.ctx.drawImage(DOM.frame, 0, 0, DOM.canvas.width, DOM.canvas.height);
     }
@@ -126,29 +168,40 @@ function recordBoomerang() {
   try {
     AppState.boomerangFrames = [];
     const canvas = document.createElement('canvas');
-    canvas.width = DOM.camera.videoWidth;
-    canvas.height = DOM.camera.videoHeight;
+    
+    // Definir tamanho com proporção vertical
+    const targetHeight = Math.min(DOM.camera.videoHeight, DOM.camera.videoWidth * (16/9));
+    const targetWidth = targetHeight * (9/16);
+    
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
     
     const frameCount = CONFIG.boomerang.duration * CONFIG.boomerang.fps;
     let framesCaptured = 0;
     
-    // Mostra indicador de processamento
-    if (DOM.processingIndicator) {
-      DOM.processingIndicator.style.display = 'block';
-      DOM.processingIndicator.textContent = 'Capturando...';
-    }
+    showProcessingIndicator('Capturando...');
     
-    const captureInterval = setInterval(() => {
+    AppState.captureInterval = setInterval(() => {
       try {
-        // Captura frame
+        // Calcular área de recorte
+        const sourceX = (DOM.camera.videoWidth - (DOM.camera.videoHeight * (9/16))) / 2;
+        const sourceY = 0;
+        const sourceWidth = DOM.camera.videoHeight * (9/16);
+        const sourceHeight = DOM.camera.videoHeight;
+        
+        // Capturar frame
         ctx.save();
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(DOM.camera, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(
+          DOM.camera,
+          sourceX, sourceY, sourceWidth, sourceHeight,
+          0, 0, canvas.width, canvas.height
+        );
         ctx.restore();
         
-        // Adiciona moldura
+        // Adicionar moldura
         if (DOM.frame.complete) {
           ctx.drawImage(DOM.frame, 0, 0, canvas.width, canvas.height);
         }
@@ -157,15 +210,13 @@ function recordBoomerang() {
         framesCaptured++;
         
         if (framesCaptured >= frameCount) {
-          clearInterval(captureInterval);
+          clearInterval(AppState.captureInterval);
           processBoomerang();
         }
       } catch (error) {
-        clearInterval(captureInterval);
+        clearInterval(AppState.captureInterval);
         console.error('Erro na captura de frames:', error);
-        if (DOM.processingIndicator) {
-          DOM.processingIndicator.style.display = 'none';
-        }
+        hideProcessingIndicator();
         AppState.isProcessing = false;
       }
     }, 1000 / CONFIG.boomerang.fps);
@@ -173,25 +224,23 @@ function recordBoomerang() {
   } catch (error) {
     console.error('Erro ao iniciar bumerangue:', error);
     AppState.isProcessing = false;
-    if (DOM.processingIndicator) {
-      DOM.processingIndicator.style.display = 'none';
-    }
+    hideProcessingIndicator();
   }
 }
 
 async function processBoomerang() {
   try {
-    if (DOM.processingIndicator) {
-      DOM.processingIndicator.textContent = 'Processando...';
+    showProcessingIndicator('Processando...');
+    
+    if (AppState.boomerangFrames.length === 0) {
+      throw new Error('Nenhum frame capturado');
     }
     
-    // Cria o efeito de bumerangue (frames normais + reverso)
     const boomerangFrames = [
       ...AppState.boomerangFrames,
       ...AppState.boomerangFrames.slice(0, -1).reverse()
     ];
     
-    // Cria um vídeo simples (na prática, use uma biblioteca para GIF/MP4)
     const videoUrl = await createSimpleVideo(boomerangFrames);
     
     saveToGallery(videoUrl, 'video');
@@ -202,20 +251,18 @@ async function processBoomerang() {
     alert('Erro ao criar o bumerangue. Tente novamente.');
   } finally {
     AppState.isProcessing = false;
-    if (DOM.processingIndicator) {
-      DOM.processingIndicator.style.display = 'none';
-    }
+    hideProcessingIndicator();
   }
 }
 
 async function createSimpleVideo(frames) {
   return new Promise((resolve) => {
-    // Esta é uma implementação simplificada que cria um vídeo básico
-    // Para produção, considere usar MediaRecorder ou uma biblioteca como gif.js
-    
     const canvas = document.createElement('canvas');
-    canvas.width = DOM.camera.videoWidth;
-    canvas.height = DOM.camera.videoHeight;
+    const targetHeight = Math.min(DOM.camera.videoHeight, DOM.camera.videoWidth * (16/9));
+    const targetWidth = targetHeight * (9/16);
+    
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
     const ctx = canvas.getContext('2d');
     
     const video = document.createElement('video');
@@ -313,22 +360,48 @@ function generateQRCode(data) {
   DOM.qrContainer.style.display = 'block';
 }
 
+function showProcessingIndicator(message) {
+  if (DOM.processingIndicator) {
+    DOM.processingIndicator.textContent = message;
+    DOM.processingIndicator.style.display = 'block';
+  }
+}
+
+function hideProcessingIndicator() {
+  if (DOM.processingIndicator) {
+    DOM.processingIndicator.style.display = 'none';
+  }
+}
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
+  // Verificar orientação inicial
+  const checkOrientation = () => {
+    if (window.innerHeight > window.innerWidth) {
+      AppState.isPortraitMode = true;
+    } else {
+      AppState.isPortraitMode = false;
+      alert('Por favor, use o dispositivo no modo retrato (vertical) para a melhor experiência');
+    }
+  };
+  
+  window.addEventListener('resize', checkOrientation);
+  checkOrientation();
+  
   initCamera();
   setupPhotoCapture();
   setupBoomerang();
   
-  // Botão de cancelamento
   DOM.cancelBtn.addEventListener('click', () => {
     AppState.isProcessing = false;
     if (AppState.mediaRecorder) {
       AppState.mediaRecorder.stop();
     }
+    if (AppState.captureInterval) {
+      clearInterval(AppState.captureInterval);
+    }
     DOM.counter.style.display = 'none';
     DOM.cancelBtn.style.display = 'none';
-    if (DOM.processingIndicator) {
-      DOM.processingIndicator.style.display = 'none';
-    }
+    hideProcessingIndicator();
   });
 });
