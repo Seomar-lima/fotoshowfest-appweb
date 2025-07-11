@@ -9,7 +9,6 @@ const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
 const previewContainer = document.getElementById("preview-container");
 
-// Configurações do Boomerang
 const BOOMERANG_SETTINGS = {
   width: 540,
   height: 960,
@@ -22,17 +21,14 @@ let cancelRecording = false;
 let mediaRecorder = null;
 let recordingInterval = null;
 
-// Rola até o elemento
 function scrollToElement(element) {
   element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// Centraliza preview
 function resetView() {
   scrollToElement(previewContainer);
 }
 
-// Inicia câmera
 navigator.mediaDevices.getUserMedia({ 
   video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' }, 
   audio: false 
@@ -48,7 +44,6 @@ navigator.mediaDevices.getUserMedia({
   alert("Não foi possível acessar a câmera. Verifique permissões.");
 });
 
-// Tirar foto com contagem
 fotoBtn.onclick = () => {
   resetView();
   let count = 5;
@@ -89,7 +84,6 @@ function capturarFoto() {
     };
     galeria.appendChild(img);
     enviarParaImgbb(imgData);
-    baixarImagem(imgData); // ⬇️ Salvar automaticamente a imagem
   }, 300);
 }
 
@@ -119,6 +113,10 @@ function enviarParaImgbb(imgData) {
     .then(data => {
       if (data?.data?.url) {
         gerarQRCode(data.data.url);
+
+        // Agora sim: baixar imagem somente após upload e QR code
+        baixarImagem("data:image/png;base64," + base64);
+
         setTimeout(() => scrollToElement(qrDiv), 500);
       } else {
         throw new Error("Resposta inválida do imgbb");
@@ -169,7 +167,6 @@ function gerarQRCode(link) {
   qrDiv.appendChild(downloadLink);
 }
 
-// Botão bumerangue
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
   
@@ -267,7 +264,6 @@ async function iniciarBumerangueVertical() {
           cancelBtn.style.display = 'none';
           setTimeout(() => scrollToElement(qrDiv), 500);
 
-          // ⬇️ Salva automaticamente o vídeo no celular
           const downloadLink = document.createElement("a");
           downloadLink.href = videoUrl;
           downloadLink.download = "bumerangue_showfest_" + Date.now() + ".webm";
@@ -308,7 +304,6 @@ async function iniciarBumerangueVertical() {
   }
 }
 
-// Botão cancelar gravação
 document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.createElement("button");
   cancelBtn.id = "cancelBtn";
