@@ -84,20 +84,24 @@ async function initCamera() {
 // Função para salvar na galeria
 async function saveToGallery(blob, fileName, type) {
   try {
-    let shareSuccess = false;
-    
     if (navigator.share) {
-      try {
-        await navigator.share({
-          files: [new File([blob], fileName, { type })],
-          title: 'Foto Show Fest'
-        });
-        shareSuccess = true;
-      } catch (shareError) {
-        console.log("Compartilhamento cancelado:", shareError);
-      }
+      await navigator.share({
+        files: [new File([blob], fileName, { type })],
+        title: 'Foto Show Fest'
+      });
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      }, 100);
     }
-
+    
     const itemUrl = URL.createObjectURL(blob);
     savedItems.push({ 
       url: itemUrl,
@@ -299,28 +303,21 @@ async function capturarFoto() {
     );
     
     if (url) {
-      try {
-        const publicUrl = await enviarParaImgbb(imgData);
-        gerarQRCode(publicUrl || url);
-        adicionarNaGaleria(publicUrl || url);
-        showStatus("Foto salva com sucesso!", false);
-      } catch (uploadError) {
-        console.log("Usando URL local:", uploadError);
-        gerarQRCode(url);
-        adicionarNaGaleria(url);
-        showStatus("Foto salva (offline)!", false);
-      }
+      const shareUrl = await enviarParaImgbb(imgData);
+      adicionarNaGaleria(shareUrl || url);
+      showStatus("Foto salva na galeria!", false);
     }
   } catch (error) {
-    console.error("Erro na captura:", error);
+    console.error("Erro ao capturar foto:", error);
     showStatus("Erro ao capturar foto", true);
   }
 }
 
 async function enviarParaImgbb(imgData) {
   try {
+    const base64 = imgData.split(',')[1];
     const formData = new FormData();
-    formData.append('image', imgData.split(',')[1]);
+    formData.append('image', base64);
     
     const response = await fetch('https://api.imgbb.com/1/upload?key=586fe56b6fe8223c90078eae64e1d678', {
       method: 'POST',
@@ -328,10 +325,13 @@ async function enviarParaImgbb(imgData) {
     });
     
     const data = await response.json();
-    return data.data?.url || null;
+    if (data.data?.url) {
+      return data.data.url;
+    }
+    throw new Error('URL não recebida do ImgBB');
   } catch (error) {
-    console.error("Erro no upload:", error);
-    throw error; // Propaga o erro para tratamento externo
+    console.error("Upload falhou:", error);
+    return null;
   }
 }
 
