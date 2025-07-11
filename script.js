@@ -100,9 +100,10 @@ function enviarParaImgbb(imgData) {
   formData.append("image", base64);
   formData.append("name", "foto_showfest_" + Date.now());
 
-  statusUpload.innerText = "Enviando imagem...";
-  statusUpload.style.display = "block";
-
+contador.innerText = "";
+statusUpload.innerText = "Enviando imagem...";
+statusUpload.style.display = "block";
+  
   fetch("https://api.imgbb.com/1/upload", {
     method: "POST",
     body: formData
