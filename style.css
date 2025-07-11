@@ -1,83 +1,83 @@
-:root {
-  --gold: #FFD700;
-  --dark-gold: #FFA500;
-  --black: #000000;
-  --white: #FFFFFF;
-}
-
+/* Reset e Estilos Gerais */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   font-family: 'Arial', sans-serif;
-  background-color: var(--black);
-  color: var(--gold);
+  background-color: #000;
+  color: #FFD700;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  overflow-x: hidden;
+  line-height: 1.6;
 }
 
-#app {
+#app-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  width: 100%;
-  max-width: 100vw;
   padding: 15px;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 /* Cabeçalho */
-header {
-  text-align: center;
-  padding: 10px 0;
-  margin-bottom: 15px;
-}
-
 h1 {
-  font-size: clamp(1.5rem, 6vw, 2rem);
-  margin-bottom: 5px;
+  font-size: 1.8rem;
+  margin: 10px 0 5px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 h2 {
-  font-size: clamp(1.2rem, 5vw, 1.5rem);
+  font-size: 1.4rem;
   font-weight: normal;
+  margin-bottom: 15px;
 }
 
 /* Container da Câmera */
 #camera-container {
   position: relative;
   width: 100%;
-  max-width: 100%;
-  margin: 0 auto 20px;
+  max-width: 500px;
+  margin: 0 auto 15px;
   aspect-ratio: 9/16;
-  overflow: hidden;
+  background-color: #333;
   border-radius: 10px;
-  background-color: var(--black);
-  border: 2px solid var(--gold);
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(255,215,0,0.3);
 }
 
 #camera {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);
+  display: block;
 }
 
-#frame {
+#moldura {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   pointer-events: none;
-  z-index: 2;
+}
+
+#camera-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
 }
 
 /* Controles */
@@ -85,119 +85,95 @@ h2 {
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin: 20px 0;
-  width: 100%;
-  flex-wrap: wrap;
+  margin: 15px 0;
+  padding: 0 10px;
 }
 
 .controls button {
-  background: linear-gradient(to bottom, var(--gold), var(--dark-gold));
-  color: var(--black);
+  background: linear-gradient(to bottom, #FFD700, #FFA500);
+  color: #000;
   border: none;
   padding: 12px 20px;
   border-radius: 50px;
   font-size: 1rem;
-  font-weight: bold;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 140px;
-  justify-content: center;
-  transition: all 0.2s;
-  flex: 1;
+  transition: all 0.3s;
+  min-width: 45%;
+  max-width: 200px;
+  font-weight: bold;
 }
 
-.controls button:active {
-  transform: scale(0.95);
+.controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.controls button span {
-  font-size: 1.2rem;
-}
-
-/* Galeria */
-#gallery {
-  margin-top: 20px;
-  width: 100%;
-}
-
-#gallery h3 {
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-#gallery-items {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 10px;
-}
-
-.gallery-item {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid var(--gold);
-}
-
-.gallery-item img,
-.gallery-item video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Contador e Status */
-#counter {
+/* Contador e Mensagens */
+#contador {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 4rem;
-  color: var(--gold);
-  text-shadow: 0 0 10px rgba(0,0,0,0.8);
-  z-index: 3;
-  display: none;
+  font-size: 3rem;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  z-index: 20;
 }
 
-#status {
-  position: absolute;
-  top: 10px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  color: var(--white);
-  background: rgba(0,0,0,0.7);
+.status-message {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* QR Code e Galeria */
+.qr-download {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  margin: 15px auto;
+  max-width: 230px;
+}
+
+#galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 800px;
+  margin: 10px auto;
   padding: 10px;
-  z-index: 3;
-  display: none;
 }
 
 /* Rodapé */
 footer {
   margin-top: auto;
-  text-align: center;
   padding: 15px;
   color: #888;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
-/* Elementos ocultos */
-#canvas {
-  display: none;
-}
-
-/* PWA Install Prompt */
-#install-prompt {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--gold);
-  color: var(--black);
-  padding: 10px 20px;
-  border-radius: 50px;
-  z-index: 100;
-  display: none;
+/* Responsividade */
+@media (max-width: 500px) {
+  .controls {
+    flex-direction: column;
+    align-items: center;
+  }
+  .controls button {
+    width: 80%;
+    max-width: none;
+  }
 }
