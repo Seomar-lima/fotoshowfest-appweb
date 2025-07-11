@@ -1,4 +1,57 @@
-// Configurações
+/// ... parte anterior (frames capturados e mediaRecorder configurado)
+
+mediaRecorder.onstop = async () => {
+  try {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+
+    // Prepara upload para GoFile
+    contador.innerText = "Enviando vídeo...";
+
+    // Passo 1: Pede o servidor de upload do GoFile
+    const serverResp = await fetch("https://api.gofile.io/getServer");
+    const serverData = await serverResp.json();
+    const uploadServer = serverData.data.server;
+
+    // Passo 2: Envia o vídeo para o servidor indicado
+    const formData = new FormData();
+    formData.append("file", blob, "bumerangue.webm");
+
+    const uploadResp = await fetch(`https://${uploadServer}.gofile.io/uploadFile`, {
+      method: "POST",
+      body: formData
+    });
+
+    const uploadJson = await uploadResp.json();
+    const link = uploadJson?.data?.downloadPage;
+
+    if (!link) throw new Error("Erro no retorno da GoFile");
+
+    // Exibe QR Code com link
+    gerarQRCode(link);
+    contador.innerText = "Pronto!";
+
+    // Adiciona link direto para download
+    const downloadLink = document.createElement("a");
+    downloadLink.href = link;
+    downloadLink.textContent = "📥 Baixar Vídeo";
+    downloadLink.style.display = "block";
+    downloadLink.style.marginTop = "10px";
+    qrDiv.appendChild(downloadLink);
+
+    // Centraliza QR
+    setTimeout(() => scrollToElement(qrDiv), 500);
+
+  } catch (error) {
+    console.error("Erro no upload para GoFile:", error);
+    qrDiv.innerHTML = `
+      <p style="color:red">Erro ao gerar link.</p>
+      <button onclick="location.reload()">Tentar novamente</button>
+    `;
+    contador.innerText = "Erro ao finalizar";
+  } finally {
+    cancelBtn.style.display = 'none';
+  }
+};/ Configurações
 const CONFIG = {
   boomerang: {
     duration: 3,
