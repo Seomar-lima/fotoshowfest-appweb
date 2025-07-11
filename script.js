@@ -30,9 +30,9 @@ function resetView() {
   scrollToElement(previewContainer);
 }
 
-navigator.mediaDevices.getUserMedia({ 
-  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' }, 
-  audio: false 
+navigator.mediaDevices.getUserMedia({
+  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
+  audio: false
 })
 .then(s => {
   stream = s;
@@ -69,7 +69,7 @@ function capturarFoto() {
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
+
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
@@ -107,23 +107,23 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) {
-        gerarQRCode(data.data.url);
-        baixarImagem("data:image/png;base64," + base64);
-        setTimeout(() => scrollToElement(qrDiv), 500);
-      } else {
-        throw new Error("Resposta inválida do imgbb");
-      }
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
-    })
-    .finally(() => {
-      statusUpload.style.display = "none";
-    });
+  .then(response => response.json())
+  .then(data => {
+    if (data?.data?.url) {
+      gerarQRCode(data.data.url);
+      baixarImagem("data:image/png;base64," + base64);
+      setTimeout(() => scrollToElement(qrDiv), 500);
+    } else {
+      throw new Error("Resposta inválida do imgbb");
+    }
+  })
+  .catch(error => {
+    console.error("Erro no upload:", error);
+    qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
+  })
+  .finally(() => {
+    statusUpload.style.display = "none";
+  });
 }
 
 function gerarQRCode(link) {
@@ -149,6 +149,37 @@ function gerarQRCode(link) {
     correctLevel: QRCode.CorrectLevel.H
   });
 }
+
+bumerangueBtn.onclick = async () => {
+  if (!stream) return alert("Câmera não inicializada.");
+
+  resetView();
+  const cancelBtn = document.getElementById('cancelBtn');
+  cancelBtn.style.display = 'block';
+  cancelRecording = false;
+
+  if (mediaRecorder) mediaRecorder = null;
+  if (recordingInterval) clearInterval(recordingInterval);
+
+  try {
+    let count = 3;
+    contador.innerText = count;
+    recordingInterval = setInterval(() => {
+      count--;
+      contador.innerText = count;
+      beep.play();
+      if (count === 0) {
+        clearInterval(recordingInterval);
+        contador.innerText = "Gravando...";
+        iniciarBumerangueVertical();
+      }
+    }, 1000);
+  } catch (error) {
+    console.error("Erro:", error);
+    contador.innerText = "Erro ao iniciar";
+    cancelBtn.style.display = 'none';
+  }
+};
 
 async function iniciarBumerangueVertical() {
   const cancelBtn = document.getElementById('cancelBtn');
@@ -201,8 +232,8 @@ async function iniciarBumerangueVertical() {
           cancelBtn.style.display = 'none';
           setTimeout(() => scrollToElement(qrDiv), 500);
 
-          window.lastVideoBlob = blob;
-          resolve();
+          // Sem abrir o vídeo automaticamente
+          // Se quiser salvar, pode adicionar isso aqui
         } catch (error) {
           console.error("Erro ao processar vídeo:", error);
           contador.innerText = "Erro ao finalizar";
@@ -247,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelBtn.style.margin = "10px auto";
   cancelBtn.style.cursor = "pointer";
   cancelBtn.style.fontWeight = "bold";
-  
+
   cancelBtn.addEventListener('click', () => {
     cancelRecording = true;
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
