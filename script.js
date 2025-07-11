@@ -29,9 +29,9 @@ function resetView() {
   scrollToElement(previewContainer);
 }
 
-navigator.mediaDevices.getUserMedia({ 
-  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' }, 
-  audio: false 
+navigator.mediaDevices.getUserMedia({
+  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
+  audio: false
 })
 .then(s => {
   stream = s;
@@ -68,7 +68,7 @@ function capturarFoto() {
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
+
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
@@ -109,36 +109,31 @@ function enviarParaImgbb(imgData) {
     method: "POST",
     body: formData
   })
-    .then(response => response.json())
-    .then(data => {
-      if (data?.data?.url) {
-        gerarQRCode(data.data.url);
-
-        // Agora sim: baixar imagem somente após upload e QR code
-        baixarImagem("data:image/png;base64," + base64);
-
-        setTimeout(() => scrollToElement(qrDiv), 500);
-      } else {
-        throw new Error("Resposta inválida do imgbb");
-      }
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
-    });
+  .then(response => response.json())
+  .then(data => {
+    if (data?.data?.url) {
+      gerarQRCode(data.data.url);
+      baixarImagem("data:image/png;base64," + base64);
+      setTimeout(() => scrollToElement(qrDiv), 500);
+    } else {
+      throw new Error("Resposta inválida do imgbb");
+    }
+  })
+  .catch(error => {
+    console.error("Erro no upload:", error);
+    qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
+  });
 }
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
 
-  // Título
   const title = document.createElement("h3");
   title.textContent = "Escaneie para baixar:";
   title.style.color = "#FFD700";
   title.style.marginBottom = "10px";
   qrDiv.appendChild(title);
 
-  // QR Code
   const qrContainer = document.createElement("div");
   qrContainer.style.margin = "0 auto";
   qrContainer.style.width = "256px";
@@ -153,7 +148,6 @@ function gerarQRCode(link) {
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  // ✅ Download automático para imagem ou vídeo
   const isImage = link.includes("ibb.co") || link.includes("image");
   const fileName = isImage ? "foto_showfest.png" : "bumerangue_showfest.webm";
 
@@ -165,25 +159,10 @@ function gerarQRCode(link) {
   a.click();
   document.body.removeChild(a);
 }
-  const downloadLink = document.createElement("a");
-  downloadLink.href = link;
-  downloadLink.textContent = "📥 Clique aqui se não conseguir escanear";
-  downloadLink.download = "";
-  downloadLink.style.display = "block";
-  downloadLink.style.margin = "15px auto";
-  downloadLink.style.padding = "10px";
-  downloadLink.style.background = "#FFD700";
-  downloadLink.style.color = "#000";
-  downloadLink.style.borderRadius = "8px";
-  downloadLink.style.textAlign = "center";
-  downloadLink.style.textDecoration = "none";
-  downloadLink.style.fontWeight = "bold";
-  qrDiv.appendChild(downloadLink);
-}
 
 bumerangueBtn.onclick = async () => {
   if (!stream) return alert("Câmera não inicializada.");
-  
+
   resetView();
   const cancelBtn = document.getElementById('cancelBtn');
   cancelBtn.style.display = 'block';
@@ -272,7 +251,7 @@ async function iniciarBumerangueVertical() {
         try {
           const blob = new Blob(chunks, { type: 'video/webm' });
           const videoUrl = URL.createObjectURL(blob);
-          
+
           gerarQRCode(videoUrl);
           contador.innerText = "Pronto!";
           cancelBtn.style.display = 'none';
@@ -331,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelBtn.style.margin = "10px auto";
   cancelBtn.style.cursor = "pointer";
   cancelBtn.style.fontWeight = "bold";
-  
+
   cancelBtn.addEventListener('click', () => {
     cancelRecording = true;
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
