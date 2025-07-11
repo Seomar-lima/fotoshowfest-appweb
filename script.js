@@ -287,14 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function baixarVideo(blob) {
-  const apiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNmRjYmE4ZWJhZjk5MmMxOTYxMTdkYzUyZmJjNmJkMzVkNTI5ZjQ0NzdhMzRkZDQ4YzA3YjU0YmY3YzA4NWE2MWYwMjJhYzI1MzFkYTk0YjkiLCJpYXQiOjE3NTIxMDcxMTQuNTE2MTI3LCJuYmYiOjE3NTIxMDcxMTQuNTE2MTI4LCJleHAiOjQ5MDc3ODA3MTQuNTExNjcsInN1YiI6IjcyMjA4MDIzIiwic2NvcGVzIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0YXNrLnJlYWQiLCJ0YXNrLndyaXRlIiwid2ViaG9vay53cml0ZSIsIndlYmhvb2sucmVhZCIsInByZXNldC5yZWFkIiwicHJlc2V0LndyaXRlIl19.LHX9u69IcYbJqijxBEv3mWT-7YLH_NkaY42DZWjqEha-_t9hLsnHD4-5yCHSdSJzcJ_ELi-TOjqqI3U2k2lfilqZuFks9LvN5GDEfd_J7nxSUeBJgnocoWebARtGEJlcl1z_PaZRn44MiwUgin1af1o66_1ikXP2jgJG45ichB6Buot1ee7MGfZ_EDW47tVKlrsLJ4yuwV4G1UX_ucb1_MJHnHJq_BpEINn0qw0F0Hv9H0689qGv-Wd3SA2jvI6nfbhXddtwM_3ovAfLRzRXGGMi9ogD9pAjmB-IcMKvEqRqfRlqCUrt93yFTlWW1D1mByvZ5jQBj66Hlj_Q7sDExwIE6gRbkzifMLV78V0toGljjml6H0rnObf2D96jvwawI7xAU2oY4Vdyrc5AqyQD_m4Gb7EJVxaDCZXqYotWGRwuSZoBS5z1licbbNWuAFibiAceX6zqlVYdCw0uvPG7lyDwEw1KXm0ooUShfj65VaV-tizcwFsve4f43rO7CT_xR3X3RzJS8cT6SL5h9uAhSa3GjdNxhcykSBcPrF2NqYwmaqWzkZ1YHyOvVAcbskwmqveMj6Uf0aWdPdiKpDCxnNa4XG9ad715JO4agxiNV16KsclsPwE0CStWuCjphp6YT_2QiW1IPLpguZWE4Tase784DocFaTY2EN1da1rNWqI";
+  const apiKey = eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNGEyZjQ2NWVhY2VhMjg0NGYxY2MyNzljNGY2MmZiNzRlNWMzZWIzMTAxMmU2YjBmNDIyMzdhZDY1NGFiYjVhMWI2YTVhYmIxNjNhM2FhNGEiLCJpYXQiOjE3NTIyNTE2NTEuNzQxMzA2LCJuYmYiOjE3NTIyNTE2NTEuNzQxMzA4LCJleHAiOjQ5MDc5MjUyNTEuNzM2NTYzLCJzdWIiOiI3MjIwODAyMyIsInNjb3BlcyI6WyJ1c2VyLnJlYWQiLCJ1c2VyLndyaXRlIiwidGFzay5yZWFkIiwidGFzay53cml0ZSIsIndlYmhvb2sucmVhZCIsIndlYmhvb2sud3JpdGUiLCJwcmVzZXQucmVhZCIsInByZXNldC53cml0ZSJdfQ.kHzVF7UW9PT-Efr1YPi9wqTv6t1iikwhkMEqOywxK-U66jwHmIsrMOzibcoMStH8u8xqYCgcwz8x4C4R_lNCCapnDLsM6VsV4nGP-8pZ5BR1KH8ovvF9K5uIj6rZP4axZuDsom-4mtXllDeC2C8x5vbDF5b99WTHUXyfYLMjp4R8tpih5riQJHhQzyxRHmxFhtUyNqo3MlTpR9Jbz_-t-HNXoqp3yvEt1ATLHAxY-01kPeYSf38PPXdLmw40kzR0X3vStz-PsWxPK8omctPQthZKZOjf-ejk6HY2vbQ5MVgiRwy1NKR04DxdgxnSDySOkASuhaP2RyFfR3u47ZBVSsA585S6y2IID05kJ2MSUTQVRyw_XxR1PlhV8c9JpGUzoMIqC2qQcJNEKmyxMVwUMwn_pMOJRB64_lLEGhVHXC5FjXjETW89YoFAee2HGhgQHMgGiLRUAviHHLxrOom2BgDwK9wm1dk06KcGaT-k-lSpjCvIOArI_EmMiUb5SWYGqjh_tz0w0FbKvOWtN8sAESDwORqLjtRad2E-Wi5ScjB1NHgSYkEYfoMgF6m0roAi14Wtcsfx_1Xg73vT5bD6ikh9R1nAz-hdmcgGLx_dE__dBZQZA_3iAjvoNrvZ9ymGEtXeDcyqGAUREUkmxCsr-aQSXMk572GB04dZDNcLhUc
 
   const reader = new FileReader();
   reader.readAsDataURL(blob);
   reader.onloadend = async () => {
     const base64Data = reader.result.split(',')[1];
+
     statusUpload.innerText = "Convertendo para MP4...";
     statusUpload.style.display = "block";
+    contador.innerText = "";
 
     try {
       const importRes = await fetch("https://api.cloudconvert.com/v2/import/base64", {
@@ -308,7 +310,9 @@ function baixarVideo(blob) {
           filename: "bumerangue.webm"
         })
       });
-      const importTask = await importRes.json();
+
+      const importData = await importRes.json();
+      const importTaskId = importData.data.id;
 
       const convertRes = await fetch("https://api.cloudconvert.com/v2/convert", {
         method: "POST",
@@ -317,11 +321,13 @@ function baixarVideo(blob) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          input: importTask.data.id,
+          input: importTaskId,
           output_format: "mp4"
         })
       });
-      const convertTask = await convertRes.json();
+
+      const convertData = await convertRes.json();
+      const convertTaskId = convertData.data.id;
 
       const exportRes = await fetch("https://api.cloudconvert.com/v2/export/url", {
         method: "POST",
@@ -330,24 +336,30 @@ function baixarVideo(blob) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          input: convertTask.data.id
+          input: convertTaskId
         })
       });
-      const exportTask = await exportRes.json();
-      const mp4Url = exportTask.data.result.files[0].url;
 
-      const a = document.createElement("a");
-      a.href = mp4Url;
-      a.download = "bumerangue_showfest_" + Date.now() + ".mp4";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const exportData = await exportRes.json();
+      const mp4Url = exportData.data.result.files[0].url;
+
+      const link = document.createElement("a");
+      link.href = mp4Url;
+      link.download = "bumerangue_showfest_" + Date.now() + ".mp4";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       gerarQRCode(mp4Url);
       statusUpload.style.display = "none";
-    } catch (err) {
-      console.error("Erro ao converter vídeo:", err);
+      contador.innerText = "Pronto!";
+    } catch (error) {
+      console.error("Erro ao converter vídeo:", error);
       statusUpload.innerText = "Erro ao converter vídeo.";
+      contador.innerText = "Erro ao finalizar";
+      qrDiv.innerHTML = "<p style='color:red'>Erro ao converter o vídeo. Tente novamente.</p>";
     }
+  };
+}
   };
 }
