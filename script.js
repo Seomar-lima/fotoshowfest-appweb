@@ -368,7 +368,20 @@ function baixarVideo(blob) {
       a.click();
       document.body.removeChild(a);
 
-      gerarQRCode(mp4Url);
+    // Encurtar o link antes de gerar o QR Code
+try {
+  const shortRes = await fetch("https://cleanuri.com/api/v1/shorten", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ url: mp4Url })
+  });
+  const shortData = await shortRes.json();
+  const shortLink = shortData.result_url || mp4Url;
+  gerarQRCode(shortLink);
+} catch (e) {
+  console.warn("Erro ao encurtar link, usando original:", e);
+  gerarQRCode(mp4Url); // fallback
+}
       statusUpload.style.display = "none";
       contador.innerText = "Pronto!";
     } catch (err) {
