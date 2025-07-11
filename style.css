@@ -155,3 +155,7 @@ footer {
   background: none;
   padding: 0;
 }
+
+#preview-container {
+  position: relative;
+}
