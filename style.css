@@ -83,16 +83,10 @@ h1, h2, h3 {
 }
 
 .qr-download {
-  margin: 20px auto;
+  margin: 20px;
   padding: 15px;
-  background: rgba(255,215,0,0.1);
+  background: rgba(255,255,255,0.1);
   border-radius: 10px;
-  max-width: 200px;
-}
-
-.qr-download img {
-  display: block;
-  margin: 0 auto;
 }
 
 footer {
@@ -116,12 +110,7 @@ footer {
   background-color: #f44336;
 }
 
-#cancelBtn {
-  background: #f44336;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  margin-top: 10px;
-  cursor: pointer;
+/* Esconde links de download do QR */
+.qr-download a {
+  display: none !important;
 }
