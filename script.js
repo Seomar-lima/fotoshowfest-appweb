@@ -150,7 +150,89 @@ function gerarQRCode(link) {
   });
 }
 
-// Função do bumerangue permanece como já enviada antes
+async function iniciarBumerangueVertical() {
+  const cancelBtn = document.getElementById('cancelBtn');
+
+  try {
+    const canvasVideo = document.createElement("canvas");
+    const ctx = canvasVideo.getContext("2d");
+    canvasVideo.width = BOOMERANG_SETTINGS.width;
+    canvasVideo.height = BOOMERANG_SETTINGS.height;
+
+    const totalFrames = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
+    const frames = [];
+
+    for (let i = 0; i < totalFrames; i++) {
+      if (cancelRecording) break;
+
+      ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
+
+      if (moldura.complete && moldura.naturalHeight !== 0) {
+        ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
+      }
+
+      const frame = ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height);
+      frames.push(frame);
+      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
+    }
+
+    if (cancelRecording) {
+      contador.innerText = "Cancelado";
+      cancelBtn.style.display = 'none';
+      return;
+    }
+
+    contador.innerText = "Processando...";
+
+    const finalFrames = [...frames, ...frames.slice().reverse()];
+    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
+    mediaRecorder = new MediaRecorder(streamOut, { mimeType: 'video/webm;codecs=vp9' });
+    const chunks = [];
+
+    return new Promise((resolve) => {
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = async () => {
+        try {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const videoUrl = URL.createObjectURL(blob);
+
+          gerarQRCode(videoUrl);
+          contador.innerText = "Pronto!";
+          cancelBtn.style.display = 'none';
+          setTimeout(() => scrollToElement(qrDiv), 500);
+
+          window.lastVideoBlob = blob;
+          resolve();
+        } catch (error) {
+          console.error("Erro ao processar vídeo:", error);
+          contador.innerText = "Erro ao finalizar";
+          qrDiv.innerHTML = "<p style='color:red'>Erro ao processar o vídeo. Tente novamente.</p>";
+          cancelBtn.style.display = 'none';
+        }
+      };
+
+      mediaRecorder.start();
+
+      (async () => {
+        for (const frame of finalFrames) {
+          if (cancelRecording) {
+            mediaRecorder.stop();
+            return;
+          }
+          ctx.putImageData(frame, 0, 0);
+          await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
+        }
+        mediaRecorder.stop();
+      })();
+    });
+
+  } catch (error) {
+    console.error("Erro no bumerangue:", error);
+    contador.innerText = "Erro no processamento";
+    cancelBtn.style.display = 'none';
+    throw error;
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.createElement("button");
