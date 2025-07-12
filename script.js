@@ -126,6 +126,7 @@ function enviarParaImgbb(imgData) {
 // === QR CODE CENTRALIZADO ===
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
+
   const title = document.createElement("h3");
   title.textContent = "Escaneie para baixar:";
   title.style = "color:#FFD700;margin-bottom:10px;text-align:center";
@@ -144,7 +145,6 @@ function gerarQRCode(link) {
     correctLevel: QRCode.CorrectLevel.H
   });
 }
-
 // === BUMERANGUE COM CONTAGEM ===
 bumerangueBtn.onclick = () => {
   if (!stream) return alert("Câmera não inicializada.");
