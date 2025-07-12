@@ -140,9 +140,14 @@ function gerarQRCode(link) {
     text: link,
     width: 256,
     height: 256,
-    colorDark: "#000",
-    colorLight: "#fff",
+    colorDark: "#000000",
+    colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // Garante que o scroll aconteça após o QR ser renderizado
+  requestAnimationFrame(() => {
+    setTimeout(() => scrollToElement(qrDiv), 300);
   });
 }
 // === BUMERANGUE COM CONTAGEM ===
