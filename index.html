@@ -1,40 +1,64 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Assistir e Baixar Vídeo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: #000;
+      color: white;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      margin-top: 20px;
+    }
+    #baixar {
+      margin-top: 20px;
+      background-color: #FFD700;
+      color: black;
+      border: none;
+      padding: 12px 20px;
+      font-size: 1.1em;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #aviso {
+      margin-top: 15px;
+      color: #ccc;
+      font-size: 0.9em;
+    }
+  </style>
 </head>
 <body>
-  <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
+  <h2>🎞️ Visualizar Bumerangue</h2>
+  <video id="video" controls autoplay loop></video>
+  <br>
+  <a id="baixar" download="bumerangue_showfest.mp4">⬇️ Baixar Vídeo</a>
+  <div id="aviso">Se estiver no iPhone, mantenha pressionado no vídeo e selecione “Salvar Vídeo”</div>
 
-  <div id="preview-container">
-    <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-    <div id="statusUpload" style="color: yellow; font-size: 1.2em; font-weight: bold; margin-top: 10px;"></div>
-  </div>
+  <script>
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
 
-  <div id="contador"></div>
+    const videoUrl = getQueryParam("file");
+    if (videoUrl) {
+      const video = document.getElementById("video");
+      video.src = videoUrl;
 
-  <div class="controls">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
-  </div>
-
-  <div class="qr-download" id="qrDownload"></div>
-
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
-  <div id="galeria"></div>
-
-  <footer>© 2025 - Foto Show Fest</footer>
-
-  <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <canvas id="canvas" style="display:none;"></canvas>
-
-  <script src="script.js"></script>
+      const downloadBtn = document.getElementById("baixar");
+      downloadBtn.href = videoUrl;
+    } else {
+      document.body.innerHTML = "<h2>🚫 Vídeo não encontrado.</h2>";
+    }
+  </script>
 </body>
 </html>
