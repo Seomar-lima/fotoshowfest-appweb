@@ -1,131 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Baixar Bumerangue</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: #000;
-      color: #fff;
-    }
-    #video-container {
-      margin: 20px auto;
-      max-width: 500px;
-    }
-    video {
-      width: 100%;
-      background: #111;
-    }
-    .ios-save-btn {
-      display: inline-block;
-      background: #007AFF;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: bold;
-      margin: 15px 0;
-    }
-    .instructions {
-      margin-top: 20px;
-      padding: 15px;
-      background: #1c1c1e;
-      border-radius: 10px;
-      display: none;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foto Show Fest</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <div id="video-container">
-    <h2>Seu Bumerangue</h2>
-    <video id="video" controls playsinline></video>
-  </div>
-  
-  <a id="saveBtn" class="ios-save-btn">Salvar na Galeria</a>
-  
-  <div id="instructions" class="instructions">
-    <p>Se o botão não funcionar:</p>
-    <p>1. Toque no vídeo para reproduzir</p>
-    <p>2. Toque e segure no vídeo</p>
-    <p>3. Selecione "Salvar Vídeo"</p>
+  <h1>Foto Show Fest</h1>
+  <h2>15 anos da Geovanna</h2>
+
+  <div id="preview-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="moldura" src="moldura.png" alt="Moldura" />
+    <div id="statusUpload" style="color: yellow; font-size: 1.2em; font-weight: bold; margin-top: 10px;"></div>
   </div>
 
-  <script>
-    // Detectar iOS
-    function isIOS() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
+  <div id="contador"></div>
 
-    // Obter URL do vídeo da query string
-    function getVideoUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('url');
-    }
+  <div class="controls">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+  </div>
 
-    // Configurar a página
-    document.addEventListener('DOMContentLoaded', () => {
-      const videoUrl = getVideoUrl();
-      const video = document.getElementById('video');
-      const saveBtn = document.getElementById('saveBtn');
-      const instructions = document.getElementById('instructions');
-      
-      if (!videoUrl) {
-        document.body.innerHTML = '<h2 style="color:red">Vídeo não encontrado</h2>';
-        return;
-      }
+  <div class="qr-download" id="qrDownload"></div>
 
-      video.src = videoUrl;
-      
-      // Comportamento específico para iOS
-      if (isIOS()) {
-        // Mostrar instruções alternativas
-        instructions.style.display = 'block';
-        
-        // Configurar botão de save
-        saveBtn.onclick = async (e) => {
-          e.preventDefault();
-          
-          try {
-            // Tentativa de download via API web
-            const response = await fetch(videoUrl);
-            const blob = await response.blob();
-            
-            // Criar objeto URL
-            const blobUrl = URL.createObjectURL(blob);
-            
-            // Criar link temporário
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `bumerangue_${Date.now()}.mp4`;
-            
-            // Disparar o download
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Limpar depois de 5 segundos
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-          } catch (error) {
-            alert('Não foi possível salvar automaticamente. Use as instruções abaixo.');
-            console.error('Erro ao salvar:', error);
-          }
-        };
-      } else {
-        // Comportamento para Android/outros dispositivos
-        saveBtn.textContent = 'Download do Vídeo';
-        saveBtn.href = videoUrl;
-        saveBtn.download = `bumerangue_${Date.now()}.mp4`;
-      }
-      
-      // Auto-play para iOS (pode não funcionar sem interação)
-      video.play().catch(e => console.log('Auto-play bloqueado:', e));
-    });
-  </script>
+  <h3>📸 Galeria de Fotos</h3>
+  <img id="galeria-icon" src="galeria.png" alt="Galeria">
+  <div id="galeria"></div>
+
+  <footer>© 2025 - Foto Show Fest</footer>
+
+  <audio id="beep" src="beep.mp3" preload="auto"></audio>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script src="script.js"></script>
 </body>
 </html>
