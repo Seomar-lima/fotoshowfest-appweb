@@ -145,13 +145,13 @@ function gerarQRCode(link) {
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  // Garante que o scroll execute depois do QR ser realmente renderizado no DOM
   setTimeout(() => {
     requestAnimationFrame(() => {
       scrollToElement(qrDiv);
     });
-  }, 200); // Pequeno atraso para permitir que o DOM atualize
+  }, 200);
 }
+
 // === BUMERANGUE COM CONTAGEM ===
 bumerangueBtn.onclick = () => {
   if (!stream) return alert("Câmera não inicializada.");
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(cancelBtn);
 });
 
-// === CONVERSÃO PARA MP4 E QR CODE ===
+// === CONVERSÃO PARA MP4 E QR CODE (via GoFile) ===
 async function converterParaMP4(blob) {
   statusUpload.innerText = "Enviando para o servidor...";
   statusUpload.style.display = "block";
@@ -275,3 +275,4 @@ async function converterParaMP4(blob) {
     statusUpload.style.display = "none";
   }
 }
+
