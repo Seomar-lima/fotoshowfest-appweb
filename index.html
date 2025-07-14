@@ -5,91 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foto Show Fest</title>
   <link rel="stylesheet" href="style.css" />
-  <style>
-    body {
-      margin: 0;
-      background-color: #000;
-      color: #fff;
-      font-family: sans-serif;
-      text-align: center;
-    }
-
-    #camera {
-      width: 100%;
-      max-width: 540px;
-      border-radius: 10px;
-    }
-
-    #moldura {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 540px;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    #canvas {
-      display: none;
-    }
-
-    #galeria img {
-      width: 100px;
-      margin: 5px;
-    }
-
-    #qrDownload {
-      margin-top: 20px;
-    }
-
-    #contador {
-      font-size: 32px;
-      margin: 10px 0;
-    }
-
-    button {
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #statusUpload {
-      margin-top: 10px;
-      font-size: 14px;
-      color: yellow;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
   <h1>Foto Show Fest</h1>
+  <h2>15 anos da Geovanna</h2>
 
   <div id="preview-container">
-    <video id="camera" autoplay playsinline muted></video>
+    <video id="camera" autoplay playsinline></video>
     <img id="moldura" src="moldura.png" alt="Moldura" />
-    <canvas id="canvas"></canvas>
+    <div id="statusUpload" style="color: yellow; font-size: 1.2em; font-weight: bold; margin-top: 10px;"></div>
   </div>
 
   <div id="contador"></div>
 
-  <button id="foto">📸 Tirar Foto</button>
-  <button id="bumerangue">🎬 Gravar Bumerangue</button>
-  <p id="statusUpload" style="display:none;"></p>
+  <div class="controls">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+  </div>
 
-  <div id="qrDownload"></div>
+  <div class="qr-download" id="qrDownload"></div>
 
+  <h3>📸 Galeria de Fotos</h3>
+  <img id="galeria-icon" src="galeria.png" alt="Galeria">
   <div id="galeria"></div>
 
-  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+  <footer>© 2025 - Foto Show Fest</footer>
 
-  <!-- QRCode.js (lib para gerar QR Code) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <audio id="beep" src="beep.mp3" preload="auto"></audio>
+  <canvas id="canvas" style="display:none;"></canvas>
 
-  <!-- Seu script principal -->
   <script src="script.js"></script>
 </body>
 </html>
