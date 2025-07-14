@@ -1,40 +1,135 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Baixar Bumerangue - Show Fest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #000;
+      color: #FFD700;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
+    }
+    .video-container {
+      margin: 20px auto;
+      max-width: 90%;
+    }
+    video {
+      width: 100%;
+      border-radius: 15px;
+      background: #111;
+    }
+    .instructions {
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 10px;
+      border: 1px solid #FFD700;
+    }
+    .loading {
+      margin: 40px 0;
+      font-size: 1.2em;
+      color: #FFD700;
+    }
+    .error {
+      color: #ff4444;
+      margin: 20px;
+    }
+    .success {
+      color: #4CAF50;
+    }
+  </style>
 </head>
 <body>
-  <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
-
-  <div id="preview-container">
-    <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-    <div id="statusUpload"></div>
+  <h2>Seu Bumerangue</h2>
+  <div class="video-container">
+    <video id="video" controls playsinline></video>
+    <div id="loading" class="loading">Carregando seu vídeo...</div>
+    <div id="error" class="error" style="display:none;"></div>
   </div>
 
-  <div id="contador"></div>
-
-  <div class="controls">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+  <div id="ios-instructions" class="instructions" style="display:none;">
+    <h3>Como salvar no seu iPhone:</h3>
+    <p>1. Toque no vídeo para reproduzir</p>
+    <p>2. Toque e segure no vídeo</p>
+    <p>3. Selecione <strong>"Salvar Vídeo"</strong></p>
   </div>
 
-  <div class="qr-download" id="qrDownload"></div>
+  <div id="success-message" class="success" style="display:none;">
+    Vídeo carregado com sucesso!
+  </div>
 
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
-  <div id="galeria"></div>
+  <script>
+    // Detectar se é iPhone/iOS
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
 
-  <footer>© 2025 - Foto Show Fest</footer>
+    // Obter URL do vídeo dos parâmetros
+    function getVideoUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('url');
+    }
 
-  <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <canvas id="canvas" style="display:none;"></canvas>
+    // Quando a página carregar
+    document.addEventListener('DOMContentLoaded', async () => {
+      const videoUrl = getVideoUrl();
+      const videoElement = document.getElementById('video');
+      const loadingElement = document.getElementById('loading');
+      const errorElement = document.getElementById('error');
+      const iosInstructions = document.getElementById('ios-instructions');
+      const successMessage = document.getElementById('success-message');
+      
+      if (!videoUrl) {
+        errorElement.textContent = 'Link do vídeo não encontrado.';
+        errorElement.style.display = 'block';
+        loadingElement.style.display = 'none';
+        return;
+      }
 
-  <script src="script.js"></script>
+      // Mostrar instruções específicas para iOS
+      if (isIOS()) {
+        iosInstructions.style.display = 'block';
+      }
+
+      try {
+        // Configurar o vídeo
+        videoElement.src = videoUrl;
+        
+        // Quando o vídeo carregar
+        videoElement.addEventListener('loadeddata', () => {
+          loadingElement.style.display = 'none';
+          successMessage.style.display = 'block';
+          
+          // Tentar reproduzir (pode não funcionar sem interação do usuário)
+          videoElement.play().catch(e => {
+            console.log('Auto-play bloqueado:', e);
+          });
+        });
+
+        // Quando o vídeo for reproduzido (para iOS)
+        videoElement.addEventListener('play', () => {
+          console.log('Vídeo pronto para interação');
+        });
+
+        // Tratamento de erros
+        videoElement.addEventListener('error', () => {
+          loadingElement.style.display = 'none';
+          errorElement.textContent = 'Erro ao carregar o vídeo. Tente novamente.';
+          errorElement.style.display = 'block';
+        });
+
+      } catch (error) {
+        loadingElement.style.display = 'none';
+        errorElement.textContent = 'Erro: ' + error.message;
+        errorElement.style.display = 'block';
+      }
+    });
+  </script>
 </body>
 </html>
