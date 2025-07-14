@@ -245,71 +245,74 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === ENVIO PARA GOFILE ===
-async function enviarParaGoFile(fileData, type) {
-  statusUpload.innerText = type === 'image' ? "Enviando imagem..." : "Enviando vídeo...";
+// === CONVERSÃO E ENVIO PARA GOFILE ===
+async function converterEEnviarParaGoFile(blob, tipo) {
+  statusUpload.innerText = "Convertendo e enviando...";
   statusUpload.style.display = "block";
   contador.innerText = "";
 
   try {
-    let file;
-    if (type === 'image') {
-      const blob = dataURLtoBlob(fileData);
-      file = new File([blob], `foto_showfest_${Date.now()}.png`, { type: 'image/png' });
-    } else {
-      file = new File([fileData], `bumerangue_showfest_${Date.now()}.mp4`, { type: 'video/mp4' });
-    }
+    // 1. Criar arquivo com extensão correta
+    const extensao = tipo === 'video' ? 'mp4' : 'png';
+    const nomeArquivo = `${tipo}_showfest_${Date.now()}.${extensao}`;
+    const arquivo = new File([blob], nomeArquivo, { type: blob.type });
 
-    // Obter servidor do GoFile
-    const serverResponse = await fetch("https://api.gofile.io/getServer");
-    const serverData = await serverResponse.json();
+    // 2. Obter servidor do GoFile
+    const serverRes = await fetch("https://api.gofile.io/getServer");
+    const serverData = await serverRes.json();
     
     if (!serverData.data || !serverData.data.server) {
-      throw new Error("Não foi possível obter servidor do GoFile");
+      throw new Error("Falha ao obter servidor");
     }
-    
-    const server = serverData.data.server;
-    const formData = new FormData();
-    formData.append("file", file);
 
-    // Fazer upload
-    const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {
+    // 3. Fazer upload
+    const formData = new FormData();
+    formData.append("file", arquivo);
+    
+    const uploadRes = await fetch(`https://${serverData.data.server}.gofile.io/uploadFile`, {
       method: "POST",
       body: formData
     });
     
-    const result = await uploadRes.json();
+    const resultado = await uploadRes.json();
     
-    if (!result || !result.data || !result.data.downloadPage) {
-      throw new Error("Erro ao enviar para o GoFile");
-    }
-    
-    const link = result.data.downloadPage;
-    gerarQRCode(link);
-    contador.innerText = "Pronto!";
-    
-    // Baixar localmente também (apenas para imagens)
-    if (type === 'image') {
-      baixarImagem(fileData);
+    if (!resultado.data || !resultado.data.downloadPage) {
+      throw new Error("Falha no upload");
     }
 
-  } catch (err) {
-    console.error("Erro no upload:", err);
-    contador.innerText = "Erro ao enviar";
-    qrDiv.innerHTML = `<p style='color:red'>Erro ao ${type === 'image' ? 'enviar imagem' : 'enviar vídeo'}. Tente novamente.</p>`;
+    // 4. Gerar QR Code com link direto do GoFile
+    gerarQRCode(resultado.data.downloadPage);
+    contador.innerText = "Pronto!";
+
+    // 5. Baixar localmente (opcional)
+    if (tipo === 'image') {
+      const url = URL.createObjectURL(blob);
+      baixarImagem(url);
+    }
+
+  } catch (erro) {
+    console.error("Erro:", erro);
+    qrDiv.innerHTML = `<p style="color:red">Erro ao processar. Tente novamente.</p>`;
+    contador.innerText = "Erro";
   } finally {
     statusUpload.style.display = "none";
   }
 }
 
-// Função auxiliar para converter DataURL para Blob
-function dataURLtoBlob(dataurl) {
-  const arr = dataurl.split(',');
-  const mime = arr[0].match(/:(.*?);/)[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new Blob([u8arr], { type: mime });
+// === MODIFICAÇÃO NA FUNÇÃO DE BUMERANGUE ===
+mediaRecorder.onstop = async () => {
+  const blob = new Blob(chunks, { type: 'video/webm' });
+  
+  // Enviar diretamente como WebM (sem conversão) ou implementar FFmpeg.wasm aqui
+  await converterEEnviarParaGoFile(blob, 'video');
+};
+
+// === MODIFICAÇÃO NA FUNÇÃO DE FOTO ===
+function capturarFoto() {
+  // ... código existente ...
+  setTimeout(() => {
+    const imgData = canvas.toDataURL("image/png");
+    const blob = dataURLtoBlob(imgData);
+    converterEEnviarParaGoFile(blob, 'image');
+  }, 300);
 }
