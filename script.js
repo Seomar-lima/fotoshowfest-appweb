@@ -314,7 +314,8 @@ async function converterParaMP4(blob) {
         link = d.result_url || mp4Url;
       } catch {}
 
-      gerarQRCode(link);
+    const viewerURL = `https://fotoshowfest.vercel.app/viewer.html?file=${encodeURIComponent(link)}`;
+gerarQRCode(viewerURL);
       contador.innerText = "Pronto!";
       statusUpload.style.display = "none";
     } catch (err) {
