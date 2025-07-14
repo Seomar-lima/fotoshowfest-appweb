@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Visualizar Boomerang</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+    }
+    video {
+      max-width: 100%;
+      max-height: 80vh;
+    }
+    a {
+      margin-top: 20px;
+      color: yellow;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
+  <video id="player" controls autoplay loop playsinline></video>
+  <a id="baixar" download target="_blank">Baixar vídeo</a>
 
-  <div id="preview-container">
-    <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-    <div id="statusUpload" style="color: yellow; font-size: 1.2em; font-weight: bold; margin-top: 10px;"></div>
-  </div>
-
-  <div id="contador"></div>
-
-  <div class="controls">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
-  </div>
-
-  <div class="qr-download" id="qrDownload"></div>
-
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
-  <div id="galeria"></div>
-
-  <footer>© 2025 - Foto Show Fest</footer>
-
-  <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <canvas id="canvas" style="display:none;"></canvas>
-
-  <script src="script.js"></script>
+  <script>
+    const url = new URLSearchParams(window.location.search).get("file");
+    if (url) {
+      const video = document.getElementById("player");
+      video.src = url;
+      document.getElementById("baixar").href = url;
+    } else {
+      document.body.innerHTML = "<h2>Vídeo não encontrado</h2>";
+    }
+  </script>
 </body>
 </html>
