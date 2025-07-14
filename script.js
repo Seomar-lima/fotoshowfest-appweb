@@ -145,13 +145,13 @@ function gerarQRCode(link) {
     correctLevel: QRCode.CorrectLevel.H
   });
 
-  // Garante que o scroll execute depois do QR ser realmente renderizado no DOM
   setTimeout(() => {
     requestAnimationFrame(() => {
       scrollToElement(qrDiv);
     });
-  }, 200); // Pequeno atraso para permitir que o DOM atualize
+  }, 200);
 }
+
 // === BUMERANGUE COM CONTAGEM ===
 bumerangueBtn.onclick = () => {
   if (!stream) return alert("Câmera não inicializada.");
@@ -241,87 +241,69 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(cancelBtn);
 });
 
-// === CONVERSÃO PARA MP4 E QR CODE ===
+// === CONVERSÃO PARA MP4 E QR CODE (ATUALIZADA) ===
 async function converterParaMP4(blob) {
-  const apiKey = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZjNjZGY1MmRlZTUwZTgwNjk3NDI4ZmM1OGQwYWU0YzgzMjM2MWRiNjU3ZDYyMTdiZmJkMzNhZjlmMmY2M2I4MWYxNWZhMWMxMDEzZTMwMDgiLCJpYXQiOjE3NTIyNTMxNzQuMzk1NjUzLCJuYmYiOjE3NTIyNTMxNzQuMzk1NjU1LCJleHAiOjQ5MDc5MjY3NzQuMzg5NzU1LCJzdWIiOiI3MjIwODAyMyIsInNjb3BlcyI6WyJ1c2VyLnJlYWQiLCJ1c2VyLndyaXRlIiwidGFzay5yZWFkIiwid2ViaG9vay5yZWFkIiwidGFzay53cml0ZSIsIndlYmhvb2sud3JpdGUiLCJwcmVzZXQucmVhZCIsInByZXNldC53cml0ZSJdfQ.qF8t3vTkWuo3RNdsh2Sz2ULv-UJ3p0_iaOcafk5zEBg778IpEJ-WN7TDu8XVuo4ZnHy4IQ9u-2u1hv3giT_vN8QrUrZvJGK8MxrUC5zUzyO0mKFdOjDp9j4qvR-OrLZI3UIBbcXVMs2NExnDtmubR2cfKwkGmDs6jJ3rh-MBlVPlTu30BvocQAwe9C-n-Nr9I7E1fHo11M_Dz7mSj0m_deqJDjpk4r-Iu_6hwmzXacKi550j-f7fUJ3oZdGBH6dr-24WcEP3CiLTR0utLx5HtFDwcJhbBjhbTE0kycH_xIMuKUC2b8DLwZs_X07xsLcT6N1iAWSNbieyw1AcN7iLDn1-Lwqyxp4QlnvDNxN04rlcgkynd_2fQCA_isex0gie0f1wBJWm3X2I5cieUdXqPPzlv-uLz3SisBnhiMZpTQTTMro84mBMeucxjXIFGWHINp4ooMFXWzcUxoDml7l07ISJGC5Zyu_vOvwJKAVFUJ62oBudjOGq_tS5XItXqbm9_aTMiXBHru9D6GK7lO6x70KEaUvMQu2wI5Dhee3I0S7shknALcjB2tCbCjRnpJ1DRL3BV7amIkdLB5jSUbM1XTZ4BZwl5j9Vp0iO1sfL0zbLDYRh1IFgEFYlyUvQuw4wSmXiFvzMsL-tX1aFESRYc_VA75J1CrXTo40nwKSefW4";
-;
+  const apiKey = "sua_api_key_aqui"; // Substitua pela sua chave real
   
-  const reader = new FileReader();
-  reader.readAsDataURL(blob);
-  reader.onloadend = async () => {
-    const base64Data = reader.result.split(',')[1];
-    statusUpload.innerText = "Convertendo para MP4...";
-    statusUpload.style.display = "block";
-    contador.innerText = "";
-    try {
-      const importRes = await fetch("https://api.cloudconvert.com/v2/import/base64", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ file: base64Data, filename: `bumerangue_${Date.now()}.webm` })
-      });
-      const importTask = await importRes.json();
-      if (!importTask?.data?.id) throw new Error("Erro ao importar");
+  statusUpload.innerText = "Preparando seu bumerangue...";
+  statusUpload.style.display = "block";
+  
+  try {
+    // 1. Criar URL temporária para o blob
+    const tempUrl = URL.createObjectURL(blob);
+    
+    // 2. Gerar QR code com link direto para a página de download otimizada
+    const downloadPageUrl = new URL('https://seusite.com/download.html');
+    downloadPageUrl.searchParams.append('url', tempUrl);
+    downloadPageUrl.searchParams.append('tipo', 'bumerangue');
+    
+    // 3. Gerar QR code
+    qrDiv.innerHTML = `
+      <h3 style="color:#FFD700;text-align:center;margin-bottom:15px;">
+        Escaneie para baixar seu bumerangue
+      </h3>
+      <div id="qrcode" style="margin:0 auto;width:256px;"></div>
+      <p style="margin-top:15px;color:#FFD700;">
+        Aponte a câmera do seu celular para este QR code
+      </p>
+    `;
 
-      const convertRes = await fetch("https://api.cloudconvert.com/v2/convert", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ input: importTask.data.id, output_format: "mp4" })
-      });
-      const convertTask = await convertRes.json();
-      if (!convertTask?.data?.id) throw new Error("Erro ao converter");
+    new QRCode(document.getElementById("qrcode"), {
+      text: downloadPageUrl.toString(),
+      width: 256,
+      height: 256,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
 
-      const exportRes = await fetch("https://api.cloudconvert.com/v2/export/url", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ input: convertTask.data.id })
-      });
-      const exportTask = await exportRes.json();
-      const taskId = exportTask.data.id;
+    // 4. Scroll para o QR code
+    setTimeout(() => {
+      qrDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 300);
 
-      let mp4Url = null;
-      for (let i = 0; i < 10; i++) {
-        const st = await (await fetch(`https://api.cloudconvert.com/v2/tasks/${taskId}`, {
-          headers: { Authorization: `Bearer ${apiKey}` }
-        })).json();
-        if (st.data.status === "finished" && st.data.result?.files?.[0]?.url) {
-          mp4Url = st.data.result.files[0].url;
-          break;
-        }
-        await new Promise(r => setTimeout(r, 2000));
-      }
-      if (!mp4Url) throw new Error("Conversão não finalizada");
+    // 5. Download automático no dispositivo da cabine
+    const uniqueName = `bumerangue_showfest_${Date.now()}.mp4`;
+    const a = document.createElement("a");
+    a.href = tempUrl;
+    a.download = uniqueName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 
-      const finalBlob = await fetch(mp4Url).then(r => r.blob());
-      const blobUrl = URL.createObjectURL(finalBlob);
-      const uniqueName = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random()*10000)}.mp4`;
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = uniqueName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
+    // 6. Configurar revogação da URL após 30 minutos
+    setTimeout(() => {
+      URL.revokeObjectURL(tempUrl);
+      console.log('URL do vídeo revogada após 30 minutos');
+    }, 30 * 60 * 1000);
 
-      // Encurtar link + QR
-      let link = mp4Url;
-      try {
-        const s = await fetch("https://cleanuri.com/api/v1/shorten", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ url: mp4Url })
-        });
-        const d = await s.json();
-        link = d.result_url || mp4Url;
-      } catch {}
+    contador.innerText = "Pronto!";
+    statusUpload.style.display = "none";
 
-      gerarQRCode(link);
-      contador.innerText = "Pronto!";
-      statusUpload.style.display = "none";
-    } catch (err) {
-      console.error("Erro ao converter vídeo:", err);
-      contador.innerText = "Erro ao finalizar";
-      statusUpload.innerText = "Erro ao converter vídeo.";
-      qrDiv.innerHTML = "<p style='color:red'>Erro ao converter o vídeo. Tente novamente.</p>";
-    }
-  };
+  } catch (err) {
+    console.error("Erro ao converter vídeo:", err);
+    contador.innerText = "Erro ao finalizar";
+    statusUpload.innerText = "Erro ao processar vídeo";
+    qrDiv.innerHTML = "<p style='color:red'>Erro ao processar. Tente novamente.</p>";
+  }
 }
