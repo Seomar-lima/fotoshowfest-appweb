@@ -2,86 +2,94 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Seu Bumerangue - Foto Show Fest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foto Show Fest</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
     body {
-      background: #000;
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      min-height: 100vh;
-      box-sizing: border-box;
-    }
-
-    h1 {
-      color: #FFD700;
-      margin-bottom: 20px;
-      font-size: 1.5rem;
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
       text-align: center;
     }
 
-    video {
-      max-width: 100%;
-      max-height: 70vh;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-      margin-bottom: 25px;
+    #camera {
+      width: 100%;
+      max-width: 540px;
+      border-radius: 10px;
     }
 
-    a.download {
-      background-color: #FFD700;
-      color: black;
-      padding: 12px 24px;
-      font-weight: bold;
+    #moldura {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 540px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    #galeria img {
+      width: 100px;
+      margin: 5px;
+    }
+
+    #qrDownload {
+      margin-top: 20px;
+    }
+
+    #contador {
+      font-size: 32px;
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
       border: none;
       border-radius: 8px;
-      text-decoration: none;
-      font-size: 1rem;
-      box-shadow: 0 4px 6px rgba(255, 215, 0, 0.3);
-      transition: all 0.3s ease;
+      cursor: pointer;
     }
 
-    a.download:hover {
-      background-color: #ffc400;
-      box-shadow: 0 6px 10px rgba(255, 215, 0, 0.5);
-    }
-
-    .info {
-      margin-top: 15px;
-      font-size: 0.9rem;
-      color: #aaa;
+    #statusUpload {
+      margin-top: 10px;
+      font-size: 14px;
+      color: yellow;
     }
   </style>
 </head>
 <body>
+  <h1>Foto Show Fest</h1>
 
-  <h1>Seu vídeo está pronto! 🎉</h1>
+  <div id="preview-container">
+    <video id="camera" autoplay playsinline muted></video>
+    <img id="moldura" src="moldura.png" alt="Moldura" />
+    <canvas id="canvas"></canvas>
+  </div>
 
-  <video id="boomerangVideo" autoplay loop muted playsinline controls></video>
+  <div id="contador"></div>
 
-  <a id="downloadLink" class="download" download>⬇️ Baixar Vídeo</a>
+  <button id="foto">📸 Tirar Foto</button>
+  <button id="bumerangue">🎬 Gravar Bumerangue</button>
+  <p id="statusUpload" style="display:none;"></p>
 
-  <div class="info">Toque no botão acima para baixar o vídeo para seu celular.</div>
+  <div id="qrDownload"></div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const file = params.get("file");
+  <div id="galeria"></div>
 
-    if (file) {
-      const video = document.getElementById("boomerangVideo");
-      const link = document.getElementById("downloadLink");
-      video.src = file;
-      link.href = file;
-    } else {
-      document.body.innerHTML = "<h2 style='color: red;'>Erro: vídeo não encontrado.</h2>";
-    }
-  </script>
+  <audio id="beep" src="https://www.soundjay.com/button/beep-07.wav"></audio>
 
+  <!-- QRCode.js (lib para gerar QR Code) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- Seu script principal -->
+  <script src="script.js"></script>
 </body>
 </html>
