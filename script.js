@@ -1,309 +1,128 @@
-// === CONFIGURAÇÕES E ELEMENTOS ===
-const video = document.getElementById("camera");
-const canvas = document.getElementById("canvas");
-const fotoBtn = document.getElementById("foto");
-const bumerangueBtn = document.getElementById("bumerangue");
-const beep = document.getElementById("beep");
-const contador = document.getElementById("contador");
-const galeria = document.getElementById("galeria");
-const qrDiv = document.getElementById("qrDownload");
-const moldura = document.getElementById("moldura");
-const previewContainer = document.getElementById("preview-container");
-const statusUpload = document.getElementById("statusUpload");
-
-const BOOMERANG_SETTINGS = {
-  width: 540,
-  height: 960,
-  fps: 30,
-  duration: 2
-};
-
-let stream;
-let cancelRecording = false;
-let mediaRecorder = null;
-let recordingInterval = null;
-
-function scrollToElement(element) {
-  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function resetView() {
-  scrollToElement(previewContainer);
-}
-
-// === INICIAR CÂMERA ===
-navigator.mediaDevices.getUserMedia({
-  video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
-  audio: false
-})
-.then(s => {
-  stream = s;
-  video.srcObject = stream;
-  video.play();
-  resetView();
-})
-.catch(err => {
-  console.error("Erro ao acessar a câmera:", err);
-  alert("Não foi possível acessar a câmera. Verifique permissões.");
-});
-
-// === FOTO COM CONTAGEM ===
-fotoBtn.onclick = () => {
-  resetView();
-  let count = 5;
-  contador.innerText = count;
-  if (recordingInterval) clearInterval(recordingInterval);
-  recordingInterval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(recordingInterval);
-      contador.innerText = "";
-      capturarFoto();
-    }
-  }, 1000);
-};
-
-function capturarFoto() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  if (moldura.complete && moldura.naturalHeight !== 0) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-  }
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
-    const img = new Image();
-    img.src = imgData;
-    img.style.cursor = "pointer";
-    galeria.appendChild(img);
-    enviarParaImgbb(imgData);
-  }, 300);
-}
-
-function baixarImagem(imgData) {
-  const link = document.createElement("a");
-  link.href = imgData;
-  const uniqueName = `foto_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.png`;
-  link.download = uniqueName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
-  contador.innerText = "";
-  statusUpload.innerText = "Enviando imagem...";
-  statusUpload.style.display = "block";
-  fetch("https://api.imgbb.com/1/upload", {
-    method: "POST",
-    body: formData
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data?.data?.url) {
-      gerarQRCode(data.data.url);
-      baixarImagem(imgData);
-      setTimeout(() => scrollToElement(qrDiv), 500);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(err => {
-    console.error("Erro no upload:", err);
-    qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
-  })
-  .finally(() => statusUpload.style.display = "none");
-}
-
-// === QR CODE CENTRALIZADO ===
-function gerarQRCode(link) {
-  qrDiv.innerHTML = "";
-
-  const title = document.createElement("h3");
-  title.textContent = "Escaneie para baixar:";
-  title.style = "color:#FFD700;margin-bottom:10px;text-align:center";
-  qrDiv.appendChild(title);
-
-  const qrContainer = document.createElement("div");
-  qrContainer.style = "margin: 0 auto; width: 256px; text-align: center;";
-  qrDiv.appendChild(qrContainer);
-
-  new QRCode(qrContainer, {
-    text: link,
-    width: 256,
-    height: 256,
-    colorDark: "#000000",
-    colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
-
-  setTimeout(() => {
-    requestAnimationFrame(() => {
-      scrollToElement(qrDiv);
-    });
-  }, 200);
-}
-
-// === BUMERANGUE COM CONTAGEM ===
-bumerangueBtn.onclick = () => {
-  if (!stream) return alert("Câmera não inicializada.");
-  resetView();
-  const cancelBtn = document.getElementById('cancelBtn');
-  cancelBtn.style.display = 'block';
-  cancelRecording = false;
-  if (recordingInterval) clearInterval(recordingInterval);
-  let count = 3;
-  contador.innerText = count;
-  recordingInterval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    beep.play();
-    if (count === 0) {
-      clearInterval(recordingInterval);
-      contador.innerText = "Gravando...";
-      iniciarBumerangueVertical();
-    }
-  }, 1000);
-};
-
-async function iniciarBumerangueVertical() {
-  const cancelBtn = document.getElementById('cancelBtn');
+// Substitua a função generateQRCode por esta versão corrigida
+function generateQRCode(mediaData) {
   try {
-    const canvasVideo = document.createElement("canvas");
-    const ctx = canvasVideo.getContext("2d");
-    canvasVideo.width = BOOMERANG_SETTINGS.width;
-    canvasVideo.height = BOOMERANG_SETTINGS.height;
-    const total = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
-    const frames = [];
-    for (let i = 0; i < total; i++) {
-      if (cancelRecording) break;
-      ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
-      if (moldura.complete && moldura.naturalHeight) {
-        ctx.drawImage(moldura, 0, 0, canvasVideo.width, canvasVideo.height);
-      }
-      frames.push(ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height));
-      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-    }
-    if (cancelRecording) {
-      contador.innerText = "Cancelado";
-      cancelBtn.style.display = 'none';
-      return;
-    }
-    contador.innerText = "Processando...";
-    const finalFrames = [...frames, ...frames.slice().reverse()];
-    const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
-    mediaRecorder = new MediaRecorder(streamOut, { mimeType: 'video/webm;codecs=vp9' });
-    const chunks = [];
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
-      converterParaMP4(blob);
-    };
-    mediaRecorder.start();
-    for (const f of finalFrames) {
-      if (cancelRecording) {
-        mediaRecorder.stop();
-        return;
-      }
-      ctx.putImageData(f, 0, 0);
-      await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
-    }
-    mediaRecorder.stop();
-    cancelBtn.style.display = 'none';
-  } catch (err) {
-    console.error("Erro no bumerangue:", err);
-    contador.innerText = "Erro ao processar";
-    document.getElementById('cancelBtn').style.display = 'none';
-  }
-}
-
-// === BOTÃO CANCELAR ===
-document.addEventListener('DOMContentLoaded', () => {
-  const cancelBtn = document.createElement("button");
-  cancelBtn.id = "cancelBtn";
-  cancelBtn.textContent = "✖ Cancelar Gravação";
-  cancelBtn.style = "display:none;background:#f44;color:#fff;border:none;padding:10px 15px;border-radius:5px;margin:10px auto;cursor:pointer;font-weight:bold";
-  cancelBtn.onclick = () => {
-    cancelRecording = true;
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
-    if (recordingInterval) clearInterval(recordingInterval);
-    contador.innerText = "Cancelado";
-    setTimeout(() => cancelBtn.style.display = 'none', 2000);
-  };
-  document.body.appendChild(cancelBtn);
-});
-
-// === CONVERSÃO PARA MP4 E QR CODE (ATUALIZADA) ===
-async function converterParaMP4(blob) {
-  const apiKey = "sua_api_key_aqui"; // Substitua pela sua chave real
-  
-  statusUpload.innerText = "Preparando seu bumerangue...";
-  statusUpload.style.display = "block";
-  
-  try {
-    // 1. Criar URL temporária para o blob
-    const tempUrl = URL.createObjectURL(blob);
+    // Limpar container do QR Code
+    DOM.qrContainer.innerHTML = '';
     
-    // 2. Gerar QR code com link direto para a página de download otimizada
-    const downloadPageUrl = new URL('https://seusite.com/download.html');
-    downloadPageUrl.searchParams.append('url', tempUrl);
-    downloadPageUrl.searchParams.append('tipo', 'bumerangue');
+    // Criar um Blob a partir dos dados da mídia
+    const byteString = atob(mediaData.split(',')[1]);
+    const mimeString = mediaData.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
     
-    // 3. Gerar QR code
-    qrDiv.innerHTML = `
-      <h3 style="color:#FFD700;text-align:center;margin-bottom:15px;">
-        Escaneie para baixar seu bumerangue
-      </h3>
-      <div id="qrcode" style="margin:0 auto;width:256px;"></div>
-      <p style="margin-top:15px;color:#FFD700;">
-        Aponte a câmera do seu celular para este QR code
-      </p>
-    `;
-
-    new QRCode(document.getElementById("qrcode"), {
-      text: downloadPageUrl.toString(),
-      width: 256,
-      height: 256,
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    
+    const blob = new Blob([ab], { type: mimeString });
+    
+    // Criar um URL temporário para o arquivo
+    const fileUrl = URL.createObjectURL(blob);
+    
+    // Gerar QR Code com o URL temporário
+    new QRCode(DOM.qrContainer, {
+      text: fileUrl,
+      width: 200,
+      height: 200,
       colorDark: "#000000",
-      colorLight: "#ffffff",
+      colorLight: "#FFFFFF",
       correctLevel: QRCode.CorrectLevel.H
     });
-
-    // 4. Scroll para o QR code
-    setTimeout(() => {
-      qrDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-
-    // 5. Download automático no dispositivo da cabine
-    const uniqueName = `bumerangue_showfest_${Date.now()}.mp4`;
-    const a = document.createElement("a");
-    a.href = tempUrl;
-    a.download = uniqueName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // 6. Configurar revogação da URL após 30 minutos
-    setTimeout(() => {
-      URL.revokeObjectURL(tempUrl);
-      console.log('URL do vídeo revogada após 30 minutos');
-    }, 30 * 60 * 1000);
-
-    contador.innerText = "Pronto!";
-    statusUpload.style.display = "none";
-
-  } catch (err) {
-    console.error("Erro ao converter vídeo:", err);
-    contador.innerText = "Erro ao finalizar";
-    statusUpload.innerText = "Erro ao processar vídeo";
-    qrDiv.innerHTML = "<p style='color:red'>Erro ao processar. Tente novamente.</p>";
+    
+    // Mostrar container do QR Code
+    DOM.qrContainer.style.display = 'block';
+    
+    // Adicionar botão de download
+    addDownloadButton(mediaData, mimeString.includes('image') ? 'foto' : 'video');
+    
+  } catch (error) {
+    console.error('Erro ao gerar QR Code:', error);
+    alert('Erro ao gerar QR Code. Tente novamente.');
   }
+}
+
+// Função para adicionar botão de download
+function addDownloadButton(data, type) {
+  // Remover botão anterior se existir
+  const oldButton = document.getElementById('download-btn');
+  if (oldButton) oldButton.remove();
+  
+  // Criar novo botão
+  const downloadBtn = document.createElement('button');
+  downloadBtn.id = 'download-btn';
+  downloadBtn.textContent = `Baixar ${type}`;
+  downloadBtn.style.display = 'block';
+  downloadBtn.style.margin = '10px auto';
+  downloadBtn.style.padding = '8px 16px';
+  downloadBtn.style.backgroundColor = '#4CAF50';
+  downloadBtn.style.color = 'white';
+  downloadBtn.style.border = 'none';
+  downloadBtn.style.borderRadius = '4px';
+  downloadBtn.style.cursor = 'pointer';
+  
+  // Adicionar evento de clique
+  downloadBtn.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.href = data;
+    link.download = `foto-show-fest-${new Date().getTime()}.${type === 'foto' ? 'jpg' : 'mp4'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+  
+  // Adicionar botão ao container do QR Code
+  DOM.qrContainer.appendChild(downloadBtn);
+}
+
+// Modifique a função takePhoto para garantir que chame a versão correta
+function takePhoto() {
+  try {
+    // ... (código existente de captura)
+    
+    const imageData = DOM.canvas.toDataURL('image/jpeg', 0.9); // Qualidade de 90%
+    saveToGallery(imageData, 'photo');
+    generateQRCode(imageData); // Chamada corrigida
+    
+  } catch (error) {
+    // ... (tratamento de erro existente)
+  }
+}
+
+// Modifique a função processBoomerang para garantir que chame a versão correta
+async function processBoomerang() {
+  try {
+    // ... (código existente de processamento)
+    
+    const videoUrl = await createSimpleVideo(boomerangFrames);
+    saveToGallery(videoUrl, 'video');
+    
+    // Converter o vídeo para Data URL para o QR Code
+    const videoData = await getVideoDataUrl(videoUrl);
+    generateQRCode(videoData);
+    
+  } catch (error) {
+    // ... (tratamento de erro existente)
+  }
+}
+
+// Função auxiliar para converter vídeo URL para Data URL
+function getVideoDataUrl(videoUrl) {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.src = videoUrl;
+    video.onloadedmetadata = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // Capturar frame do vídeo para o QR Code
+      video.currentTime = 0.1;
+      video.onseeked = () => {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const thumbnail = canvas.toDataURL('image/jpeg');
+        resolve(thumbnail);
+      };
+    };
+  });
 }
