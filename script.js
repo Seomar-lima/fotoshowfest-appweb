@@ -243,112 +243,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // === CONVERSÃO PARA MP4 E QR CODE ===
 async function converterParaMP4(blob) {
-  const apiKey ="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZjNjZGY1MmRlZTUwZTgwNjk3NDI4ZmM1OGQwYWU0YzgzMjM2MWRiNjU3ZDYyMTdiZmJkMzNhZjlmMmY2M2I4MWYxNWZhMWMxMDEzZTMwMDgiLCJpYXQiOjE3NTIyNTMxNzQuMzk1NjUzLCJuYmYiOjE3NTIyNTMxNzQuMzk1NjU1LCJleHAiOjQ5MDc5MjY3NzQuMzg5NzU1LCJzdWIiOiI3MjIwODAyMyIsInNjb3BlcyI6WyJ1c2VyLnJlYWQiLCJ1c2VyLndyaXRlIiwidGFzay5yZWFkIiwid2ViaG9vay5yZWFkIiwidGFzay53cml0ZSIsIndlYmhvb2sud3JpdGUiLCJwcmVzZXQucmVhZCIsInByZXNldC53cml0ZSJdfQ.qF8t3vTkWuo3RNdsh2Sz2ULv-UJ3p0_iaOcafk5zEBg778IpEJ-WN7TDu8XVuo4ZnHy4IQ9u-2u1hv3giT_vN8QrUrZvJGK8MxrUC5zUzyO0mKFdOjDp9j4qvR-OrLZI3UIBbcXVMs2NExnDtmubR2cfKwkGmDs6jJ3rh-MBlVPlTu30BvocQAwe9C-n-Nr9I7E1fHo11M_Dz7mSj0m_deqJDjpk4r-Iu_6hwmzXacKi550j-f7fUJ3oZdGBH6dr-24WcEP3CiLTR0utLx5HtFDwcJhbBjhbTE0kycH_xIMuKUC2b8DLwZs_X07xsLcT6N1iAWSNbieyw1AcN7iLDn1-Lwqyxp4QlnvDNxN04rlcgkynd_2fQCA_isex0gie0f1wBJWm3X2I5cieUdXqPPzlv-uLz3SisBnhiMZpTQTTMro84mBMeucxjXIFGWHINp4ooMFXWzcUxoDml7l07ISJGC5Zyu_vOvwJKAVFUJ62oBudjOGq_tS5XItXqbm9_aTMiXBHru9D6GK7lO6x70KEaUvMQu2wI5Dhee3I0S7shknALcjB2tCbCjRnpJ1DRL3BV7amIkdLB5jSUbM1XTZ4BZwl5j9Vp0iO1sfL0zbLDYRh1IFgEFYlyUvQuw4wSmXiFvzMsL-tX1aFESRYc_VA75J1CrXTo40nwKSefW4";
+  statusUpload.innerText = "Enviando para o servidor...";
+  statusUpload.style.display = "block";
+  contador.innerText = "";
 
-  const reader = new FileReader();
-  reader.readAsDataURL(blob);
-
-  reader.onloadend = async () => {
-    const base64Data = reader.result.split(',')[1];
-    statusUpload.innerText = "Convertendo para MP4...";
-    statusUpload.style.display = "block";
-    contador.innerText = "";
-
-    let taskId = null; // vamos manter isso acessível ao catch
-    try {
-      // Importar arquivo
-      const importRes = await fetch("https://api.cloudconvert.com/v2/import/base64", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ file: base64Data, filename: `bumerangue_${Date.now()}.webm` })
-      });
-      const importTask = await importRes.json();
-      if (!importTask?.data?.id) throw new Error("Erro ao importar");
-
-      // Converter para MP4
-      const convertRes = await fetch("https://api.cloudconvert.com/v2/convert", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ input: importTask.data.id, output_format: "mp4" })
-      });
-      const convertTask = await convertRes.json();
-      if (!convertTask?.data?.id) throw new Error("Erro ao converter");
-
-      // Exportar
-      const exportRes = await fetch("https://api.cloudconvert.com/v2/export/url", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ input: convertTask.data.id })
-      });
-      const exportTask = await exportRes.json();
-      taskId = exportTask.data.id; // Guardamos o taskId aqui para deletar se falhar
-
-      let mp4Url = null;
-      for (let i = 0; i < 10; i++) {
-        const st = await (await fetch(`https://api.cloudconvert.com/v2/tasks/${taskId}`, {
-          headers: { Authorization: `Bearer ${apiKey}` }
-        })).json();
-        if (st.data.status === "finished" && st.data.result?.files?.[0]?.url) {
-          mp4Url = st.data.result.files[0].url;
-          break;
-        }
-        await new Promise(r => setTimeout(r, 2000));
-      }
-
-      if (!mp4Url) throw new Error("Conversão não finalizada");
-
-      // Download
-      const finalBlob = await fetch(mp4Url).then(r => r.blob());
-      const blobUrl = URL.createObjectURL(finalBlob);
-      const uniqueName = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random()*10000)}.mp4`;
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = uniqueName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-
-      // Link curto
-      let link = mp4Url;
-      try {
-        const s = await fetch("https://cleanuri.com/api/v1/shorten", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ url: mp4Url })
-        });
-        const d = await s.json();
-        link = d.result_url || mp4Url;
-      } catch {}
-
-      const viewerURL = `https://fotoshowfest.vercel.app/viewer.html?file=${encodeURIComponent(link)}`;
-      gerarQRCode(viewerURL);
-      contador.innerText = "Pronto!";
-      statusUpload.style.display = "none";
-    } catch (err) {
-      console.error("Erro ao converter vídeo:", err);
-      contador.innerText = "Erro ao finalizar";
-      statusUpload.innerText = "Erro ao converter vídeo.";
-      qrDiv.innerHTML = "<p style='color:red'>Erro ao converter o vídeo. Tente novamente.</p>";
-      // Se souber o taskId, tentamos deletar
-      if (taskId) await deletarTarefaCloudConvert(taskId, apiKey);
-    }
-  };
-}
-
-// === Função para limpar o arquivo no CloudConvert ===
-async function deletarTarefaCloudConvert(taskId, apiKey) {
   try {
-    const res = await fetch(`https://api.cloudconvert.com/v2/tasks/${taskId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${apiKey}` }
+    const formData = new FormData();
+    const filename = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.webm`;
+    formData.append("file", blob, filename);
+
+    const uploadRes = await fetch("https://store1.gofile.io/uploadFile", {
+      method: "POST",
+      body: formData
     });
-    if (res.ok) {
-      console.log("🧹 Arquivo deletado do CloudConvert.");
-    } else {
-      console.warn("⚠️ Não foi possível deletar o arquivo.");
+
+    const result = await uploadRes.json();
+    if (!result || !result.data || !result.data.downloadPage) {
+      throw new Error("Erro ao enviar para o GoFile");
     }
-  } catch (e) {
-    console.error("Erro ao tentar deletar tarefa:", e);
+
+    const link = result.data.downloadPage;
+    const viewerURL = `https://fotoshowfest.vercel.app/viewer.html?file=${encodeURIComponent(link)}`;
+    gerarQRCode(viewerURL);
+    contador.innerText = "Pronto!";
+  } catch (err) {
+    console.error("Erro ao enviar para o GoFile:", err);
+    contador.innerText = "Erro ao finalizar";
+    statusUpload.innerText = "Erro ao enviar vídeo.";
+    qrDiv.innerHTML = "<p style='color:red'>Erro ao enviar o vídeo. Tente novamente.</p>";
+  } finally {
+    statusUpload.style.display = "none";
   }
 }
