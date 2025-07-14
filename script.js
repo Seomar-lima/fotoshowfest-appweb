@@ -79,7 +79,7 @@ function capturarFoto() {
     img.src = imgData;
     img.style.cursor = "pointer";
     galeria.appendChild(img);
-    enviarParaImgbb(imgData);
+    enviarParaGoFile(imgData, 'image');
   }, 300);
 }
 
@@ -91,36 +91,6 @@ function baixarImagem(imgData) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-function enviarParaImgbb(imgData) {
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
-  contador.innerText = "";
-  statusUpload.innerText = "Enviando imagem...";
-  statusUpload.style.display = "block";
-  fetch("https://api.imgbb.com/1/upload", {
-    method: "POST",
-    body: formData
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data?.data?.url) {
-      gerarQRCode(data.data.url);
-      baixarImagem(imgData);
-      setTimeout(() => scrollToElement(qrDiv), 500);
-    } else {
-      throw new Error("Resposta inválida do imgbb");
-    }
-  })
-  .catch(err => {
-    console.error("Erro no upload:", err);
-    qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
-  })
-  .finally(() => statusUpload.style.display = "none");
 }
 
 // === QR CODE CENTRALIZADO ===
@@ -183,6 +153,7 @@ async function iniciarBumerangueVertical() {
     canvasVideo.height = BOOMERANG_SETTINGS.height;
     const total = BOOMERANG_SETTINGS.fps * BOOMERANG_SETTINGS.duration;
     const frames = [];
+    
     for (let i = 0; i < total; i++) {
       if (cancelRecording) break;
       ctx.drawImage(video, 0, 0, canvasVideo.width, canvasVideo.height);
@@ -192,22 +163,27 @@ async function iniciarBumerangueVertical() {
       frames.push(ctx.getImageData(0, 0, canvasVideo.width, canvasVideo.height));
       await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
     }
+    
     if (cancelRecording) {
       contador.innerText = "Cancelado";
       cancelBtn.style.display = 'none';
       return;
     }
+    
     contador.innerText = "Processando...";
     const finalFrames = [...frames, ...frames.slice().reverse()];
     const streamOut = canvasVideo.captureStream(BOOMERANG_SETTINGS.fps);
     mediaRecorder = new MediaRecorder(streamOut, { mimeType: 'video/webm;codecs=vp9' });
+    
     const chunks = [];
     mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = async () => {
       const blob = new Blob(chunks, { type: 'video/webm' });
-      converterParaMP4(blob);
+      await enviarParaGoFile(blob, 'video');
     };
+    
     mediaRecorder.start();
+    
     for (const f of finalFrames) {
       if (cancelRecording) {
         mediaRecorder.stop();
@@ -216,6 +192,7 @@ async function iniciarBumerangueVertical() {
       ctx.putImageData(f, 0, 0);
       await new Promise(r => setTimeout(r, 1000 / BOOMERANG_SETTINGS.fps));
     }
+    
     mediaRecorder.stop();
     cancelBtn.style.display = 'none';
   } catch (err) {
@@ -241,38 +218,72 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(cancelBtn);
 });
 
-// === CONVERSÃO PARA MP4 E QR CODE (via GoFile) ===
-async function converterParaMP4(blob) {
-  statusUpload.innerText = "Enviando para o servidor...";
+// === ENVIO PARA GOFILE ===
+async function enviarParaGoFile(fileData, type) {
+  statusUpload.innerText = type === 'image' ? "Enviando imagem..." : "Enviando vídeo...";
   statusUpload.style.display = "block";
   contador.innerText = "";
 
   try {
-    const formData = new FormData();
-    const filename = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.webm`;
-    formData.append("file", blob, filename);
+    let file;
+    if (type === 'image') {
+      const blob = dataURLtoBlob(fileData);
+      file = new File([blob], `foto_showfest_${Date.now()}.png`, { type: 'image/png' });
+    } else {
+      file = new File([fileData], `bumerangue_showfest_${Date.now()}.webm`, { type: 'video/webm' });
+    }
 
-    const uploadRes = await fetch("https://store1.gofile.io/uploadFile", {
+    // Primeiro obtemos um servidor disponível
+    const serverResponse = await fetch("https://api.gofile.io/getServer");
+    const serverData = await serverResponse.json();
+    
+    if (!serverData.data || !serverData.data.server) {
+      throw new Error("Não foi possível obter servidor do GoFile");
+    }
+    
+    const server = serverData.data.server;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    // Fazemos o upload para o servidor obtido
+    const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {
       method: "POST",
       body: formData
     });
-
+    
     const result = await uploadRes.json();
+    
     if (!result || !result.data || !result.data.downloadPage) {
       throw new Error("Erro ao enviar para o GoFile");
     }
-
+    
     const link = result.data.downloadPage;
-    const viewerURL = `https://fotoshowfest.vercel.app/viewer.html?file=${encodeURIComponent(link)}`;
-    gerarQRCode(viewerURL);
+    gerarQRCode(link);
     contador.innerText = "Pronto!";
+    
+    // Baixar localmente também
+    if (type === 'image') {
+      baixarImagem(fileData);
+    }
+
   } catch (err) {
-    console.error("Erro ao enviar para o GoFile:", err);
-    contador.innerText = "Erro ao finalizar";
-    statusUpload.innerText = "Erro ao enviar vídeo.";
-    qrDiv.innerHTML = "<p style='color:red'>Erro ao enviar o vídeo. Tente novamente.</p>";
+    console.error("Erro no upload:", err);
+    contador.innerText = "Erro ao enviar";
+    qrDiv.innerHTML = `<p style='color:red'>Erro ao ${type === 'image' ? 'enviar imagem' : 'enviar vídeo'}. Tente novamente.</p>`;
   } finally {
     statusUpload.style.display = "none";
   }
 }
 
+// Função auxiliar para converter DataURL para Blob
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new Blob([u8arr], { type: mime });
+}
