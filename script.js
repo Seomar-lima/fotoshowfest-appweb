@@ -40,7 +40,7 @@ async function enviarParaGoFile(blob, tipo) {
     const { data: { server } } = await serverRes.json();
 
     // Preparar arquivo
-    const extensao = tipo === 'foto' ? 'png' : 'mp4';
+    const extensao = tipo === 'foto' ? 'png' : (tipo === 'webm' ? 'webm' : 'mp4');
     const formData = new FormData();
     formData.append('file', blob, `showfest_${Date.now()}.${extensao}`);
 
@@ -85,26 +85,23 @@ async function processarFoto() {
   }
 }
 
-// 3. Função para Bumerangue
+// 3. Função para Bumerangue (sem conversão, envia .webm direto)
 async function processarBumerangue() {
   try {
     const webmBlob = new Blob(chunks, { type: 'video/webm' });
-    
-    // Converter para MP4
-    statusUpload.innerText = "Convertendo para MP4...";
+
+    // Upload direto para GoFile (sem conversão)
+    statusUpload.innerText = "Enviando vídeo (WEBM)...";
     statusUpload.style.display = 'block';
-    const mp4Blob = await converterParaMP4(webmBlob);
-    
-    // Upload para GoFile
-    const gofileUrl = await enviarParaGoFile(mp4Blob, 'video');
-    
+    const gofileUrl = await enviarParaGoFile(webmBlob, 'webm');
+
     // Gerar QR Code
     gerarQRCode(gofileUrl);
-    
-    // Download local após 1s (opcional)
+
+    // Download local (opcional)
     setTimeout(() => {
-      const url = URL.createObjectURL(mp4Blob);
-      baixarVideoLocal(url, 'bumerangue.mp4');
+      const url = URL.createObjectURL(webmBlob);
+      baixarVideoLocal(url, 'bumerangue.webm');
     }, 1000);
 
   } catch (erro) {
