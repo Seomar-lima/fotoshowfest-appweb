@@ -89,50 +89,28 @@ async function processarFoto() {
 async function processarBumerangue() {
   try {
     const webmBlob = new Blob(chunks, { type: 'video/webm' });
-    
-    // Converter para MP4
-    statusUpload.innerText = "Convertendo para MP4...";
+
+    statusUpload.innerText = "Enviando vídeo...";
     statusUpload.style.display = 'block';
-    const mp4Blob = await converterParaMP4(webmBlob);
-    
-    // Upload para GoFile
-    const gofileUrl = await enviarParaGoFile(mp4Blob, 'video');
-    
+
+    // Enviar direto para GoFile sem conversão
+    const gofileUrl = await enviarParaGoFile(webmBlob, 'video');
+
     // Gerar QR Code
     gerarQRCode(gofileUrl);
-    
-    // Download local após 1s (opcional)
+
+    // Download local (opcional)
     setTimeout(() => {
-      const url = URL.createObjectURL(mp4Blob);
-      baixarVideoLocal(url, 'bumerangue.mp4');
+      const url = URL.createObjectURL(webmBlob);
+      baixarVideoLocal(url, `bumerangue_${Date.now()}.webm`);
     }, 1000);
 
+    contador.innerText = "Pronto!";
   } catch (erro) {
     mostrarErro("Erro ao processar vídeo");
   }
 }
-
-// ===== FUNÇÕES DE APOIO =====
-
-// Conversão WebM → MP4
-async function converterParaMP4(webmBlob) {
-  const { createFFmpeg } = FFmpeg;
-  const ffmpeg = createFFmpeg({ log: true });
-  await ffmpeg.load();
-
-  ffmpeg.FS('writeFile', 'input.webm', new Uint8Array(await webmBlob.arrayBuffer()));
-  await ffmpeg.run(
-    '-i', 'input.webm',
-    '-c:v', 'libx264',
-    '-profile:v', 'baseline',
-    '-pix_fmt', 'yuv420p',
-    'output.mp4'
-  );
-
-  const data = ffmpeg.FS('readFile', 'output.mp4');
-  return new Blob([data.buffer], { type: 'video/mp4' });
-}
-
+  
 // Download local de imagem
 function baixarImagemLocal(dataUrl) {
   const link = document.createElement('a');
