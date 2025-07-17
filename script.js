@@ -85,16 +85,15 @@ async function processarFoto() {
   }
 }
 
-// 3. Função para Bumerangue
+// 3. Função para Bumerangue (sem conversão, envia .webm direto)
 async function processarBumerangue() {
   try {
     const webmBlob = new Blob(chunks, { type: 'video/webm' });
 
-    statusUpload.innerText = "Enviando vídeo...";
+    // Upload direto para GoFile (sem conversão)
+    statusUpload.innerText = "Enviando vídeo (WEBM)...";
     statusUpload.style.display = 'block';
-
-    // Enviar direto para GoFile sem conversão
-    const gofileUrl = await enviarParaGoFile(webmBlob, 'video');
+    const gofileUrl = await enviarParaGoFile(webmBlob, 'webm');
 
     // Gerar QR Code
     gerarQRCode(gofileUrl);
@@ -102,10 +101,9 @@ async function processarBumerangue() {
     // Download local (opcional)
     setTimeout(() => {
       const url = URL.createObjectURL(webmBlob);
-      baixarVideoLocal(url, `bumerangue_${Date.now()}.webm`);
+      baixarVideoLocal(url, 'bumerangue.webm');
     }, 1000);
 
-    contador.innerText = "Pronto!";
   } catch (erro) {
     mostrarErro("Erro ao processar vídeo");
   }
