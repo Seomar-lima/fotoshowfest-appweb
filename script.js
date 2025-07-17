@@ -12,7 +12,7 @@ const BOOMERANG_SETTINGS = {
   width: 540,
   height: 960,
   fps: 30,
-  duration: 2
+  duration: 1
 };
 
 // Variáveis de estado
