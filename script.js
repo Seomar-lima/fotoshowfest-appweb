@@ -90,22 +90,29 @@ async function processarBumerangue() {
   try {
     const webmBlob = new Blob(chunks, { type: 'video/webm' });
 
-    // Upload direto para GoFile (sem conversão)
-    statusUpload.innerText = "Enviando vídeo (WEBM)...";
-    statusUpload.style.display = 'block';
-    const gofileUrl = await enviarParaGoFile(webmBlob, 'webm');
+    // Mostrar status
+    statusUpload.innerText = "Convertendo para MP4...";
+    statusUpload.style.display = "block";
 
-    // Gerar QR Code
+    // 1. CONVERTER PARA MP4
+    const mp4Blob = await converterParaMP4(webmBlob);
+
+    // 2. ENVIAR PARA GOFILE
+    statusUpload.innerText = "Enviando para GoFile...";
+    const gofileUrl = await enviarParaGoFile(mp4Blob, 'mp4');
+
+    // 3. MOSTRAR QR CODE
     gerarQRCode(gofileUrl);
 
-    // Download local (opcional)
-    setTimeout(() => {
-      const url = URL.createObjectURL(webmBlob);
-      baixarVideoLocal(url, 'bumerangue.webm');
-    }, 1000);
+    // 4. FAZER DOWNLOAD AUTOMÁTICO NO CELULAR
+    const blobUrl = URL.createObjectURL(mp4Blob);
+    baixarVideoLocal(blobUrl, 'bumerangue_showfest.mp4');
 
   } catch (erro) {
+    console.error("Erro ao processar bumerangue:", erro);
     mostrarErro("Erro ao processar vídeo");
+  } finally {
+    statusUpload.style.display = "none";
   }
 }
 
