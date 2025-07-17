@@ -89,24 +89,23 @@ async function processarFoto() {
 async function processarBumerangue() {
   try {
     const webmBlob = new Blob(chunks, { type: 'video/webm' });
-    
-    // Converter para MP4
-    statusUpload.innerText = "Convertendo para MP4...";
+
+    statusUpload.innerText = "Enviando vídeo...";
     statusUpload.style.display = 'block';
-    const mp4Blob = await converterParaMP4(webmBlob);
-    
-    // Upload para GoFile
-    const gofileUrl = await enviarParaGoFile(mp4Blob, 'video');
-    
+
+    // Enviar direto para GoFile sem conversão
+    const gofileUrl = await enviarParaGoFile(webmBlob, 'video');
+
     // Gerar QR Code
     gerarQRCode(gofileUrl);
-    
-    // Download local após 1s (opcional)
+
+    // Download local (opcional)
     setTimeout(() => {
-      const url = URL.createObjectURL(mp4Blob);
-      baixarVideoLocal(url, 'bumerangue.mp4');
+      const url = URL.createObjectURL(webmBlob);
+      baixarVideoLocal(url, `bumerangue_${Date.now()}.webm`);
     }, 1000);
 
+    contador.innerText = "Pronto!";
   } catch (erro) {
     mostrarErro("Erro ao processar vídeo");
   }
