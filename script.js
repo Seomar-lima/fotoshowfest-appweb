@@ -30,36 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== FUNÇÕES PRINCIPAIS =====
 
 // 1. Sistema de Upload para GoFile
-async function enviarParaGoFile(blob, tipo) {
-  statusUpload.innerText = `Enviando ${tipo === 'foto' ? 'imagem' : 'vídeo'}...`;
-  statusUpload.style.display = 'block';
+async function enviarParaGoFile(blob, tipo = 'mp4') {
+  const serverRes = await fetch("https://api.gofile.io/getServer");
+  const { data: { server } } = await serverRes.json();
 
-  try {
-    // Obter servidor ativo
-    const serverRes = await fetch("https://api.gofile.io/getServer");
-    const { data: { server } } = await serverRes.json();
+  const formData = new FormData();
+  formData.append("file", blob, `showfest_${Date.now()}.${tipo}`);
 
-    // Preparar arquivo
-    const extensao = tipo === 'foto' ? 'png' : (tipo === 'webm' ? 'webm' : 'mp4');
-    const formData = new FormData();
-    formData.append('file', blob, `showfest_${Date.now()}.${extensao}`);
+  const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {
+    method: 'POST',
+    body: formData
+  });
 
-    // Fazer upload
-    const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {
-      method: 'POST',
-      body: formData
-    });
-    const { data } = await uploadRes.json();
+  const json = await uploadRes.json();
+  if (!json?.data?.downloadPage) throw new Error("Erro no upload");
 
-    if (!data?.downloadPage) throw new Error("Upload falhou");
-    return data.downloadPage;
-
-  } catch (erro) {
-    console.error("Erro no upload:", erro);
-    throw erro;
-  } finally {
-    statusUpload.style.display = 'none';
-  }
+  return json.data.downloadPage;
 }
 
 // 2. Função para Fotos
