@@ -228,3 +228,50 @@ function criarBotaoCancelar() {
   };
   document.body.appendChild(btn);
 }
+
+// ===== EVENT LISTENERS PARA BOTÕES ===== 
+
+// Botão de Foto
+fotoBtn.addEventListener('click', () => {
+  resetView();
+  let count = 3; // Contagem regressiva de 3 segundos
+  contador.innerText = count;
+  
+  const interval = setInterval(() => {
+    count--;
+    contador.innerText = count;
+    
+    if (count <= 0) {
+      clearInterval(interval);
+      contador.innerText = "";
+      capturarFoto(); // Função que já existe no seu código
+    }
+  }, 1000);
+});
+
+// Botão de Bumerangue 
+bumerangueBtn.addEventListener('click', () => {
+  if (!stream) return alert("Câmera não inicializada");
+  resetView();
+  
+  let count = 3; // Contagem regressiva
+  contador.innerText = count;
+  document.getElementById('cancelBtn').style.display = 'block';
+  
+  const interval = setInterval(() => {
+    count--;
+    contador.innerText = count;
+    
+    if (count <= 0) {
+      clearInterval(interval);
+      contador.innerText = "Gravando...";
+      iniciarBumerangueVertical(); // Função existente
+    }
+  }, 1000);
+});
+
+// Função auxiliar para resetar a visualização
+function resetView() {
+  qrDiv.innerHTML = "";
+  scrollToElement(previewContainer);
+}
