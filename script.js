@@ -1,168 +1,230 @@
+// ===== CONFIGURAÇÕES GERAIS =====
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
 const bumerangueBtn = document.getElementById("bumerangue");
-const previewDiv = document.getElementById("preview");
-const previewImg = document.getElementById("preview-img");
-const previewVideo = document.getElementById("preview-video");
-const qrDiv = document.getElementById("qrcode");
+const statusUpload = document.getElementById("statusUpload");
+const qrDiv = document.getElementById("qrDownload");
+const moldura = document.getElementById("moldura");
 
-// Ativar câmera
-navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true })
-  .then(stream => {
-    video.srcObject = stream;
-  });
-
-// Tirar foto com moldura
-fotoBtn.onclick = async () => {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  const moldura = document.getElementById("moldura");
-  ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-
-  const imgData = canvas.toDataURL("image/png");
-
-  previewImg.src = imgData;
-  previewImg.style.display = "block";
-  previewVideo.style.display = "none";
-  previewDiv.style.display = "block";
-
-  const link = await enviarParaGoFile(imgData);
-  gerarQRCode(link);
-  baixarImagemLocal(imgData);
+// Configurações do Bumerangue
+const BOOMERANG_SETTINGS = {
+  width: 540,
+  height: 960,
+  fps: 30,
+  duration: 2
 };
 
-// Gravar bumerangue com moldura
-bumerangueBtn.onclick = async () => {
-  const stream = video.srcObject;
-  const recorder = new MediaRecorder(stream);
-  const chunks = [];
+// Variáveis de estado
+let stream;
+let mediaRecorder;
+let chunks = [];
+let cancelRecording = false;
 
-  recorder.ondataavailable = e => chunks.push(e.data);
-  recorder.onstop = async () => {
-    const original = new Blob(chunks, { type: "video/webm" });
-    const url = URL.createObjectURL(original);
+// ===== INICIALIZAÇÃO =====
+document.addEventListener('DOMContentLoaded', () => {
+  iniciarCamera();
+  criarBotaoCancelar();
+});
 
-    const videoEl = document.createElement("video");
-    videoEl.src = url;
-    videoEl.muted = true;
-    await videoEl.play();
+// ===== FUNÇÕES PRINCIPAIS =====
 
-    // Criar canvas para capturar frames
-    const vCanvas = document.createElement("canvas");
-    vCanvas.width = videoEl.videoWidth;
-    vCanvas.height = videoEl.videoHeight;
-    const ctx = vCanvas.getContext("2d");
+// 1. Sistema de Upload para GoFile
+async function enviarParaGoFile(blob, tipo) {
+  statusUpload.innerText = `Enviando ${tipo === 'foto' ? 'imagem' : 'vídeo'}...`;
+  statusUpload.style.display = 'block';
 
-    const frameRate = 30;
-    const frames = [];
-    const duration = videoEl.duration;
+  try {
+    // Obter servidor ativo
+    const serverRes = await fetch("https://api.gofile.io/getServer");
+    const { data: { server } } = await serverRes.json();
 
-    // Capturar frames
-    for (let t = 0; t < duration; t += 1 / frameRate) {
-      videoEl.currentTime = t;
-      await new Promise(resolve => setTimeout(resolve, 30));
-      ctx.drawImage(videoEl, 0, 0, vCanvas.width, vCanvas.height);
+    // Preparar arquivo
+    const extensao = tipo === 'foto' ? 'png' : 'mp4';
+    const formData = new FormData();
+    formData.append('file', blob, `showfest_${Date.now()}.${extensao}`);
 
-      // Aplicar moldura
-      const img = new Image();
-      img.src = document.getElementById("moldura").src;
-      await new Promise(res => img.onload = res);
-      ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
+    // Fazer upload
+    const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {
+      method: 'POST',
+      body: formData
+    });
+    const { data } = await uploadRes.json();
 
-      frames.push(vCanvas.toDataURL("image/webp"));
-    }
+    if (!data?.downloadPage) throw new Error("Upload falhou");
+    return data.downloadPage;
 
-    // Reverso
-    const reversed = [...frames].reverse();
-    const allFrames = [...frames, ...reversed];
-
-    // Criar WebM final
-    const stream = vCanvas.captureStream(frameRate);
-    const mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-    const recordedChunks = [];
-
-    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
-    mediaRecorder.onstop = async () => {
-      const finalBlob = new Blob(recordedChunks, { type: "video/webm" });
-      const finalURL = URL.createObjectURL(finalBlob);
-
-      previewVideo.src = finalURL;
-      previewVideo.style.display = "block";
-      previewImg.style.display = "none";
-      previewDiv.style.display = "block";
-
-      const file = new File([finalBlob], "bumerangue.webm", { type: "video/webm" });
-      const link = await enviarArquivoParaGoFile(file);
-      gerarQRCode(link);
-      baixarVideoLocal(finalBlob);
-    };
-
-    mediaRecorder.start();
-
-    // Desenhar cada frame com delay
-    for (let frame of allFrames) {
-      const img = new Image();
-      img.src = frame;
-      await new Promise(r => img.onload = r);
-      ctx.drawImage(img, 0, 0, vCanvas.width, vCanvas.height);
-      await new Promise(r => setTimeout(r, 1000 / frameRate));
-    }
-
-    mediaRecorder.stop();
-  };
-
-  recorder.start();
-  await new Promise(r => setTimeout(r, 3000));
-  recorder.stop();
-};
-
-// Upload imagem ou vídeo para GoFile
-async function enviarArquivoParaGoFile(file) {
-  const res = await fetch("https://api.gofile.io/getServer");
-  const { data } = await res.json();
-  const server = data.server;
-
-  const form = new FormData();
-  form.append("file", file);
-
-  const upload = await fetch(`https://${server}.gofile.io/uploadFile`, {
-    method: "POST",
-    body: form
-  });
-
-  const result = await upload.json();
-  return result.data.downloadPage;
+  } catch (erro) {
+    console.error("Erro no upload:", erro);
+    throw erro;
+  } finally {
+    statusUpload.style.display = 'none';
+  }
 }
 
-// Gerar QR Code
-function gerarQRCode(link) {
-  qrDiv.innerHTML = "";
-  QRCode.toCanvas(document.createElement("canvas"), link, (err, canvas) => {
-    if (!err) qrDiv.appendChild(canvas);
-  });
+// 2. Função para Fotos
+async function processarFoto() {
+  // Capturar imagem do canvas
+  const imgData = canvas.toDataURL('image/png');
+  const blob = dataURLtoBlob(imgData);
+
+  try {
+    // Upload para GoFile
+    const gofileUrl = await enviarParaGoFile(blob, 'foto');
+    
+    // Gerar QR Code primeiro
+    gerarQRCode(gofileUrl);
+    
+    // Download local após 1s (opcional)
+    setTimeout(() => {
+      baixarImagemLocal(imgData);
+    }, 1000);
+
+  } catch (erro) {
+    mostrarErro("Erro ao processar foto");
+  }
 }
 
-// Baixar imagem local
+// 3. Função para Bumerangue
+async function processarBumerangue() {
+  try {
+    const webmBlob = new Blob(chunks, { type: 'video/webm' });
+    
+    // Converter para MP4
+    statusUpload.innerText = "Convertendo para MP4...";
+    statusUpload.style.display = 'block';
+    const mp4Blob = await converterParaMP4(webmBlob);
+    
+    // Upload para GoFile
+    const gofileUrl = await enviarParaGoFile(mp4Blob, 'video');
+    
+    // Gerar QR Code
+    gerarQRCode(gofileUrl);
+    
+    // Download local após 1s (opcional)
+    setTimeout(() => {
+      const url = URL.createObjectURL(mp4Blob);
+      baixarVideoLocal(url, 'bumerangue.mp4');
+    }, 1000);
+
+  } catch (erro) {
+    mostrarErro("Erro ao processar vídeo");
+  }
+}
+
+// ===== FUNÇÕES DE APOIO =====
+
+// Conversão WebM → MP4
+async function converterParaMP4(webmBlob) {
+  const { createFFmpeg } = FFmpeg;
+  const ffmpeg = createFFmpeg({ log: true });
+  await ffmpeg.load();
+
+  ffmpeg.FS('writeFile', 'input.webm', new Uint8Array(await webmBlob.arrayBuffer()));
+  await ffmpeg.run(
+    '-i', 'input.webm',
+    '-c:v', 'libx264',
+    '-profile:v', 'baseline',
+    '-pix_fmt', 'yuv420p',
+    'output.mp4'
+  );
+
+  const data = ffmpeg.FS('readFile', 'output.mp4');
+  return new Blob([data.buffer], { type: 'video/mp4' });
+}
+
+// Download local de imagem
 function baixarImagemLocal(dataUrl) {
-  const a = document.createElement("a");
-  a.href = dataUrl;
-  a.download = "foto_showfest.png";
-  a.click();
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = `foto_showfest_${Date.now()}.png`;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => document.body.removeChild(link), 100);
 }
 
-// Baixar vídeo local
-function baixarVideoLocal(blob) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "bumerangue_showfest.webm";
-  a.click();
+// Download local de vídeo
+function baixarVideoLocal(url, nome) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nome;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+  }, 100);
 }
 
-// Voltar à câmera
-function voltarParaCamera() {
-  previewDiv.style.display = "none";
+// Geração de QR Code
+function gerarQRCode(url) {
+  qrDiv.innerHTML = `
+    <h3 style="color:#FFD700;text-align:center">Escaneie para baixar</h3>
+    <div id="qrcode" style="margin:0 auto"></div>
+    <a href="${url}" target="_blank" style="color:#FFD700;display:block;margin-top:10px">
+      Abrir link diretamente
+    </a>
+  `;
+  
+  new QRCode(document.getElementById("qrcode"), {
+    text: url,
+    width: 200,
+    height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff"
+  });
+}
+
+// ===== FUNÇÕES AUXILIARES =====
+function dataURLtoBlob(dataurl) {
+  const arr = dataurl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  const u8arr = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) {
+    u8arr[i] = bstr.charCodeAt(i);
+  }
+  return new Blob([u8arr], { type: mime });
+}
+
+function mostrarErro(mensagem) {
+  qrDiv.innerHTML = `<p style="color:red">${mensagem}</p>`;
+  statusUpload.style.display = 'none';
+}
+
+function iniciarCamera() {
+  navigator.mediaDevices.getUserMedia({
+    video: { width: 1920, height: 1080, facingMode: 'user' },
+    audio: false
+  }).then(s => {
+    stream = s;
+    video.srcObject = stream;
+  }).catch(err => {
+    console.error("Erro na câmera:", err);
+  });
+}
+
+function criarBotaoCancelar() {
+  const btn = document.createElement('button');
+  btn.id = 'cancelBtn';
+  btn.textContent = '✖ Cancelar';
+  btn.style.cssText = `
+    display: none;
+    background: #ff4444;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    margin: 10px auto;
+    cursor: pointer;
+  `;
+  btn.onclick = () => {
+    cancelRecording = true;
+    if (mediaRecorder?.state !== 'inactive') mediaRecorder.stop();
+    document.getElementById('contador').innerText = '';
+    btn.style.display = 'none';
+  };
+  document.body.appendChild(btn);
 }
