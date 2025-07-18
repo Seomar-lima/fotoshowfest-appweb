@@ -7,23 +7,26 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app">
-    <div class="camera-container">
-      <video id="camera" autoplay muted playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura" />
-      <canvas id="canvas" style="display: none;"></canvas>
-      <div id="contador"></div>
-    </div>
+  <header class="topo">
+    <h1>Foto Show Fest</h1>
+    <h2>15 anos Geovanna</h2>
+  </header>
 
-    <div class="botoes">
-      <button id="foto">Tirar Foto</button>
-      <button id="bumerangue">Gravar Bumerangue</button>
-      <button id="limpar-cache">Limpar Cache</button>
-    </div>
-
-    <div id="qrDownload"></div>
-    <div id="galeria" class="galeria"></div>
+  <div class="camera-container">
+    <video id="camera" autoplay muted playsinline></video>
+    <img id="moldura" src="moldura.png" alt="Moldura" />
+    <div id="contador"></div>
+    <canvas id="canvas" style="display: none;"></canvas>
   </div>
+
+  <div class="botoes">
+    <button id="foto">Tirar Foto</button>
+    <button id="bumerangue">Gravar Bumerangue</button>
+    <button id="limpar-cache" style="display: none;">Limpar Cache</button>
+  </div>
+
+  <div id="qrDownload"></div>
+  <div id="galeria" class="galeria"></div>
 
   <audio id="beep" src="beep.mp3" preload="auto"></audio>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
