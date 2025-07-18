@@ -2,149 +2,123 @@ const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
 const bumerangueBtn = document.getElementById("bumerangue");
-const statusUpload = document.getElementById("statusUpload");
-const previewVideo = document.getElementById("previewVideo");
+const beep = document.getElementById("beep");
+const contador = document.getElementById("contador");
+const galeria = document.getElementById("galeria");
+const qrDiv = document.getElementById("qrDownload");
+const moldura = document.getElementById("moldura");
 
-let mediaRecorder;
-let recordedChunks = [];
+let stream;
 
-// Acesso à câmera
-navigator.mediaDevices.getUserMedia({
-  video: { facingMode: "user", width: 1080, height: 1920 },
-  audio: true,
-}).then((stream) => {
-  video.srcObject = stream;
-  video.onloadedmetadata = () => video.play();
-}).catch((err) => {
-  alert("Erro ao acessar câmera: " + err.message);
-});
-
-function mostrarStatus(mensagem) {
-  statusUpload.textContent = mensagem;
-  statusUpload.style.display = "flex";
-}
-
-function esconderStatus() {
-  statusUpload.style.display = "none";
-}
-
-function contagemRegressiva(segundos, callback) {
-  let tempo = segundos;
-  mostrarStatus(tempo);
-  const intervalo = setInterval(() => {
-    tempo--;
-    if (tempo <= 0) {
-      clearInterval(intervalo);
-      esconderStatus();
-      callback();
-    } else {
-      mostrarStatus(tempo);
-    }
-  }, 1000);
-}
-
-function gerarQR(link) {
-  const qr = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(link)}&size=200x200`;
-  const img = new Image();
-  img.src = qr;
-  img.style.position = "absolute";
-  img.style.bottom = "20px";
-  img.style.left = "50%";
-  img.style.transform = "translateX(-50%)";
-  img.style.zIndex = "999";
-  document.body.appendChild(img);
-  mostrarStatus("Pronto!");
-}
-
-function salvarBlobNoCelular(blob, nomeArquivo) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nomeArquivo;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-async function enviarParaGoFile(blob, nome) {
-  mostrarStatus("Financiando...");
-
-  const resp = await fetch("https://api.gofile.io/getServer");
-  const { data } = await resp.json();
-  const form = new FormData();
-  form.append("file", blob, nome);
-
-  const upload = await fetch(`https://${data.server}.gofile.io/uploadFile`, {
-    method: "POST",
-    body: form,
+navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audio: false })
+  .then(s => {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+  })
+  .catch(err => {
+    console.error("Erro ao acessar a câmera:", err);
+    alert("Erro ao acessar a câmera. Verifique as permissões.");
   });
-
-  const resultado = await upload.json();
-  const link = resultado.data.downloadPage;
-
-  gerarQR(link);
-  salvarBlobNoCelular(blob, nome);
-}
 
 fotoBtn.onclick = () => {
-  contagemRegressiva(5, () => {
-    mostrarStatus("Criando QR Code");
-
-    const context = canvas.getContext("2d");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    context.translate(canvas.width, 0); // desespelha horizontalmente
-    context.scale(-1, 1);
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const dataUrl = canvas.toDataURL("image/png");
-    const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
-    const blob = atob(base64);
-    const array = new Uint8Array(blob.length);
-    for (let i = 0; i < blob.length; i++) {
-      array[i] = blob.charCodeAt(i);
+  let count = 5;
+  contador.innerText = count;
+  const interval = setInterval(() => {
+    count--;
+    contador.innerText = count;
+    try { beep.play(); } catch (err) {}
+    if (count === 0) {
+      clearInterval(interval);
+      contador.innerText = "";
+      capturarFoto();
     }
-    const finalBlob = new Blob([array], { type: "image/png" });
-
-    enviarParaGoFile(finalBlob, "foto_showfest.png");
-  });
+  }, 1000);
 };
+
+function capturarFoto() {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  if (moldura.complete && moldura.naturalHeight !== 0) {
+    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+  }
+
+  setTimeout(() => {
+    const imgData = canvas.toDataURL("image/png");
+    const img = new Image();
+    img.src = imgData;
+    img.style.cursor = "pointer";
+    img.onclick = () => {
+      const novaJanela = window.open();
+      novaJanela.document.write(`<img src="${imgData}" style="width:100%">`);
+    };
+    galeria.appendChild(img);
+    enviarParaImgbb(imgData);
+  }, 300);
+}
+
+function enviarParaImgbb(imgData) {
+  const base64 = imgData.split(',')[1];
+  const formData = new FormData();
+  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
+  formData.append("image", base64);
+  formData.append("name", "foto_showfest_" + Date.now());
+
+  qrDiv.innerHTML = "Enviando imagem...";
+
+  fetch("https://api.imgbb.com/1/upload", {
+    method: "POST",
+    body: formData
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) gerarQRCode(data.data.url);
+      else throw new Error("Resposta inválida do imgbb");
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerText = "Erro ao gerar QR Code.";
+      qrDiv.style.color = "red";
+    });
+}
+
+function gerarQRCode(link) {
+  qrDiv.innerHTML = "";
+  const qrContainer = document.createElement("div");
+  qrContainer.style.margin = "10px auto";
+  qrDiv.appendChild(qrContainer);
+
+  new QRCode(qrContainer, {
+    text: link,
+    width: 256,
+    height: 256,
+    margin: 4
+  });
+
+  const a = document.createElement("a");
+  a.href = link;
+  a.innerText = "📥 Baixar";
+  a.download = "";
+  a.style.display = "block";
+  a.style.textAlign = "center";
+  a.style.marginTop = "10px";
+  a.style.fontWeight = "bold";
+  qrDiv.appendChild(a);
+}
 
 bumerangueBtn.onclick = () => {
-  contagemRegressiva(3, () => {
-    mostrarStatus("Gravando");
-
-    recordedChunks = [];
-    const stream = video.srcObject;
-    mediaRecorder = new MediaRecorder(stream);
-
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = async () => {
-      mostrarStatus("Financiando...");
-
-      const originalBlob = new Blob(recordedChunks, { type: "video/webm" });
-      const videoUrl = URL.createObjectURL(originalBlob);
-
-      const videoTemp = document.createElement("video");
-      videoTemp.src = videoUrl;
-      await videoTemp.play();
-
-      // Exibir no preview
-      previewVideo.src = videoUrl;
-      previewVideo.style.display = "block";
-      video.style.display = "none";
-
-      // Enviar para servidor GoFile
-      enviarParaGoFile(originalBlob, "bumerangue_showfest.webm");
-    };
-
-    mediaRecorder.start();
-
-    setTimeout(() => {
-      mediaRecorder.stop();
-    }, 3000);
-  });
+  alert("Modo Bumerangue ainda em desenvolvimento.");
 };
+
+const limparBtn = document.getElementById("limpar-cache");
+if (limparBtn) {
+  limparBtn.onclick = async () => {
+    const confirmar = confirm("Deseja limpar o cache?");
+    if (!confirmar) return;
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+    alert("Cache limpo. Atualize a página.");
+  };
+}
