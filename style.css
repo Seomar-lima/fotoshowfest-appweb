@@ -4,68 +4,115 @@
   box-sizing: border-box;
 }
 
-body {
+body, html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
   background-color: black;
   font-family: sans-serif;
-  color: white;
+}
+
+#camera-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
 }
 
-#camera,
-#canvas,
-#previewVideo {
+#camera {
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   object-fit: cover;
-  transform: scaleX(-1); /* Corrige o espelhamento da câmera */
+  transform: scaleX(-1); /* efeito espelho */
+}
+
+#moldura {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 2;
 }
 
 #canvas {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 3;
 }
 
-#previewVideo {
-  z-index: 2;
-  display: none;
+#status-text {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  z-index: 4;
+  font-size: 16px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 5px 10px;
+  border-radius: 5px;
 }
 
-.controls {
+#botoes {
   position: absolute;
-  bottom: 40px;
+  bottom: 20px;
   width: 100%;
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
   z-index: 5;
 }
 
-button {
+#botoes button {
+  padding: 12px 16px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
   background-color: #ff3b3b;
   color: white;
-  font-size: 18px;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
+  font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  transition: background-color 0.2s ease;
 }
 
-button:hover {
-  background-color: #ff1c1c;
+#preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
 }
 
-#statusUpload {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 60px;
+#previewImage {
+  max-width: 90vw;
+  max-height: 70vh;
+  border-radius: 10px;
+}
+
+#qrcode {
+  margin: 20px;
+}
+
+#voltar {
+  padding: 10px 20px;
+  background-color: #ff3b3b;
   color: white;
-  z-index: 6;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
-  pointer-events: none;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
 }
