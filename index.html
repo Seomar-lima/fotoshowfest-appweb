@@ -7,26 +7,26 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="app">
+    <div class="camera-container">
+      <video id="camera" autoplay muted playsinline></video>
+      <img id="moldura" src="moldura.png" alt="Moldura" />
+      <canvas id="canvas" style="display: none;"></canvas>
+      <div id="contador"></div>
+    </div>
 
-  <div id="camera-container">
-    <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-    <canvas id="canvas"></canvas>
-    <div id="status-text">Aguardando...</div>
+    <div class="botoes">
+      <button id="foto">Tirar Foto</button>
+      <button id="bumerangue">Gravar Bumerangue</button>
+      <button id="limpar-cache">Limpar Cache</button>
+    </div>
+
+    <div id="qrDownload"></div>
+    <div id="galeria" class="galeria"></div>
   </div>
 
-  <div id="botoes">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎥 Gravar Bumerangue</button>
-  </div>
-
-  <div id="preview" style="display: none;">
-    <img id="previewImage" />
-    <div id="qrcode"></div>
-    <button id="voltar">🔙 Voltar</button>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <audio id="beep" src="beep.mp3" preload="auto"></audio>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
