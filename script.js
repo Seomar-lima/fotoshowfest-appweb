@@ -5,143 +5,146 @@ const bumerangueBtn = document.getElementById("bumerangue");
 const statusUpload = document.getElementById("statusUpload");
 const previewVideo = document.getElementById("previewVideo");
 
-let mediaStream;
 let mediaRecorder;
 let recordedChunks = [];
 
-function exibirMensagem(texto) {
-  statusUpload.innerText = texto;
-  statusUpload.style.display = "block";
+// Acesso à câmera
+navigator.mediaDevices.getUserMedia({
+  video: { facingMode: "user", width: 1080, height: 1920 },
+  audio: true,
+}).then((stream) => {
+  video.srcObject = stream;
+  video.onloadedmetadata = () => video.play();
+}).catch((err) => {
+  alert("Erro ao acessar câmera: " + err.message);
+});
+
+function mostrarStatus(mensagem) {
+  statusUpload.textContent = mensagem;
+  statusUpload.style.display = "flex";
 }
 
-function ocultarMensagem() {
+function esconderStatus() {
   statusUpload.style.display = "none";
 }
 
-function tocarBeep() {
-  const beep = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-  beep.play();
+function contagemRegressiva(segundos, callback) {
+  let tempo = segundos;
+  mostrarStatus(tempo);
+  const intervalo = setInterval(() => {
+    tempo--;
+    if (tempo <= 0) {
+      clearInterval(intervalo);
+      esconderStatus();
+      callback();
+    } else {
+      mostrarStatus(tempo);
+    }
+  }, 1000);
 }
 
-async function iniciarCamera() {
-  mediaStream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "user" },
-    audio: true
-  });
-  video.srcObject = mediaStream;
-  video.play();
+function gerarQR(link) {
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(link)}&size=200x200`;
+  const img = new Image();
+  img.src = qr;
+  img.style.position = "absolute";
+  img.style.bottom = "20px";
+  img.style.left = "50%";
+  img.style.transform = "translateX(-50%)";
+  img.style.zIndex = "999";
+  document.body.appendChild(img);
+  mostrarStatus("Pronto!");
 }
 
-function tirarFoto() {
-  const context = canvas.getContext("2d");
-  canvas.width = video.videoHeight;
-  canvas.height = video.videoWidth;
-
-  context.save();
-  context.translate(canvas.width, 0);
-  context.scale(-1, 1); // Corrige a inversão da câmera frontal
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  context.restore();
-
-  const dataURL = canvas.toDataURL("image/png");
-  enviarParaImgbb(dataURL);
-}
-
-async function enviarParaImgbb(imgData) {
-  exibirMensagem("Criando QR Code");
-  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
-  const formData = new FormData();
-  formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
-  formData.append("image", base64);
-  formData.append("name", "foto_showfest_" + Date.now());
-
-  const response = await fetch("https://api.imgbb.com/1/upload", {
-    method: "POST",
-    body: formData
-  });
-  const result = await response.json();
-  const url = result.data.url;
-  gerarQRCode(url);
-  exibirMensagem("Pronto!");
-}
-
-async function gravarBumerangue() {
-  await contarRegressiva(3);
-  exibirMensagem("Gravando");
-
-  recordedChunks = [];
-  mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
-
-  mediaRecorder.ondataavailable = function (event) {
-    if (event.data.size > 0) recordedChunks.push(event.data);
-  };
-
-  mediaRecorder.onstop = async () => {
-    exibirMensagem("Processando");
-
-    const blob = new Blob(recordedChunks, { type: "video/webm" });
-    const file = new File([blob], "video.webm", { type: "video/webm" });
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const uploadRes = await fetch("https://api.gofile.io/uploadFile", {
-      method: "POST",
-      body: formData
-    });
-
-    const uploadResult = await uploadRes.json();
-    const url = uploadResult.data.downloadPage;
-
-    exibirMensagem("Financiando...");
-
-    gerarQRCode(url);
-    salvarVideoLocal(blob);
-    exibirMensagem("Pronto!");
-
-    const videoURL = URL.createObjectURL(blob);
-    previewVideo.src = videoURL;
-    previewVideo.loop = true;
-    previewVideo.play();
-    previewVideo.style.display = "block";
-  };
-
-  mediaRecorder.start();
-  setTimeout(() => mediaRecorder.stop(), 3000);
-}
-
-async function contarRegressiva(segundos) {
-  for (let i = segundos; i > 0; i--) {
-    exibirMensagem(i);
-    tocarBeep();
-    await new Promise(r => setTimeout(r, 1000));
-  }
-}
-
-function gerarQRCode(url) {
-  const qr = new QRCode(statusUpload, {
-    text: url,
-    width: 256,
-    height: 256,
-    colorDark: "#ffffff",
-    colorLight: "#000000",
-    correctLevel: QRCode.CorrectLevel.H
-  });
-}
-
-function salvarVideoLocal(blob) {
+function salvarBlobNoCelular(blob, nomeArquivo) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "bumerangue.mp4";
+  a.href = url;
+  a.download = nomeArquivo;
   a.click();
+  URL.revokeObjectURL(url);
 }
 
-// Eventos
+async function enviarParaGoFile(blob, nome) {
+  mostrarStatus("Financiando...");
+
+  const resp = await fetch("https://api.gofile.io/getServer");
+  const { data } = await resp.json();
+  const form = new FormData();
+  form.append("file", blob, nome);
+
+  const upload = await fetch(`https://${data.server}.gofile.io/uploadFile`, {
+    method: "POST",
+    body: form,
+  });
+
+  const resultado = await upload.json();
+  const link = resultado.data.downloadPage;
+
+  gerarQR(link);
+  salvarBlobNoCelular(blob, nome);
+}
+
 fotoBtn.onclick = () => {
-  contarRegressiva(5).then(tirarFoto);
+  contagemRegressiva(5, () => {
+    mostrarStatus("Criando QR Code");
+
+    const context = canvas.getContext("2d");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    context.translate(canvas.width, 0); // desespelha horizontalmente
+    context.scale(-1, 1);
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL("image/png");
+    const base64 = dataUrl.replace(/^data:image\/png;base64,/, "");
+    const blob = atob(base64);
+    const array = new Uint8Array(blob.length);
+    for (let i = 0; i < blob.length; i++) {
+      array[i] = blob.charCodeAt(i);
+    }
+    const finalBlob = new Blob([array], { type: "image/png" });
+
+    enviarParaGoFile(finalBlob, "foto_showfest.png");
+  });
 };
 
-bumerangueBtn.onclick = gravarBumerangue;
+bumerangueBtn.onclick = () => {
+  contagemRegressiva(3, () => {
+    mostrarStatus("Gravando");
 
-// Iniciar câmera ao abrir
-iniciarCamera();
+    recordedChunks = [];
+    const stream = video.srcObject;
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      mostrarStatus("Financiando...");
+
+      const originalBlob = new Blob(recordedChunks, { type: "video/webm" });
+      const videoUrl = URL.createObjectURL(originalBlob);
+
+      const videoTemp = document.createElement("video");
+      videoTemp.src = videoUrl;
+      await videoTemp.play();
+
+      // Exibir no preview
+      previewVideo.src = videoUrl;
+      previewVideo.style.display = "block";
+      video.style.display = "none";
+
+      // Enviar para servidor GoFile
+      enviarParaGoFile(originalBlob, "bumerangue_showfest.webm");
+    };
+
+    mediaRecorder.start();
+
+    setTimeout(() => {
+      mediaRecorder.stop();
+    }, 3000);
+  });
+};
