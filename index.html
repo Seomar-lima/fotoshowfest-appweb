@@ -1,53 +1,32 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app-container">
-    <header>
-      <h1>Foto Show Fest</h1>
-      <h2>15 anos da Geovanna</h2>
-    </header>
 
-    <div id="camera-wrapper">
-      <div id="camera-container">
-        <video id="camera" autoplay playsinline></video>
-        <img id="moldura" src="moldura.png" alt="Moldura" crossorigin="anonymous">
-        <div id="counter"></div>
-      </div>
-    </div>
+  <!-- Vídeo da câmera -->
+  <video id="camera" autoplay playsinline muted></video>
 
-    <div class="controls">
-      <button id="capture-btn">
-        <span class="icon">📸</span> Tirar Foto
-      </button>
-      <button id="boomerang-btn">
-        <span class="icon">🎞️</span> Bumerangue
-      </button>
-    </div>
+  <!-- Canvas para captura de foto -->
+  <canvas id="canvas"></canvas>
 
-    <div id="qr-container"></div>
+  <!-- Status (usado para contagem, mensagens tipo "Gravando", "Pronto!", etc.) -->
+  <div id="statusUpload"></div>
 
-    <div id="gallery-container">
-      <h3><span class="icon">📸</span> Galeria</h3>
-      <div id="gallery"></div>
-    </div>
+  <!-- Visualização de vídeo bumerangue -->
+  <video id="previewVideo" loop muted autoplay playsinline></video>
 
-    <footer>
-      <p>© 2025 - Foto Show Fest</p>
-    </footer>
-
-    <!-- Elementos ocultos -->
-    <canvas id="canvas"></canvas>
-    <audio id="shutter-sound" src="beep.mp3" preload="auto"></audio>
-    <button id="cancel-btn" style="display:none;">✖ Cancelar</button>
+  <!-- Botões -->
+  <div class="controls">
+    <button id="foto">Tirar Foto</button>
+    <button id="bumerangue">Gravar Bumerangue</button>
   </div>
 
+  <!-- Scripts -->
   <script src="script.js"></script>
 </body>
 </html>
