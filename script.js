@@ -7,6 +7,7 @@ const contador = document.getElementById("contador");
 const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
+const limparBtn = document.getElementById("limpar-cache");
 
 let stream;
 
@@ -49,7 +50,7 @@ function capturarFoto() {
     const imgData = canvas.toDataURL("image/png");
     const img = new Image();
     img.src = imgData;
-    img.style.cursor = "pointer";
+    img.classList.add("foto-miniatura");
     img.onclick = () => {
       const novaJanela = window.open();
       novaJanela.document.write(`<img src="${imgData}" style="width:100%">`);
@@ -75,19 +76,19 @@ function enviarParaImgbb(imgData) {
     .then(response => response.json())
     .then(data => {
       if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida do imgbb");
+      else throw new Error("Resposta inválida");
     })
     .catch(error => {
-      console.error("Erro no upload:", error);
+      console.error("Erro ao enviar:", error);
       qrDiv.innerText = "Erro ao gerar QR Code.";
       qrDiv.style.color = "red";
+      limparBtn.style.display = "inline-block"; // Exibe botão caso erro
     });
 }
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
   const qrContainer = document.createElement("div");
-  qrContainer.style.margin = "10px auto";
   qrDiv.appendChild(qrContainer);
 
   new QRCode(qrContainer, {
@@ -108,17 +109,16 @@ function gerarQRCode(link) {
   qrDiv.appendChild(a);
 }
 
-bumerangueBtn.onclick = () => {
-  alert("Modo Bumerangue ainda em desenvolvimento.");
-};
-
-const limparBtn = document.getElementById("limpar-cache");
 if (limparBtn) {
   limparBtn.onclick = async () => {
     const confirmar = confirm("Deseja limpar o cache?");
     if (!confirmar) return;
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
-    alert("Cache limpo. Atualize a página.");
+    alert("Cache limpo. Recarregue a página.");
   };
 }
+
+bumerangueBtn.onclick = () => {
+  alert("Modo Bumerangue em breve!");
+};
