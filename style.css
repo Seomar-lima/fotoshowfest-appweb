@@ -1,118 +1,76 @@
-* {
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body, html {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  background-color: black;
   font-family: sans-serif;
+  background-color: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-#camera-container {
+.camera-container {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 9 / 16;
   overflow: hidden;
+  background-color: #111;
 }
 
-#camera {
+#camera, #moldura {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  transform: scaleX(-1); /* efeito espelho */
 }
 
 #moldura {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
   pointer-events: none;
   z-index: 2;
 }
 
-#canvas {
-  display: none;
+#contador {
   position: absolute;
-  top: 0;
+  top: 20px;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 3;
-}
-
-#status-text {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  color: white;
-  z-index: 4;
-  font-size: 16px;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 5px 10px;
-  border-radius: 5px;
-}
-
-#botoes {
-  position: absolute;
-  bottom: 20px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  z-index: 5;
-}
-
-#botoes button {
-  padding: 12px 16px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background-color: #ff3b3b;
-  color: white;
+  right: 0;
+  text-align: center;
+  font-size: 48px;
   font-weight: bold;
+  z-index: 3;
+  color: yellow;
+}
+
+.botoes {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.botoes button {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #1e90ff;
+  border: none;
+  border-radius: 5px;
+  color: white;
   cursor: pointer;
 }
 
-#preview {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: black;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
+.botoes button:hover {
+  background-color: #007acc;
 }
 
-#previewImage {
-  max-width: 90vw;
-  max-height: 70vh;
-  border-radius: 10px;
+#qrDownload {
+  margin: 20px auto;
+  text-align: center;
 }
 
-#qrcode {
-  margin: 20px;
-}
-
-#voltar {
-  padding: 10px 20px;
-  background-color: #ff3b3b;
-  color: white;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
+.galeria img {
+  max-width: 100%;
+  margin-top: 10px;
+  border: 2px solid white;
 }
