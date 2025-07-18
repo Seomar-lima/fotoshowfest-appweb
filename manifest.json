@@ -2,7 +2,7 @@
   "name": "Foto Show Fest",
   "short_name": "FotoFest",
   "description": "Aplicativo de fotos para evento de 15 anos",
-  "start_url": "/",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#FFD700",
@@ -46,7 +46,8 @@
     {
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
