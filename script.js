@@ -1,215 +1,278 @@
-// ===== CONFIGURAÇÕES GERAIS =====
-const video = document.getElementById("camera");
-const canvas = document.getElementById("canvas");
-const fotoBtn = document.getElementById("foto");
-const bumerangueBtn = document.getElementById("bumerangue");
-const statusUpload = document.getElementById("statusUpload");
-const qrDiv = document.getElementById("qrDownload");
-const moldura = document.getElementById("moldura");
+<script>
+  // === CONFIGURAÇÕES E ELEMENTOS ===
+  const video = document.getElementById("camera");
+  const canvas = document.getElementById("canvas");
+  const fotoBtn = document.getElementById("foto");
+  const bumerangueBtn = document.getElementById("bumerangue");
+  const beep = document.getElementById("beep");
+  const contador = document.getElementById("contador");
+  const galeria = document.getElementById("galeria");
+  const qrDiv = document.getElementById("qrDownload");
+  const moldura = document.getElementById("moldura");
+  const previewContainer = document.getElementById("preview-container");
+  const statusUpload = document.getElementById("statusUpload");
 
-// Configurações do Bumerangue
-const BOOMERANG_SETTINGS = {
-width: 540,
-height: 960,
-fps: 30,
-duration: 2
-};
+  const BOOMERANG_SETTINGS = {
+    width: 540,
+    height: 960,
+    fps: 30,
+    duration: 2
+  };
 
-// Variáveis de estado
-let stream;
-let mediaRecorder;
-let chunks = [];
-let cancelRecording = false;
+  let stream;
+  let cancelRecording = false;
+  let mediaRecorder = null;
+  let recordingInterval = null;
 
-// ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', () => {
-iniciarCamera();
-criarBotaoCancelar();
-});
+  function scrollToElement(element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
-// ===== FUNÇÕES PRINCIPAIS =====
+  function resetView() {
+    scrollToElement(previewContainer);
+  }
 
-// 1. Sistema de Upload para GoFile
-async function enviarParaGoFile(blob, tipo) {
-statusUpload.innerText = Enviando ${tipo === 'foto' ? 'imagem' : 'vídeo'}...;
-statusUpload.style.display = 'block';
+  // === INICIAR CÂMERA ===
+  navigator.mediaDevices.getUserMedia({
+    video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
+    audio: false
+  })
+  .then(s => {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+    resetView();
+  })
+  .catch(err => {
+    console.error("Erro ao acessar a câmera:", err);
+    alert("Não foi possível acessar a câmera. Verifique permissões.");
+  });
 
-try {
-// Obter servidor ativo
-const serverRes = await fetch("https://api.gofile.io/getServer");
-const { data: { server } } = await serverRes.json();
+  // === FOTO COM CONTAGEM ===
+  fotoBtn.onclick = () => {
+    resetView();
+    let count = 5;
+    contador.innerText = count;
 
-// Preparar arquivo  
-const extensao = tipo === 'foto' ? 'png' : 'mp4';  
-const formData = new FormData();  
-formData.append('file', blob, `showfest_${Date.now()}.${extensao}`);  
+    if (recordingInterval) clearInterval(recordingInterval);
 
-// Fazer upload  
-const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {  
-  method: 'POST',  
-  body: formData  
-});  
-const { data } = await uploadRes.json();  
+    recordingInterval = setInterval(() => {
+      count--;
+      contador.innerText = count;
+      beep.play();
+      if (count === 0) {
+        clearInterval(recordingInterval);
+        contador.innerText = "";
+        capturarFoto();
+      }
+    }, 1000);
+  };
 
-if (!data?.downloadPage) throw new Error("Upload falhou");  
-return data.downloadPage;
+  function capturarFoto() {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-} catch (erro) {
-console.error("Erro no upload:", erro);
-throw erro;
-} finally {
-statusUpload.style.display = 'none';
-}
-}
+    if (moldura.complete && moldura.naturalHeight !== 0) {
+      ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+    }
 
-// 2. Função para Fotos
-async function processarFoto() {
-// Capturar imagem do canvas
-const imgData = canvas.toDataURL('image/png');
-const blob = dataURLtoBlob(imgData);
+    setTimeout(() => {
+      const imgData = canvas.toDataURL("image/png");
+      const img = new Image();
+      img.src = imgData;
+      img.style.cursor = "pointer";
+      galeria.appendChild(img);
+      enviarParaImgbb(imgData);
+    }, 300);
+  }
 
-try {
-// Upload para GoFile
-const gofileUrl = await enviarParaGoFile(blob, 'foto');
+  function baixarImagem(imgData) {
+    const link = document.createElement("a");
+    link.href = imgData;
+    const uniqueName = `foto_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.png`;
+    link.download = uniqueName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
-// Gerar QR Code primeiro  
-gerarQRCode(gofileUrl);  
-  
-// Download local após 1s (opcional)  
-setTimeout(() => {  
-  baixarImagemLocal(imgData);  
-}, 1000);
+  function enviarParaImgbb(imgData) {
+    const base64 = imgData.replace(/^data:image\/png;base64,/, "");
+    const formData = new FormData();
+    formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
+    formData.append("image", base64);
+    formData.append("name", "foto_showfest_" + Date.now());
 
-} catch (erro) {
-mostrarErro("Erro ao processar foto");
-}
-}
+    contador.innerText = "";
+    statusUpload.innerText = "Enviando imagem...";
+    statusUpload.style.display = "block";
 
-// 3. Função para Bumerangue
-async function processarBumerangue() {
-try {
-const webmBlob = new Blob(chunks, { type: 'video/webm' });
+    fetch("https://api.imgbb.com/1/upload", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data?.data?.url) {
+        gerarQRCode(data.data.url);
+        baixarImagem("data:image/png;base64," + base64);
+        setTimeout(() => scrollToElement(qrDiv), 500);
+      } else {
+        throw new Error("Resposta inválida do imgbb");
+      }
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      qrDiv.innerHTML = "<p style='color:red'>Erro ao gerar QRCode. Tente novamente.</p>";
+    })
+    .finally(() => {
+      statusUpload.style.display = "none";
+    });
+  }
 
-// Converter para MP4  
-statusUpload.innerText = "Convertendo para MP4...";  
-statusUpload.style.display = 'block';  
-const mp4Blob = await converterParaMP4(webmBlob);  
-  
-// Upload para GoFile  
-const gofileUrl = await enviarParaGoFile(mp4Blob, 'video');  
-  
-// Gerar QR Code  
-gerarQRCode(gofileUrl);  
-  
-// Download local após 1s (opcional)  
-setTimeout(() => {  
-  const url = URL.createObjectURL(mp4Blob);  
-  baixarVideoLocal(url, 'bumerangue.mp4');  
-}, 1000);
+  function gerarQRCode(link) {
+    qrDiv.innerHTML = "";
+    const title = document.createElement("h3");
+    title.textContent = "Escaneie para baixar:";
+    title.style.color = "#FFD700";
+    title.style.marginBottom = "10px";
+    title.style.textAlign = "center";
+    qrDiv.appendChild(title);
 
-} catch (erro) {
-mostrarErro("Erro ao processar vídeo");
-}
-}
+    const qrContainer = document.createElement("div");
+    qrContainer.style.margin = "0 auto";
+    qrContainer.style.width = "256px";
+    qrContainer.style.textAlign = "center";
+    qrDiv.appendChild(qrContainer);
 
-// ===== FUNÇÕES DE APOIO =====
+    new QRCode(qrContainer, {
+      text: link,
+      width: 256,
+      height: 256,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
 
-// Conversão WebM → MP4
-async function converterParaMP4(webmBlob) {
-const { createFFmpeg } = FFmpeg;
-const ffmpeg = createFFmpeg({ log: true });
-await ffmpeg.load();
+  bumerangueBtn.onclick = async () => {
+    if (!stream) return alert("Câmera não inicializada.");
+    resetView();
 
-ffmpeg.FS('writeFile', 'input.webm', new Uint8Array(await webmBlob.arrayBuffer()));
-await ffmpeg.run(
-'-i', 'input.webm',
-'-c:v', 'libx264',
-'-profile:v', 'baseline',
-'-pix_fmt', 'yuv420p',
-'output.mp4'
-);
+    const cancelBtn = document.getElementById('cancelBtn');
+    cancelBtn.style.display = 'block';
+    cancelRecording = false;
 
-const data = ffmpeg.FS('readFile', 'output.mp4');
-return new Blob([data.buffer], { type: 'video/mp4' });
-}
+    if (mediaRecorder) mediaRecorder = null;
+    if (recordingInterval) clearInterval(recordingInterval);
 
-// Download local de imagem
-function baixarImagemLocal(dataUrl) {
-const link = document.createElement('a');
-link.href = dataUrl;
-link.download = foto_showfest_${Date.now()}.png;
-link.style.display = 'none';
-document.body.appendChild(link);
-link.click();
-setTimeout(() => document.body.removeChild(link), 100);
-}
+    let count = 3;
+    contador.innerText = count;
+    recordingInterval = setInterval(() => {
+      count--;
+      contador.innerText = count;
+      beep.play();
+      if (count === 0) {
+        clearInterval(recordingInterval);
+        contador.innerText = "Gravando...";
+        iniciarBumerangueVertical();
+      }
+    }, 1000);
+  };
 
-// Download local de vídeo
-function baixarVideoLocal(url, nome) {
-const link = document.createElement('a');
-link.href = url;
-link.download = nome;
-link.style.display = 'none';
-document.body.appendChild(link);
-link.click();
-setTimeout(() => {
-URL.revokeObjectURL(url);
-document.body.removeChild(link);
-}, 100);
-}
+async function converterParaMP4(blob) {
+  const apiKey = "SUA_CLOUDCONVERT_API_KEY_AQUI";
+  const reader = new FileReader();
 
-// Geração de QR Code
-function gerarQRCode(url) {
-qrDiv.innerHTML =   <h3 style="color:#FFD700;text-align:center">Escaneie para baixar</h3>   <div id="qrcode" style="margin:0 auto"></div>   <a href="${url}" target="_blank" style="color:#FFD700;display:block;margin-top:10px">   Abrir link diretamente   </a>  ;
+  reader.readAsDataURL(blob);
 
-new QRCode(document.getElementById("qrcode"), {
-text: url,
-width: 200,
-height: 200,
-colorDark: "#000000",
-colorLight: "#ffffff"
-});
-}
+  reader.onloadend = async () => {
+    const base64Data = reader.result.split(',')[1];
+    statusUpload.innerText = "Convertendo para MP4...";
+    statusUpload.style.display = "block";
+    contador.innerText = "";
 
-// ===== FUNÇÕES AUXILIARES =====
-function dataURLtoBlob(dataurl) {
-const arr = dataurl.split(',');
-const mime = arr[0].match(/:(.*?);/)[1];
-const bstr = atob(arr[1]);
-const u8arr = new Uint8Array(bstr.length);
-for (let i = 0; i < bstr.length; i++) {
-u8arr[i] = bstr.charCodeAt(i);
-}
-return new Blob([u8arr], { type: mime });
-}
+    try {
+      // 1. Upload base64
+      const importRes = await fetch("https://api.cloudconvert.com/v2/import/base64", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          file: base64Data,
+          filename: `bumerangue_${Date.now()}.webm`
+        })
+      });
+      const importTask = await importRes.json();
 
-function mostrarErro(mensagem) {
-qrDiv.innerHTML = <p style="color:red">${mensagem}</p>;
-statusUpload.style.display = 'none';
-}
+      // 2. Conversão
+      const convertRes = await fetch("https://api.cloudconvert.com/v2/convert", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          input: importTask.data.id,
+          output_format: "mp4"
+        })
+      });
+      const convertTask = await convertRes.json();
 
-function iniciarCamera() {
-navigator.mediaDevices.getUserMedia({
-video: { width: 1920, height: 1080, facingMode: 'user' },
-audio: false
-}).then(s => {
-stream = s;
-video.srcObject = stream;
-}).catch(err => {
-console.error("Erro na câmera:", err);
-});
-}
+      // 3. Exportar para link público
+      const exportRes = await fetch("https://api.cloudconvert.com/v2/export/url", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          input: convertTask.data.id
+        })
+      });
+      const exportTask = await exportRes.json();
+      const exportTaskId = exportTask.data.id;
 
-function criarBotaoCancelar() {
-const btn = document.createElement('button');
-btn.id = 'cancelBtn';
-btn.textContent = '✖ Cancelar';
-btn.style.cssText =   display: none;   background: #ff4444;   color: white;   padding: 10px 15px;   border: none;   border-radius: 5px;   margin: 10px auto;   cursor: pointer;  ;
-btn.onclick = () => {
-cancelRecording = true;
-if (mediaRecorder?.state !== 'inactive') mediaRecorder.stop();
-document.getElementById('contador').innerText = '';
-btn.style.display = 'none';
-};
-document.body.appendChild(btn);
+      // 4. Aguardar status "finished"
+      let mp4Url = null;
+      for (let i = 0; i < 10; i++) {
+        const statusRes = await fetch(`https://api.cloudconvert.com/v2/tasks/${exportTaskId}`, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          }
+        });
+        const statusJson = await statusRes.json();
+        if (statusJson.data.status === "finished" && statusJson.data.result?.files?.[0]?.url) {
+          mp4Url = statusJson.data.result.files[0].url;
+          break;
+        }
+        await new Promise(r => setTimeout(r, 2000)); // espera 2 segundos
+      }
+
+      if (!mp4Url) throw new Error("Conversão não completada a tempo.");
+
+      // 5. Baixar o arquivo convertido com nome único
+      const a = document.createElement("a");
+      a.href = mp4Url;
+      a.download = `bumerangue_showfest_${Date.now()}_${Math.floor(Math.random() * 10000)}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // 6. Gerar QR code
+      gerarQRCode(mp4Url);
+      contador.innerText = "Pronto!";
+      statusUpload.style.display = "none";
+
+    } catch (err) {
+      console.error("Erro ao converter vídeo:", err);
+      statusUpload.innerText = "Erro ao converter vídeo.";
+      contador.innerText = "Erro ao finalizar";
+      qrDiv.innerHTML = "<p style='color:red'>Erro ao converter o vídeo. Tente novamente.</p>";
+    }
+  };
 }
