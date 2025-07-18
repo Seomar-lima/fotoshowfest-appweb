@@ -7,15 +7,7 @@ body {
   text-align: center;
 }
 
-h1 {
-  font-size: 2em;
-  margin: 0.5em 0 0.2em;
-  color: #FFD700;
-}
-
-h2 {
-  font-size: 1.5em;
-  margin-bottom: 1em;
+h1, h2 {
   color: #FFD700;
 }
 
@@ -46,7 +38,7 @@ h2 {
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(255, 215, 0, 0.9); /* amarelo com transparência */
+  background-color: rgba(255, 215, 0, 0.9);
   color: black;
   font-weight: bold;
   padding: 8px 12px;
@@ -124,11 +116,6 @@ footer {
   padding: 10px;
 }
 
-#galeria-icon {
-  margin-top: 10px;
-  width: 50px;
-}
-
 #cancelBtn {
   display: none;
   background: #ff4444;
@@ -140,19 +127,3 @@ footer {
   cursor: pointer;
   font-weight: bold;
 }
-
-#statusUpload {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #FFD700;
-  font-size: 48px;
-  font-weight: bold;
-  text-align: center;
-  display: none;
-  z-index: 1000;
-  background: none;
-  padding: 0;
-}
-
