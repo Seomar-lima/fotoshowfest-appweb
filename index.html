@@ -1,40 +1,162 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000;
+      color: #FFD700;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin: 0.5em 0 0.2em;
+      color: #FFD700;
+    }
+
+    #preview-container {
+      position: relative;
+      display: inline-block;
+      width: 90%;
+      max-width: 400px;
+      margin: 20px auto;
+    }
+
+    #camera {
+      width: 100%;
+      border-radius: 15px;
+      background: #000;
+    }
+
+    #moldura {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #statusUpload {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #FFD700;
+      font-size: 1.2em;
+      font-weight: bold;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 20px;
+      border-radius: 10px;
+      z-index: 100;
+      display: none;
+    }
+
+    .controls {
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1em;
+      background-color: #FFD700;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    #qrDownload {
+      margin: 20px auto;
+      padding: 15px;
+      background: #fff;
+      border-radius: 10px;
+      max-width: 300px;
+    }
+
+    #galeria {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+    }
+
+    #galeria img {
+      width: 100px;
+      border-radius: 8px;
+      border: 2px solid #FFD700;
+    }
+
+    #contador {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #FFD700;
+      font-size: 4em;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px #000;
+      z-index: 50;
+    }
+
+    footer {
+      margin-top: 30px;
+      padding: 10px;
+      color: #FFD700;
+    }
+  </style>
 </head>
 <body>
   <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
-
+  
   <div id="preview-container">
     <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-    <div id="statusUpload" style="color: yellow; font-size: 1.2em; font-weight: bold; margin-top: 10px;"></div>
+    <img id="moldura" src="moldura.png" alt="Moldura" style="display:none;">
+    <div id="statusUpload"></div>
+    <div id="contador"></div>
   </div>
-
-  <div id="contador"></div>
 
   <div class="controls">
     <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
+    <button id="bumerangue">🎞️ Bumerangue</button>
   </div>
 
-  <div class="qr-download" id="qrDownload"></div>
+  <div id="qrDownload"></div>
 
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
+  <h2>Galeria</h2>
   <div id="galeria"></div>
 
-  <footer>© 2025 - Foto Show Fest</footer>
+  <footer>
+    © 2023 Foto Show Fest
+  </footer>
 
-  <audio id="beep" src="beep.mp3" preload="auto"></audio>
   <canvas id="canvas" style="display:none;"></canvas>
 
-  <script src="script.js"></script>
+  <script>
+    // Cole AQUI todo o conteúdo do script.js fornecido
+    // ===== CONFIGURAÇÕES GERAIS =====
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("canvas");
+    // ... (restante do seu código JavaScript)
+  </script>
 </body>
 </html>
