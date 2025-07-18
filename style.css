@@ -1,11 +1,28 @@
 body {
   margin: 0;
-  font-family: sans-serif;
-  background-color: #000;
+  background: #000;
   color: #fff;
+  font-family: sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.topo {
+  text-align: center;
+  padding: 10px;
+}
+
+.topo h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #1e90ff;
+}
+
+.topo h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #f0e68c;
 }
 
 .camera-container {
@@ -13,64 +30,73 @@ body {
   width: 100%;
   max-width: 480px;
   aspect-ratio: 9 / 16;
+  background-color: #222;
   overflow: hidden;
-  background-color: #111;
 }
 
-#camera, #moldura {
+#camera,
+#moldura {
   position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
 #moldura {
-  pointer-events: none;
   z-index: 2;
+  pointer-events: none;
 }
 
 #contador {
   position: absolute;
-  top: 20px;
-  left: 0;
-  right: 0;
+  top: 40%;
+  width: 100%;
   text-align: center;
-  font-size: 48px;
+  font-size: 64px;
   font-weight: bold;
-  z-index: 3;
   color: yellow;
+  z-index: 3;
 }
 
 .botoes {
-  margin-top: 10px;
   display: flex;
   gap: 10px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.botoes button {
-  padding: 10px 20px;
+button {
+  padding: 12px 18px;
   font-size: 16px;
-  font-weight: bold;
-  background-color: #1e90ff;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
+  background-color: #1e90ff;
   color: white;
   cursor: pointer;
 }
 
-.botoes button:hover {
+button:hover {
   background-color: #007acc;
 }
 
 #qrDownload {
-  margin: 20px auto;
   text-align: center;
+  margin-top: 20px;
+}
+
+.galeria {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
 }
 
 .galeria img {
-  max-width: 100%;
-  margin-top: 10px;
-  border: 2px solid white;
+  width: 80px;
+  height: auto;
+  cursor: pointer;
+  border: 2px solid #fff;
+  border-radius: 4px;
 }
