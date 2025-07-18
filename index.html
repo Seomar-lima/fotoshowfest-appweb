@@ -1,27 +1,37 @@
-<!DOCTYPE html><html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app">
+
+  <div id="statusUpload"></div>
+  <div id="qrDownload"></div>
+
+  <div id="preview-container">
     <video id="camera" autoplay playsinline></video>
-    <img id="moldura" src="moldura.png" alt="Moldura" />
-    <canvas id="canvas" style="display: none;"></canvas><div id="controles">
-  <button id="foto">Tirar Foto</button>
-  <button id="bumerangue">Gravar Bumerangue</button>
-</div>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <img id="moldura" src="" alt="">
+  </div>
 
-<div id="mensagem"></div>
+  <div class="controls">
+    <button id="foto">Tirar Foto</button>
+    <button id="bumerangue">Bumerangue</button>
+  </div>
 
-<div id="preview" style="display: none;">
-  <img id="imagemPreview" alt="Preview" />
-  <video id="videoPreview" controls loop style="display: none;"></video>
-  <div id="qrcode"></div>
-  <button id="voltar">Voltar</button>
-</div>
+  <div id="contador"></div>
+  <div id="galeria"></div>
 
-  </div>  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling/lib/qr-code-styling.js"></script>  <script src="script.js"></script></body>
+  <footer>
+    <p>Foto Show Fest © 2025</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
 </html>
