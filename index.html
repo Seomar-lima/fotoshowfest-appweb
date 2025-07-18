@@ -3,29 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>FotoShowFest</title>
+  <link rel="stylesheet" href="estilo.css" />
 </head>
 <body>
-  <div id="container">
-    <video id="camera" autoplay muted playsinline></video>
-    <canvas id="canvas" style="display: none;"></canvas>
+  <video id="camera" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <img id="moldura" src="moldura.png" style="display:none;" />
 
-    <div id="controles">
-      <button id="foto">📸 Tirar Foto</button>
-      <button id="bumerangue">🔁 Gravar Bumerangue</button>
-    </div>
-
-    <div id="status"></div>
-    <div id="preview">
-      <img id="previewImagem" />
-      <video id="previewVideo" controls loop></video>
-      <img id="qrCode" />
-      <button id="voltar" onclick="location.reload()">🔄 Voltar</button>
-    </div>
+  <div id="botoes">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🔁 Gravar Bumerangue</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling/lib/qr-code-styling.js"></script>
+  <div id="contador"></div>
+  <div id="statusUpload"></div>
+  <div id="qrDownload"></div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/ffmpeg.js/ffmpeg.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
