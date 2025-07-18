@@ -25,6 +25,42 @@ let cancelRecording = false;
 document.addEventListener('DOMContentLoaded', () => {
   iniciarCamera();
   criarBotaoCancelar();
+  fotoBtn.addEventListener("click", () => {
+  const context = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  processarFoto();
+});
+
+bumerangueBtn.addEventListener("click", async () => {
+  chunks = [];
+  cancelRecording = false;
+
+  const gravar = () => new Promise((resolve) => {
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => resolve();
+
+    mediaRecorder.start();
+    setTimeout(() => {
+      if (!cancelRecording && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      }
+    }, BOOMERANG_SETTINGS.duration * 1000);
+  });
+
+  document.getElementById('cancelBtn').style.display = 'block';
+  await gravar();
+
+  if (!cancelRecording) {
+    processarBumerangue();
+  }
+});
 });
 
 // ===== FUNÇÕES PRINCIPAIS =====
