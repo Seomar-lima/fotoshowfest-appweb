@@ -8,25 +8,25 @@
 </head>
 <body>
 
-  <!-- Vídeo da câmera -->
-  <video id="camera" autoplay playsinline muted></video>
-
-  <!-- Canvas para foto -->
-  <canvas id="canvas"></canvas>
-
-  <!-- Status / Legendas -->
-  <div id="statusUpload"></div>
-
-  <!-- Visualização do bumerangue -->
-  <video id="previewVideo" loop muted autoplay playsinline></video>
-
-  <!-- Botões -->
-  <div class="controls">
-    <button id="foto">Tirar Foto</button>
-    <button id="bumerangue">Gravar Bumerangue</button>
+  <div id="camera-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="moldura" src="moldura.png" alt="Moldura" />
+    <canvas id="canvas"></canvas>
+    <div id="status-text">Aguardando...</div>
   </div>
 
-  <!-- Scripts -->
+  <div id="botoes">
+    <button id="foto">📸 Tirar Foto</button>
+    <button id="bumerangue">🎥 Gravar Bumerangue</button>
+  </div>
+
+  <div id="preview" style="display: none;">
+    <img id="previewImage" />
+    <div id="qrcode"></div>
+    <button id="voltar">🔙 Voltar</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
