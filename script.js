@@ -133,17 +133,24 @@ function gerarQRCode(link) {
   qrDiv.appendChild(title);
 
   const qrContainer = document.createElement("div");
-  qrContainer.style = "margin:0 auto;width:256px;text-align:center";
+  qrContainer.style = "margin: 0 auto; width: 256px; text-align: center;";
   qrDiv.appendChild(qrContainer);
 
   new QRCode(qrContainer, {
     text: link,
     width: 256,
     height: 256,
-    colorDark: "#000",
-    colorLight: "#fff",
+    colorDark: "#000000",
+    colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
+
+  // Garante que o scroll execute depois do QR ser realmente renderizado no DOM
+  setTimeout(() => {
+    requestAnimationFrame(() => {
+      scrollToElement(qrDiv);
+    });
+  }, 200); // Pequeno atraso para permitir que o DOM atualize
 }
 // === BUMERANGUE COM CONTAGEM ===
 bumerangueBtn.onclick = () => {
