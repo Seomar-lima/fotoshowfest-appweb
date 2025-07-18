@@ -1,40 +1,27 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html><html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Foto Show Fest</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <h1>Foto Show Fest</h1>
-  <h2>15 anos da Geovanna</h2>
-
-  <div id="preview-container">
+  <div id="app">
     <video id="camera" autoplay playsinline></video>
     <img id="moldura" src="moldura.png" alt="Moldura" />
-    <div id="statusUpload" style="color: yellow; font-size: 1.2em; font-weight: bold; margin-top: 10px;"></div>
-  </div>
+    <canvas id="canvas" style="display: none;"></canvas><div id="controles">
+  <button id="foto">Tirar Foto</button>
+  <button id="bumerangue">Gravar Bumerangue</button>
+</div>
 
-  <div id="contador"></div>
+<div id="mensagem"></div>
 
-  <div class="controls">
-    <button id="foto">📸 Tirar Foto</button>
-    <button id="bumerangue">🎞️ Gravar Bumerangue</button>
-  </div>
+<div id="preview" style="display: none;">
+  <img id="imagemPreview" alt="Preview" />
+  <video id="videoPreview" controls loop style="display: none;"></video>
+  <div id="qrcode"></div>
+  <button id="voltar">Voltar</button>
+</div>
 
-  <div class="qr-download" id="qrDownload"></div>
-
-  <h3>📸 Galeria de Fotos</h3>
-  <img id="galeria-icon" src="galeria.png" alt="Galeria">
-  <div id="galeria"></div>
-
-  <footer>© 2025 - Foto Show Fest</footer>
-
-  <audio id="beep" src="beep.mp3" preload="auto"></audio>
-  <canvas id="canvas" style="display:none;"></canvas>
-
-  <script src="script.js"></script>
-</body>
+  </div>  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling/lib/qr-code-styling.js"></script>  <script src="script.js"></script></body>
 </html>
