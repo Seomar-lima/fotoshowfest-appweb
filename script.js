@@ -7,6 +7,7 @@ const contador = document.getElementById("contador");
 const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
+const erroDiv = document.getElementById("erro");
 const limparBtn = document.getElementById("limpar-cache");
 
 let stream;
@@ -19,7 +20,7 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
-    alert("Erro ao acessar a câmera. Verifique as permissões.");
+    alert("Erro ao acessar a câmera. Verifique permissões.");
   });
 
 fotoBtn.onclick = () => {
@@ -68,6 +69,7 @@ function enviarParaImgbb(imgData) {
   formData.append("name", "foto_showfest_" + Date.now());
 
   qrDiv.innerHTML = "Enviando imagem...";
+  erroDiv.style.display = "none";
 
   fetch("https://api.imgbb.com/1/upload", {
     method: "POST",
@@ -76,13 +78,13 @@ function enviarParaImgbb(imgData) {
     .then(response => response.json())
     .then(data => {
       if (data?.data?.url) gerarQRCode(data.data.url);
-      else throw new Error("Resposta inválida");
+      else throw new Error("Erro na resposta do imgbb");
     })
     .catch(error => {
-      console.error("Erro ao enviar:", error);
-      qrDiv.innerText = "Erro ao gerar QR Code.";
-      qrDiv.style.color = "red";
-      limparBtn.style.display = "inline-block"; // Exibe botão caso erro
+      console.error("Erro no upload:", error);
+      erroDiv.style.display = "block";
+      qrDiv.innerText = "";
+      limparBtn.style.display = "inline-block";
     });
 }
 
