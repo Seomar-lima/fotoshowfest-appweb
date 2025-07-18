@@ -30,6 +30,7 @@ h2 {
 #camera {
   width: 100%;
   border-radius: 15px;
+  transform: scalex(-1);
 }
 
 #moldura {
