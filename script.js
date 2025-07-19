@@ -38,27 +38,31 @@ navigator.mediaDevices.getUserMedia({
   alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
 });
 
+// Função para rolar até a câmera
+function scrollToCamera() {
+  const cameraContainer = document.querySelector('.camera-container');
+  cameraContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 // Botão de foto
-fotoBtn.addEventListener("click", takePhoto);
+fotoBtn.addEventListener("click", () => {
+  scrollToCamera();
+  takePhoto();
+});
 
 // Botão de bumerangue
-bumerangueBtn.addEventListener("click", startBoomerang);
+bumerangueBtn.addEventListener("click", () => {
+  scrollToCamera();
+  startBoomerang();
+});
 
 // Função para tirar foto
 function takePhoto() {
   if (qrGenerated) return;
   
-  // Role para a câmera
-  document.querySelector('.camera-container').scrollIntoView({ 
-    behavior: 'smooth', 
-    block: 'center'
-  });
-  
   let count = 5;
   contador.innerText = count;
-  contador.style.display = "flex"; // Mostrar contador
-  contador.classList.add("mostrar");
-  
+  contador.classList.add('visible');
   beep.play().catch(err => console.log("Erro no áudio:", err));
   
   const interval = setInterval(() => {
@@ -73,9 +77,7 @@ function takePhoto() {
     
     if (count === 0) {
       clearInterval(interval);
-      contador.innerText = "";
-      contador.style.display = "none"; // Ocultar contador
-      contador.classList.remove("mostrar");
+      contador.classList.remove('visible');
       capturePhoto();
     }
   }, 1000);
@@ -114,17 +116,9 @@ function capturePhoto() {
 function startBoomerang() {
   if (qrGenerated || isRecording) return;
   
-  // Role para a câmera
-  document.querySelector('.camera-container').scrollIntoView({ 
-    behavior: 'smooth', 
-    block: 'center'
-  });
-  
   let count = 3;
   contador.innerText = count;
-  contador.style.display = "flex"; // Mostrar contador
-  contador.classList.add("mostrar");
-  
+  contador.classList.add('visible');
   beep.play().catch(err => console.log("Erro no áudio:", err));
   
   const countdown = setInterval(() => {
@@ -139,9 +133,7 @@ function startBoomerang() {
     
     if (count === 0) {
       clearInterval(countdown);
-      contador.innerText = "";
-      contador.style.display = "none"; // Ocultar contador
-      contador.classList.remove("mostrar");
+      contador.classList.remove('visible');
       startBoomerangRecording();
     }
   }, 1000);
@@ -229,7 +221,7 @@ function simulateUpload(data, type) {
       margin: 4
     });
     
-    // Role para o QR code
+    // Centralizar o QR code na tela
     qrDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
     
     // Download automático
@@ -250,15 +242,14 @@ function simulateUpload(data, type) {
 function showProcessing(text) {
   processingText.textContent = text;
   processing.style.display = "flex";
-  processing.classList.add("mostrar");
 }
 
 // Esconder tela de processamento
 function hideProcessing() {
   processing.style.display = "none";
-  processing.classList.remove("mostrar");
 }
 
-// Inicializar a moldura com imagem SVG (substitua pelo seu arquivo)
+// Inicializar a moldura
 moldura.onerror = function() {
-  this.src = "dat
+  this.src = "moldura.png";
+};
