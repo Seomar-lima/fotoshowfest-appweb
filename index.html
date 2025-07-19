@@ -4,323 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Foto Show Fest - 15 anos Geovanna</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    body {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      overflow-x: hidden;
-      padding: 0;
-    }
-    
-    .app {
-      width: 100%;
-      max-width: 500px;
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 0 0 20px 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      position: relative;
-    }
-    
-    .header {
-      background: linear-gradient(90deg, #ff6b6b 0%, #ffc107 100%);
-      text-align: center;
-      padding: 15px 20px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    
-    .header h1 {
-      font-size: 22px;
-      margin-bottom: 3px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-      letter-spacing: 1px;
-    }
-    
-    .header h2 {
-      font-size: 18px;
-      font-weight: 600;
-    }
-    
-    .content {
-      padding: 15px;
-      padding-top: 0;
-    }
-    
-    .camera-container {
-      position: relative;
-      width: 100%;
-      height: 65vh;
-      max-height: 65vh;
-      overflow: hidden;
-      background: #000;
-      border-radius: 10px;
-      margin-top: 15px;
-    }
-    
-    #camera {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transform: scaleX(-1);
-    }
-    
-    #moldura {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      pointer-events: none;
-      z-index: 2;
-    }
-    
-    #contador {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 80px;
-      font-weight: bold;
-      z-index: 3;
-      color: #ffc107;
-      text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
-      background: rgba(0, 0, 0, 0.7);
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    
-    #contador.visible {
-      opacity: 1;
-    }
-    
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      padding: 20px 0;
-      margin-top: 10px;
-    }
-    
-    .btn {
-      background: linear-gradient(135deg, #ff6b6b 0%, #ffc107 100%);
-      border: none;
-      border-radius: 50px;
-      color: #000;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 15px 5px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      transition: all 0.3s ease;
-      text-align: center;
-    }
-    
-    .btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-    }
-    
-    .btn:active {
-      transform: translateY(1px);
-    }
-    
-    .qr-section {
-      padding: 20px;
-      text-align: center;
-      display: none;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-    
-    .qr-title {
-      font-size: 22px;
-      margin-bottom: 15px;
-      color: #ffc107;
-      font-weight: 600;
-    }
-    
-    .qr-container {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      display: inline-block;
-      margin: 0 auto;
-      max-width: 100%;
-    }
-    
-    .gallery-section {
-      padding: 20px 0;
-    }
-    
-    .gallery-title {
-      font-size: 22px;
-      margin-bottom: 15px;
-      color: #ffc107;
-      font-weight: 600;
-      text-align: center;
-    }
-    
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    .gallery img {
-      width: 100%;
-      border-radius: 8px;
-      border: 2px solid #ffc107;
-      aspect-ratio: 9/16;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-      cursor: pointer;
-    }
-    
-    .gallery img:hover {
-      transform: scale(1.05);
-    }
-    
-    #canvas {
-      display: none;
-    }
-    
-    .processing {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-      font-size: 24px;
-      color: #ffc107;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: #ffc107;
-      animation: spin 1s ease-in-out infinite;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    .download-info {
-      margin-top: 15px;
-      font-size: 16px;
-      color: #ffc107;
-      font-weight: 500;
-    }
-    
-    @media (max-width: 600px) {
-      .app {
-        max-width: 100%;
-        border-radius: 0;
-      }
-      
-      .header {
-        padding: 12px 15px;
-      }
-      
-      .header h1 {
-        font-size: 20px;
-      }
-      
-      .header h2 {
-        font-size: 16px;
-      }
-      
-      .camera-container {
-        height: 55vh;
-      }
-      
-      #contador {
-        font-size: 60px;
-        width: 100px;
-        height: 100px;
-      }
-      
-      .btn {
-        padding: 12px 5px;
-        font-size: 14px;
-      }
-      
-      .qr-title, .gallery-title {
-        font-size: 20px;
-      }
-    }
-    
-    .layout-guide {
-      position: absolute;
-      pointer-events: none;
-      z-index: 200;
-    }
-    
-    .camera-area {
-      top: 100px;
-      left: 20px;
-      width: calc(100% - 40px);
-      height: 65vh;
-      border: 2px dashed red;
-      border-radius: 10px;
-    }
-    
-    .button-area-left {
-      bottom: 120px;
-      left: 20px;
-      width: calc(50% - 25px);
-      height: 50px;
-      border: 2px dashed red;
-      border-radius: 25px;
-    }
-    
-    .button-area-right {
-      bottom: 120px;
-      right: 20px;
-      width: calc(50% - 25px);
-      height: 50px;
-      border: 2px dashed red;
-      border-radius: 25px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
@@ -329,6 +13,40 @@
       <h2>15 anos Geovanna</h2>
     </div>
     
-    <div class="content">
-      <div class="camera-container">
-        <video id
+    <div class="camera-container">
+      <video id="camera" autoplay muted playsinline></video>
+      <img id="moldura" src="moldura.png" alt="Moldura">
+      <div id="contador"></div>
+      <canvas id="canvas" style="display:none;"></canvas>
+      
+      <div id="processing" class="processing" style="display: none;">
+        <div class="spinner"></div>
+        <div id="processing-text">Processando...</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button id="foto" class="btn">📸 Tirar Foto</button>
+      <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
+    </div>
+    
+    <div class="qr-section" id="qrDownload">
+      <div class="qr-title">Escaneie para compartilhar</div>
+      <div class="qr-container" id="qrCode"></div>
+      <div class="download-info">Seu download começará automaticamente</div>
+    </div>
+    
+    <div class="gallery-section">
+      <div class="gallery-title">📸 Galeria de Fotos</div>
+      <div id="galeria" class="gallery"></div>
+    </div>
+    
+    <audio id="beep" preload="auto">
+      <source src="beep.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="script.js"></script>
+  </div>
+</body>
+</html>
