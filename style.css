@@ -25,6 +25,7 @@ body {
   overflow: hidden;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 215, 0, 0.3);
+  padding-top: 20px; /* Adicionado para espaço no topo */
 }
 
 .header {
@@ -49,8 +50,8 @@ body {
 .camera-container {
   position: relative;
   width: 100%;
-  height: 65vh;
-  max-height: 65vh;
+  height: 55vh; /* Reduzido de 65vh */
+  max-height: 55vh;
   overflow: hidden;
   background: #000;
 }
@@ -87,9 +88,13 @@ body {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  display: flex;
+  display: none; /* Oculto inicialmente */
   align-items: center;
   justify-content: center;
+}
+
+#contador.mostrar {
+  display: flex; /* Mostrar quando tiver a classe 'mostrar' */
 }
 
 .controls {
@@ -190,7 +195,7 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
-  display: flex;
+  display: none; /* Oculto por padrão */
   justify-content: center;
   align-items: center;
   z-index: 10;
@@ -198,6 +203,10 @@ body {
   color: #ffc107;
   flex-direction: column;
   gap: 20px;
+}
+
+.processing.mostrar {
+  display: flex;
 }
 
 .spinner {
@@ -235,7 +244,7 @@ body {
   }
   
   .camera-container {
-    height: 55vh;
+    height: 50vh; /* Ajuste para telas menores */
   }
   
   #contador {
