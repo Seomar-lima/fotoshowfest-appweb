@@ -1,3 +1,5 @@
+// script.js completo e corrigido
+
 // Elementos DOM
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
@@ -23,15 +25,15 @@ let goFileServer = "";
 
 // Chaves de API
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
-const GOFILE_API_KEY = "YOUR_GOFILE_API_KEY"; // Obtenha em gofile.io/api
+const GOFILE_API_KEY = "SUA_CHAVE_GOFILE_AQUI"; // Obtenha em gofile.io/api
 
 // Inicializar a câmera
 function iniciarCamera() {
   navigator.mediaDevices.getUserMedia({ 
     video: { 
       facingMode: "user",
-      width: { ideal: 1920  },
-      height: { ideal: 1080 }
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
     }, 
     audio: false 
   })
@@ -54,7 +56,7 @@ async function getGoFileToken() {
     const data = await response.json();
     if (data.status === 'ok') {
       goFileToken = data.data.token;
-      getGoFileServer();
+      await getGoFileServer();
     }
   } catch (error) {
     console.error('Erro ao obter token do GoFile:', error);
@@ -124,7 +126,7 @@ function capturePhoto() {
   // Desenhar a imagem da câmera
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   
-  // Aplicar moldura se estiver carregada
+  // Aplicar moldura
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
@@ -134,10 +136,7 @@ function capturePhoto() {
     const imgData = canvas.toDataURL("image/png");
     
     // Adicionar à galeria
-    const img = new Image();
-    img.src = imgData;
-    img.classList.add("gallery-item");
-    galeria.appendChild(img);
+    addToGallery(imgData, 'image');
     
     // Salvar localmente como backup
     saveLocalFile(imgData, `foto_15anos_${Date.now()}.png`);
@@ -145,6 +144,23 @@ function capturePhoto() {
     // Enviar para o servidor e gerar QR code
     enviarParaImgbb(imgData);
   }, 300);
+}
+
+// Adicionar item à galeria
+function addToGallery(data, type) {
+  if (type === 'image') {
+    const img = new Image();
+    img.src = data;
+    img.classList.add("gallery-item");
+    galeria.appendChild(img);
+  } 
+  else if (type === 'video') {
+    const video = document.createElement('video');
+    video.src = data;
+    video.controls = true;
+    video.classList.add("gallery-item");
+    galeria.appendChild(video);
+  }
 }
 
 // Salvar arquivo localmente
@@ -263,8 +279,6 @@ function processBoomerang() {
   try {
     // Criar um blob do vídeo gravado
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    
-    // Criar URL para o vídeo
     const videoUrl = URL.createObjectURL(blob);
     
     // Criar elemento de vídeo para processamento
@@ -281,14 +295,24 @@ function processBoomerang() {
       // Array para armazenar os frames
       const frames = [];
       let frameCount = 0;
+      const totalFrames = 15; // 15 frames (2 segundos a 7.5 fps)
       
       // Função para capturar frames
       function captureFrame() {
+        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
         tempCtx.drawImage(tempVideo, 0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Aplicar moldura
+        if (moldura.complete && moldura.naturalHeight !== 0) {
+          tempCtx.drawImage(moldura, 0, 0, tempCanvas.width, tempCanvas.height);
+        }
+        
         frames.push(tempCanvas.toDataURL('image/png'));
         frameCount++;
         
-        if (frameCount < 30) { // Capturar 30 frames (1 segundo)
+        if (frameCount < totalFrames) {
+          // Avançar o vídeo
+          tempVideo.currentTime = (frameCount / totalFrames) * 2; // 2 segundos
           requestAnimationFrame(captureFrame);
         } else {
           createBoomerangVideo(frames);
@@ -299,7 +323,7 @@ function processBoomerang() {
       tempVideo.currentTime = 0;
       tempVideo.play();
       setTimeout(() => {
-        captureFrame();
+        requestAnimationFrame(captureFrame);
       }, 100);
     };
   } catch (error) {
@@ -314,8 +338,8 @@ function createBoomerangVideo(frames) {
   // Criar frames invertidos (efeito de volta)
   const reverseFrames = [...frames].reverse();
   
-  // Combinar frames originais + invertidos
-  const boomerangFrames = [...frames, ...reverseFrames];
+  // Combinar frames originais + invertidos (remover o primeiro e último para evitar repetição)
+  const boomerangFrames = [...frames, ...reverseFrames.slice(1, reverseFrames.length - 1)];
   
   // Criar canvas para gerar o vídeo
   const outputCanvas = document.createElement('canvas');
@@ -323,34 +347,38 @@ function createBoomerangVideo(frames) {
   outputCanvas.height = video.videoHeight;
   const outputCtx = outputCanvas.getContext('2d');
   
-  // Criar elemento de vídeo final
-  const finalVideo = document.createElement('video');
-  finalVideo.controls = true;
-  finalVideo.classList.add("gallery-item");
-  
   // Criar stream para gravar o vídeo
-  const stream = outputCanvas.captureStream(15);
+  const stream = outputCanvas.captureStream(15); // 15 FPS
   const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
   const chunks = [];
   
   mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-  mediaRecorder.onstop = () => {
+  mediaRecorder.onstop = async () => {
     const blob = new Blob(chunks, { type: 'video/webm' });
+    const filename = `bumerangue_${Date.now()}.webm`;
     
     // Salvar localmente como backup
-    saveLocalFile(URL.createObjectURL(blob), `bumerangue_${Date.now()}.webm`);
+    const localUrl = URL.createObjectURL(blob);
+    saveLocalFile(localUrl, filename);
     
     // Adicionar à galeria
-    finalVideo.src = URL.createObjectURL(blob);
-    galeria.appendChild(finalVideo);
+    addToGallery(localUrl, 'video');
     
     // Enviar para o GoFile
     if (goFileServer) {
-      uploadToGoFile(blob);
+      showProcessing("Enviando para a nuvem...");
+      try {
+        const downloadUrl = await uploadToGoFile(blob, filename);
+        gerarQRCode(downloadUrl);
+      } catch (error) {
+        console.error("Erro ao enviar para GoFile:", error);
+        gerarQRCode(localUrl);
+      }
     } else {
-      gerarQRCode(URL.createObjectURL(blob));
-      hideProcessing();
+      gerarQRCode(localUrl);
     }
+    
+    hideProcessing();
   };
   
   mediaRecorder.start();
@@ -368,39 +396,33 @@ function createBoomerangVideo(frames) {
     img.src = boomerangFrames[frameIndex];
     
     img.onload = () => {
+      outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
       outputCtx.drawImage(img, 0, 0, outputCanvas.width, outputCanvas.height);
       frameIndex++;
-      setTimeout(renderFrame, 100); // 10 FPS
+      setTimeout(renderFrame, 66); // 15 FPS (1000/15 ≈ 66ms)
     };
   }
   
   renderFrame();
 }
 
-// Enviar para o GoFile
-async function uploadToGoFile(blob) {
-  try {
-    const formData = new FormData();
-    formData.append('file', blob, `bumerangue_${Date.now()}.webm`);
-    formData.append('token', goFileToken);
-    
-    const response = await fetch(`https://${goFileServer}.gofile.io/uploadFile`, {
-      method: 'POST',
-      body: formData
-    });
-    
-    const data = await response.json();
-    if (data.status === 'ok') {
-      gerarQRCode(data.data.downloadPage);
-    } else {
-      throw new Error('Erro no upload para GoFile');
-    }
-  } catch (error) {
-    console.error('Erro no upload para GoFile:', error);
-    gerarQRCode(URL.createObjectURL(blob));
-  }
+// Função para enviar para GoFile
+async function uploadToGoFile(blob, filename) {
+  const formData = new FormData();
+  formData.append('file', blob, filename);
+  formData.append('token', goFileToken);
   
-  hideProcessing();
+  const response = await fetch(`https://${goFileServer}.gofile.io/uploadFile`, {
+    method: 'POST',
+    body: formData
+  });
+  
+  const data = await response.json();
+  if (data.status === 'ok') {
+    return data.data.downloadPage;
+  } else {
+    throw new Error(data.status);
+  }
 }
 
 // Gerar QR code
