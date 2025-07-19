@@ -19,6 +19,10 @@ let recordedChunks = [];
 let isRecording = false;
 let qrGenerated = false;
 
+// Chaves de API (substitua pelas suas próprias)
+const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
+const GOFILE_API_KEY = "YOUR_GOFILE_API_KEY"; // Obtenha em gofile.io/api
+
 // Inicializar a câmera
 navigator.mediaDevices.getUserMedia({ 
   video: { 
@@ -107,9 +111,128 @@ function capturePhoto() {
     img.classList.add("gallery-item");
     galeria.appendChild(img);
     
-    // Simular envio e gerar QR code
-    simulateUpload(imgData, "foto");
+    // Enviar para o servidor e gerar QR code
+    enviarParaImgbb(imgData);
   }, 300);
+}
+
+// Enviar foto para ImgBB e gerar QR code
+function enviarParaImgbb(imgData) {
+  showProcessing("Enviando para o servidor...");
+  
+  // Extrair a parte base64 da imagem
+  const base64Data = imgData.replace(/^data:image\/(png|jpeg);base64,/, "");
+  
+  // Criar FormData para enviar
+  const formData = new FormData();
+  formData.append('key', IMGBB_API_KEY);
+  formData.append('image', base64Data);
+  formData.append('name', `foto_showfest_${Date.now()}`);
+  
+  // Fazer upload para ImgBB
+  fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.data && data.data.url) {
+      // Gerar QR code com URL real
+      gerarQRCode(data.data.url, data.data.url);
+      
+      // Download automático
+      const link = document.createElement('a');
+      link.href = data.data.url;
+      link.download = `foto_showfest_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      hideProcessing();
+    } else {
+      throw new Error('Erro no upload da imagem');
+    }
+  })
+  .catch(error => {
+    console.error("Erro no upload:", error);
+    hideProcessing();
+    alert("Erro ao enviar foto. Tente novamente.");
+  });
+}
+
+// Processar bumerangue
+async function processBoomerang() {
+  showProcessing("Processando bumerangue...");
+  
+  try {
+    // Criar um blob do vídeo gravado
+    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+    
+    // Enviar para GoFile
+    enviarParaGoFile(blob);
+    
+  } catch (error) {
+    console.error("Erro ao processar bumerangue:", error);
+    hideProcessing();
+    alert("Erro ao processar bumerangue. Tente novamente.");
+  }
+}
+
+// Enviar vídeo para GoFile
+function enviarParaGoFile(blob) {
+  // Obter servidor
+  fetch('https://api.gofile.io/getServer')
+    .then(response => response.json())
+    .then(serverData => {
+      if (serverData.status !== 'ok') {
+        throw new Error('Erro ao obter servidor');
+      }
+      
+      const server = serverData.data.server;
+      
+      // Criar FormData
+      const formData = new FormData();
+      formData.append('file', blob, `bumerangue_${Date.now()}.mp4`);
+      
+      // Fazer upload
+      return fetch(`https://${server}.gofile.io/uploadFile`, {
+        method: 'POST',
+        body: formData
+      });
+    })
+    .then(response => response.json())
+    .then(uploadData => {
+      if (uploadData.status === 'ok') {
+        const fileUrl = uploadData.data.downloadPage;
+        
+        // Adicionar à galeria (thumbnail)
+        const video = document.createElement('video');
+        video.src = URL.createObjectURL(blob);
+        video.poster = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23ffc107' opacity='0.3'/%3E%3Cpath d='M40,30 L70,50 L40,70 Z' fill='%23ff6b6b'/%3E%3C/svg%3E";
+        video.classList.add("gallery-item");
+        galeria.appendChild(video);
+        
+        // Gerar QR code com URL real
+        gerarQRCode(fileUrl, fileUrl);
+        
+        // Download automático
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = `bumerangue_${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        hideProcessing();
+      } else {
+        throw new Error('Erro no upload do vídeo');
+      }
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
+      hideProcessing();
+      alert("Erro ao enviar vídeo. Tente novamente.");
+    });
 }
 
 // Iniciar bumerangue
@@ -159,83 +282,33 @@ function startBoomerangRecording() {
   
   // Parar após 2 segundos
   setTimeout(() => {
-    mediaRecorder.stop();
+    if (mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
     isRecording = false;
   }, 2000);
 }
 
-// Processar bumerangue
-async function processBoomerang() {
-  showProcessing("Processando bumerangue...");
+// Gerar QR code
+function gerarQRCode(url, downloadUrl) {
+  // Exibir seção do QR code
+  qrDiv.style.display = "block";
+  qrContainer.innerHTML = "";
   
-  try {
-    // Criar um blob do vídeo gravado
-    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    
-    // Simular processamento (na prática, você faria o efeito de reversão aqui)
-    setTimeout(() => {
-      hideProcessing();
-      
-      // Simular um resultado (imagem estática neste exemplo)
-      const resultImage = canvas.toDataURL("image/jpeg");
-      
-      // Adicionar à galeria
-      const img = new Image();
-      img.src = resultImage;
-      img.classList.add("gallery-item");
-      galeria.appendChild(img);
-      
-      // Simular upload
-      simulateUpload(resultImage, "bumerangue");
-    }, 3000);
-    
-  } catch (error) {
-    console.error("Erro ao processar bumerangue:", error);
-    hideProcessing();
-    alert("Erro ao processar bumerangue. Tente novamente.");
-  }
-}
-
-// Simular upload e gerar QR code
-function simulateUpload(data, type) {
-  showProcessing("Enviando para o servidor...");
+  // Gerar QR code
+  new QRCode(qrContainer, {
+    text: url,
+    width: 200,
+    height: 200,
+    colorDark: "#ff6b6b",
+    colorLight: "#ffffff",
+    margin: 4
+  });
   
-  // Simular tempo de upload
-  setTimeout(() => {
-    hideProcessing();
-    
-    // Exibir seção do QR code
-    qrDiv.style.display = "block";
-    qrContainer.innerHTML = "";
-    
-    // Gerar URL fictícia
-    const url = `https://fotoshowfest.com/${type}/${Date.now()}`;
-    
-    // Gerar QR code
-    new QRCode(qrContainer, {
-      text: url,
-      width: 200,
-      height: 200,
-      colorDark: "#ff6b6b",
-      colorLight: "#ffffff",
-      margin: 4
-    });
-    
-    // Centralizar o QR code na tela
-    qrDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
-    // Download automático
-    setTimeout(() => {
-      const link = document.createElement('a');
-      link.href = data;
-      link.download = `${type}_showfest_${Date.now()}.${type === 'foto' ? 'png' : 'jpg'}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }, 1500);
-    
-    qrGenerated = true;
-  }, 2000);
+  // Centralizar o QR code na tela
+  qrDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  qrGenerated = true;
 }
 
 // Mostrar tela de processamento
