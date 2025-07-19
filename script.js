@@ -2,18 +2,21 @@
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
+const bumerangueBtn = document.getElementById("bumerangue");
 const beep = document.getElementById("beep");
 const contador = document.getElementById("contador");
 const galeria = document.getElementById("galeria");
+const qrDiv = document.querySelector(".qr-section");
 const qrContainer = document.getElementById("qrCode");
 const moldura = document.getElementById("moldura");
 const processing = document.getElementById("processing");
 const processingText = document.getElementById("processing-text");
-const galleryBtn = document.getElementById("galeriaBtn");
-const qrBtn = document.getElementById("qrBtn");
 
 // Variáveis globais
 let stream;
+let mediaRecorder;
+let recordedChunks = [];
+let isRecording = false;
 let qrGenerated = false;
 
 // Chave de API do ImgBB
@@ -41,45 +44,18 @@ function iniciarCamera() {
 }
 
 // Botão de foto
-fotoBtn.addEventListener("click", () => {
-  takePhoto();
-});
+fotoBtn.addEventListener("click", takePhoto);
 
-// Botão da galeria
-galleryBtn.addEventListener("click", mostrarGaleria);
-
-// Botão do QR
-qrBtn.addEventListener("click", mostrarQR);
-
-// Função para mostrar a galeria
-function mostrarGaleria() {
-  document.getElementById('gallerySection').style.display = 'block';
-}
-
-// Função para mostrar o QR
-function mostrarQR() {
-  if(galeria.children.length > 0) {
-    const ultimaFoto = galeria.lastChild;
-    gerarQRCode(ultimaFoto.src);
-    document.getElementById('qrDownload').style.display = 'block';
-  } else {
-    alert("Nenhuma foto disponível para compartilhar");
-  }
-}
-
-// Função para fechar a galeria
-function fecharGaleria() {
-  document.getElementById('gallerySection').style.display = 'none';
-}
-
-// Função para fechar o QR
-function fecharQR() {
-  document.getElementById('qrDownload').style.display = 'none';
-}
+// Botão de bumerangue
+bumerangueBtn.addEventListener("click", startBoomerang);
 
 // Função para tirar foto
 function takePhoto() {
-  if (qrGenerated) return;
+  if (qrGenerated) {
+    // Se já tiver um QR code, reseta para tirar nova foto
+    qrDiv.style.display = "none";
+    qrGenerated = false;
+  }
   
   let count = 3;
   contador.innerText = count;
@@ -133,12 +109,12 @@ function capturePhoto() {
     img.classList.add("gallery-item");
     galeria.appendChild(img);
     
-    // Enviar para o servidor
+    // Enviar para o servidor e gerar QR code
     enviarParaImgbb(imgData);
   }, 300);
 }
 
-// Enviar foto para ImgBB
+// Enviar foto para ImgBB e gerar QR code
 function enviarParaImgbb(imgData) {
   showProcessing("Salvando sua foto...");
   
@@ -159,14 +135,8 @@ function enviarParaImgbb(imgData) {
   .then(response => response.json())
   .then(data => {
     if (data.data && data.data.url) {
-      // Download automático
-      const link = document.createElement('a');
-      link.href = data.data.url;
-      link.download = `foto_15anos_${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
+      // Gerar QR code com URL real
+      gerarQRCode(data.data.url);
       hideProcessing();
     } else {
       throw new Error('Erro no upload da imagem');
@@ -179,19 +149,119 @@ function enviarParaImgbb(imgData) {
   });
 }
 
+// Iniciar bumerangue
+function startBoomerang() {
+  if (qrGenerated) {
+    qrDiv.style.display = "none";
+    qrGenerated = false;
+  }
+  
+  if (isRecording) return;
+  
+  let count = 3;
+  contador.innerText = count;
+  contador.classList.add('visible');
+  
+  try {
+    beep.play();
+  } catch (err) {
+    console.log("Erro no áudio:", err);
+  }
+  
+  const countdown = setInterval(() => {
+    count--;
+    contador.innerText = count;
+    
+    try {
+      beep.play();
+    } catch (err) {
+      console.warn("Erro ao tocar beep:", err);
+    }
+    
+    if (count === 0) {
+      clearInterval(countdown);
+      contador.classList.remove('visible');
+      startBoomerangRecording();
+    }
+  }, 1000);
+}
+
+// Iniciar gravação do bumerangue
+function startBoomerangRecording() {
+  isRecording = true;
+  recordedChunks = [];
+  
+  // Configurar MediaRecorder
+  const options = { mimeType: 'video/webm;codecs=vp9' };
+  mediaRecorder = new MediaRecorder(stream, options);
+  
+  mediaRecorder.ondataavailable = (event) => {
+    if (event.data.size > 0) {
+      recordedChunks.push(event.data);
+    }
+  };
+  
+  mediaRecorder.onstop = processBoomerang;
+  mediaRecorder.start();
+  
+  // Parar após 2 segundos
+  setTimeout(() => {
+    if (mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
+    isRecording = false;
+  }, 2000);
+}
+
+// Processar bumerangue
+function processBoomerang() {
+  showProcessing("Criando bumerangue...");
+  
+  try {
+    // Criar um blob do vídeo gravado
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    
+    // Criar URL para o vídeo
+    const videoUrl = URL.createObjectURL(blob);
+    
+    // Adicionar à galeria
+    const videoElement = document.createElement('video');
+    videoElement.src = videoUrl;
+    videoElement.controls = true;
+    videoElement.classList.add("gallery-item");
+    galeria.appendChild(videoElement);
+    
+    // Gerar QR code para o vídeo
+    gerarQRCode(videoUrl);
+    
+    hideProcessing();
+  } catch (error) {
+    console.error("Erro ao processar bumerangue:", error);
+    hideProcessing();
+    alert("Erro ao processar bumerangue. Tente novamente.");
+  }
+}
+
 // Gerar QR code
 function gerarQRCode(url) {
+  // Exibir seção do QR code
+  qrDiv.style.display = "block";
   qrContainer.innerHTML = "";
   
   // Gerar QR code
   new QRCode(qrContainer, {
     text: url,
-    width: 250,
-    height: 250,
+    width: 200,
+    height: 200,
     colorDark: "#ff6b6b",
     colorLight: "#ffffff",
     margin: 4
   });
+  
+  // Rolar para o QR code
+  qrDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  
+  qrGenerated = true;
 }
 
 // Mostrar tela de processamento
