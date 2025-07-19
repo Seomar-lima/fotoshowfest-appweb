@@ -40,7 +40,7 @@ main {
 #camera-container {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   aspect-ratio: 9/16;
   background: black;
   overflow: hidden;
