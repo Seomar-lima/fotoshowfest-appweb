@@ -372,8 +372,46 @@ function createBoomerangVideo(frames) {
     if (goFileServer) {
       showProcessing("Enviando para a nuvem...");
       try {
-        const downloadUrl = await uploadToGoFile(webmBlob, `bumerangue_${Date.now()}.webm`);
+       mediaRecorder.onstop = async () => {
+  const webmBlob = new Blob(chunks, { type: 'video/webm' });
+
+  try {
+    const mp4Blob = await convertToMP4(webmBlob);
+    const filename = `bumerangue_${Date.now()}.mp4`;
+    const localUrl = URL.createObjectURL(mp4Blob);
+
+    // Salvar localmente
+    saveLocalFile(localUrl, filename);
+
+    // Adicionar à galeria
+    addToGallery(localUrl, 'video');
+
+    // Enviar MP4 para GoFile
+    if (goFileServer) {
+      showProcessing("Enviando para a nuvem...");
+      try {
+        const downloadUrl = await uploadToGoFile(mp4Blob, filename); // ✅ aqui está a correção principal
         gerarQRCode(downloadUrl);
+      } catch (error) {
+        console.error("Erro ao enviar MP4 para GoFile:", error);
+        gerarQRCode(localUrl); // fallback local
+      }
+    } else {
+      gerarQRCode(localUrl); // fallback local
+    }
+
+  } catch (error) {
+    console.error("Erro na conversão para MP4:", error);
+
+    // Fallback: usar WebM
+    const fallbackUrl = URL.createObjectURL(webmBlob);
+    saveLocalFile(fallbackUrl, `bumerangue_${Date.now()}.webm`);
+    addToGallery(fallbackUrl, 'video');
+    gerarQRCode(fallbackUrl);
+  }
+
+  hideProcessing();
+};
       } catch (error) {
         console.error("Erro ao enviar para GoFile:", error);
         gerarQRCode(localUrl);
