@@ -1,35 +1,58 @@
-body {
-  font-family: Arial, sans-serif;
-  background-color: #111;
-  color: #fff;
-  text-align: center;
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.container {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 20px;
+body, html {
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
-h1 {
-  font-size: 1.8rem;
-  margin-bottom: 20px;
-}
-
-.camera-container {
+.app {
   position: relative;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+/* Título sobreposto */
+.title-overlay {
+  position: absolute;
+  top: 20px;
+  left: 0;
   width: 100%;
-  padding-top: 177.77%;
-  background-color: #000;
+  text-align: center;
+  z-index: 10;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+
+.title-overlay h1 {
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+.title-overlay h2 {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+/* Área da câmera ocupando toda a tela */
+.camera-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
   overflow: hidden;
 }
 
 #camera {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -42,32 +65,159 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
+  object-fit: cover;
   pointer-events: none;
+  z-index: 2;
 }
 
-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  background-color: #ff4081;
+/* Controles flutuantes na parte inferior */
+.controls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 20;
+}
+
+.btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffc107 100%);
   border: none;
-  color: white;
-  border-radius: 5px;
+  border-radius: 50px;
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 15px 30px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 20;
 }
 
-#statusUpload {
-  margin: 15px 0;
-  color: #ccc;
+/* Seções de QR e Galeria */
+.qr-section, .gallery-section {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 30;
+  padding: 20px;
+  overflow-y: auto;
 }
 
-#qrCodeContainer {
-  margin: 15px 0;
+.qr-section .qr-title, .gallery-section .gallery-title {
+  text-align: center;
+  margin: 20px 0;
+  color: #ffc107;
+  font-size: 24px;
 }
 
-#galeria img {
-  width: 100px;
-  margin: 10px auto;
-  display: block;
-  border: 2px solid #fff;
+.qr-container {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.gallery img, .gallery video {
+  width: 100%;
+  border-radius: 8px;
+  border: 2px solid #ffc107;
+  aspect-ratio: 9/16;
+  object-fit: cover;
+}
+
+/* Contador */
+#contador {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 80px;
+  font-weight: bold;
+  z-index: 3;
+  color: #ffc107;
+  text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.7);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#contador.visible {
+  opacity: 1;
+}
+
+/* Processando */
+.processing {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 40;
+  font-size: 24px;
+  color: #ffc107;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Botão para fechar as seções */
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 31;
+}
+
+@media (max-width: 600px) {
+  .title-overlay h1 {
+    font-size: 24px;
+  }
+  .title-overlay h2 {
+    font-size: 20px;
+  }
+  .btn {
+    padding: 12px 25px;
+    font-size: 14px;
+  }
+  #contador {
+    font-size: 60px;
+    width: 100px;
+    height: 100px;
+  }
 }
