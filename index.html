@@ -8,40 +8,42 @@
 </head>
 <body>
   <div class="app">
+    <!-- Cabeçalho simplificado -->
     <div class="header">
-      <h1>FOTO SHOW FEST</h1>
-      <h2>15 anos Geovanna</h2>
+      <h1>15 anos</h1>
+      <h2>Geovanna</h2>
     </div>
     
-    <div class="content">
-      <div class="camera-container">
-        <video id="camera" autoplay muted playsinline></video>
-        <img id="moldura" src="moldura.png" alt="Moldura">
-        <div id="contador"></div>
-        <canvas id="canvas" style="display:none;"></canvas>
-        
-        <div id="processing" class="processing">
-          <div class="spinner"></div>
-          <div id="processing-text">Processando...</div>
-        </div>
+    <!-- Área principal da câmera -->
+    <div class="camera-container">
+      <video id="camera" autoplay muted playsinline></video>
+      <img id="moldura" src="moldura.png" alt="Moldura">
+      <div id="contador"></div>
+      <canvas id="canvas" style="display:none;"></canvas>
+      
+      <div id="processing" class="processing">
+        <div class="spinner"></div>
+        <div id="processing-text">Processando...</div>
+      </div>
+    </div>
+    
+    <!-- Controles flutuantes na parte inferior -->
+    <div class="controls">
+      <button id="foto" class="btn">📸 Tirar Foto</button>
+      <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
+    </div>
+    
+    <!-- Seções secundárias com rolagem -->
+    <div class="secondary-content">
+      <div class="qr-section" id="qrDownload">
+        <div class="qr-title">Escaneie para compartilhar</div>
+        <div class="qr-container" id="qrCode"></div>
+        <div class="download-info">Seu download começará automaticamente</div>
       </div>
       
-      <div class="controls">
-        <button id="foto" class="btn">📸 Tirar Foto</button>
-        <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
-      </div>
-      
-      <div class="scrollable-content">
-        <div class="qr-section" id="qrDownload">
-          <div class="qr-title">Escaneie para compartilhar</div>
-          <div class="qr-container" id="qrCode"></div>
-          <div class="download-info">Seu download começará automaticamente</div>
-        </div>
-        
-        <div class="gallery-section">
-          <div class="gallery-title">📸 Galeria de Fotos</div>
-          <div id="galeria" class="gallery"></div>
-        </div>
+      <div class="gallery-section">
+        <div class="gallery-title">📸 Galeria de Fotos</div>
+        <div id="galeria" class="gallery"></div>
       </div>
     </div>
     
