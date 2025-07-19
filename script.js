@@ -23,8 +23,7 @@ let goFileServer = "";
 
 // Chaves de API
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
-const GOFILE_API_KEY = "SUA_CHAVE_GOFILE_AQUI"; // Obtenha em gofile.io/api
-
+const GOFILE_API_KEY = "KPYdQuOsRhqo2QQr4zN0aJgJz4RCNcuc";
 // Inicializar a câmera
 async function iniciarCamera() {
   try {
