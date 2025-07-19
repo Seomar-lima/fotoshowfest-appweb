@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Foto Show Fest - 15 anos Geovanna</title>
+  <title>15 anos Geovanna</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +14,13 @@
       <h2>Geovanna</h2>
     </div>
     
-    <!-- Área da câmera -->
+    <!-- Ícones de acesso rápido -->
+    <div class="quick-access">
+      <button id="galeriaBtn" class="icon-btn">📷</button>
+      <button id="qrBtn" class="icon-btn">🔗</button>
+    </div>
+    
+    <!-- Área principal da câmera -->
     <div class="camera-container">
       <video id="camera" autoplay muted playsinline></video>
       <img id="moldura" src="moldura.png" alt="Moldura">
@@ -30,17 +36,17 @@
     <!-- Controles flutuantes na parte inferior -->
     <div class="controls">
       <button id="foto" class="btn">📸 Tirar Foto</button>
-      <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
     </div>
     
-    <!-- Seções de QR e Galeria (inicialmente ocultas) -->
+    <!-- Seções secundárias -->
     <div class="qr-section" id="qrDownload">
+      <button class="close-btn" onclick="fecharQR()">✕</button>
       <div class="qr-title">Escaneie para compartilhar</div>
       <div class="qr-container" id="qrCode"></div>
-      <div class="download-info">Seu download começará automaticamente</div>
     </div>
     
     <div class="gallery-section" id="gallerySection">
+      <button class="close-btn" onclick="fecharGaleria()">✕</button>
       <div class="gallery-title">📸 Galeria de Fotos</div>
       <div id="galeria" class="gallery"></div>
     </div>
