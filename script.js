@@ -1,5 +1,3 @@
-// script.js completo e corrigido
-
 // Elementos DOM
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
@@ -28,25 +26,28 @@ const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
 const GOFILE_API_KEY = "SUA_CHAVE_GOFILE_AQUI"; // Obtenha em gofile.io/api
 
 // Inicializar a câmera
-function iniciarCamera() {
-  navigator.mediaDevices.getUserMedia({ 
-    video: { 
-      facingMode: "user",
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    }, 
-    audio: false 
-  })
-  .then(s => {
+async function iniciarCamera() {
+  try {
+    // Obter token e servidor do GoFile
+    await getGoFileToken();
+    
+    // Iniciar câmera
+    const s = await navigator.mediaDevices.getUserMedia({ 
+      video: { 
+        facingMode: "user",
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }, 
+      audio: false 
+    });
+    
     stream = s;
     video.srcObject = stream;
     video.play();
-    getGoFileToken(); // Obter token do GoFile
-  })
-  .catch(err => {
+  } catch (err) {
     console.error("Erro ao acessar a câmera:", err);
     alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
-  });
+  }
 }
 
 // Obter token do GoFile
@@ -354,27 +355,39 @@ function createBoomerangVideo(frames) {
   
   mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
   mediaRecorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    const filename = `bumerangue_${Date.now()}.webm`;
+    const webmBlob = new Blob(chunks, { type: 'video/webm' });
     
-    // Salvar localmente como backup
-    const localUrl = URL.createObjectURL(blob);
-    saveLocalFile(localUrl, filename);
-    
-    // Adicionar à galeria
-    addToGallery(localUrl, 'video');
-    
-    // Enviar para o GoFile
-    if (goFileServer) {
-      showProcessing("Enviando para a nuvem...");
-      try {
-        const downloadUrl = await uploadToGoFile(blob, filename);
-        gerarQRCode(downloadUrl);
-      } catch (error) {
-        console.error("Erro ao enviar para GoFile:", error);
+    // Converter para MP4 usando API
+    try {
+      const mp4Blob = await convertToMP4(webmBlob);
+      const filename = `bumerangue_${Date.now()}.mp4`;
+      const localUrl = URL.createObjectURL(mp4Blob);
+      
+      // Salvar localmente como backup
+      saveLocalFile(localUrl, filename);
+      
+      // Adicionar à galeria
+      addToGallery(localUrl, 'video');
+      
+      // Enviar para o GoFile
+      if (goFileServer) {
+        showProcessing("Enviando para a nuvem...");
+        try {
+          const downloadUrl = await uploadToGoFile(mp4Blob, filename);
+          gerarQRCode(downloadUrl);
+        } catch (error) {
+          console.error("Erro ao enviar para GoFile:", error);
+          gerarQRCode(localUrl);
+        }
+      } else {
         gerarQRCode(localUrl);
       }
-    } else {
+    } catch (error) {
+      console.error("Erro na conversão para MP4:", error);
+      // Fallback: usar o WebM
+      const localUrl = URL.createObjectURL(webmBlob);
+      saveLocalFile(localUrl, `bumerangue_${Date.now()}.webm`);
+      addToGallery(localUrl, 'video');
       gerarQRCode(localUrl);
     }
     
@@ -404,6 +417,32 @@ function createBoomerangVideo(frames) {
   }
   
   renderFrame();
+}
+
+// Função para converter para MP4 usando API externa
+async function convertToMP4(webmBlob) {
+  showProcessing("Convertendo para MP4...");
+  
+  const formData = new FormData();
+  formData.append('file', webmBlob, 'bumerangue.webm');
+  
+  try {
+    const response = await fetch('https://api.pspdfkit.com/video/convert', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': 'Bearer YOUR_CONVERSION_API_KEY' // Obtenha uma chave de conversão
+      }
+    });
+    
+    if (!response.ok) throw new Error('Erro na conversão');
+    
+    const mp4Blob = await response.blob();
+    return mp4Blob;
+  } catch (error) {
+    console.error("Erro na conversão:", error);
+    throw error;
+  }
 }
 
 // Função para enviar para GoFile
