@@ -48,8 +48,17 @@ bumerangueBtn.addEventListener("click", startBoomerang);
 function takePhoto() {
   if (qrGenerated) return;
   
+  // Role para a câmera
+  document.querySelector('.camera-container').scrollIntoView({ 
+    behavior: 'smooth', 
+    block: 'center'
+  });
+  
   let count = 5;
   contador.innerText = count;
+  contador.style.display = "flex"; // Mostrar contador
+  contador.classList.add("mostrar");
+  
   beep.play().catch(err => console.log("Erro no áudio:", err));
   
   const interval = setInterval(() => {
@@ -65,6 +74,8 @@ function takePhoto() {
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "";
+      contador.style.display = "none"; // Ocultar contador
+      contador.classList.remove("mostrar");
       capturePhoto();
     }
   }, 1000);
@@ -103,8 +114,17 @@ function capturePhoto() {
 function startBoomerang() {
   if (qrGenerated || isRecording) return;
   
+  // Role para a câmera
+  document.querySelector('.camera-container').scrollIntoView({ 
+    behavior: 'smooth', 
+    block: 'center'
+  });
+  
   let count = 3;
   contador.innerText = count;
+  contador.style.display = "flex"; // Mostrar contador
+  contador.classList.add("mostrar");
+  
   beep.play().catch(err => console.log("Erro no áudio:", err));
   
   const countdown = setInterval(() => {
@@ -120,6 +140,8 @@ function startBoomerang() {
     if (count === 0) {
       clearInterval(countdown);
       contador.innerText = "";
+      contador.style.display = "none"; // Ocultar contador
+      contador.classList.remove("mostrar");
       startBoomerangRecording();
     }
   }, 1000);
@@ -145,10 +167,8 @@ function startBoomerangRecording() {
   
   // Parar após 2 segundos
   setTimeout(() => {
-    if (mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-      isRecording = false;
-    }
+    mediaRecorder.stop();
+    isRecording = false;
   }, 2000);
 }
 
@@ -159,59 +179,23 @@ async function processBoomerang() {
   try {
     // Criar um blob do vídeo gravado
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
-    const videoUrl = URL.createObjectURL(blob);
     
-    // Criar elemento de vídeo temporário
-    const tempVideo = document.createElement('video');
-    tempVideo.src = videoUrl;
-    
-    // Aguardar carregamento do vídeo
-    await new Promise((resolve) => {
-      tempVideo.onloadedmetadata = () => {
-        tempVideo.currentTime = 0;
-        resolve();
-      };
-    });
-    
-    // Criar canvas para processamento
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = tempVideo.videoWidth;
-    tempCanvas.height = tempVideo.videoHeight;
-    const tempCtx = tempCanvas.getContext('2d');
-    
-    // Calcular número de quadros (30 fps)
-    const frameCount = Math.floor(tempVideo.duration * 30);
-    const frames = [];
-    
-    // Capturar quadros do vídeo
-    for (let i = 0; i < frameCount; i++) {
-      tempVideo.currentTime = i / 30;
-      await new Promise(r => tempVideo.onseeked = r);
-      tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
-      tempCtx.drawImage(tempVideo, 0, 0, tempCanvas.width, tempCanvas.height);
+    // Simular processamento (na prática, você faria o efeito de reversão aqui)
+    setTimeout(() => {
+      hideProcessing();
       
-      // Aplicar moldura
-      if (moldura.complete && moldura.naturalHeight !== 0) {
-        tempCtx.drawImage(moldura, 0, 0, tempCanvas.width, tempCanvas.height);
-      }
+      // Simular um resultado (imagem estática neste exemplo)
+      const resultImage = canvas.toDataURL("image/jpeg");
       
-      frames.push(tempCanvas.toDataURL('image/jpeg'));
-    }
-    
-    // Criar bumerangue: normal + reverso (excluindo o último quadro para evitar repetição)
-    const bumerangueFrames = [...frames, ...frames.slice(0, -1).reverse()];
-    
-    // Para demonstração, vamos usar o primeiro quadro como preview
-    const img = new Image();
-    img.src = bumerangueFrames[0];
-    img.classList.add("gallery-item");
-    galeria.appendChild(img);
-    
-    // Simular upload
-    simulateUpload(bumerangueFrames[0], "bumerangue");
-    
-    // Liberar memória
-    URL.revokeObjectURL(videoUrl);
+      // Adicionar à galeria
+      const img = new Image();
+      img.src = resultImage;
+      img.classList.add("gallery-item");
+      galeria.appendChild(img);
+      
+      // Simular upload
+      simulateUpload(resultImage, "bumerangue");
+    }, 3000);
     
   } catch (error) {
     console.error("Erro ao processar bumerangue:", error);
@@ -245,6 +229,9 @@ function simulateUpload(data, type) {
       margin: 4
     });
     
+    // Role para o QR code
+    qrDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
     // Download automático
     setTimeout(() => {
       const link = document.createElement('a');
@@ -263,15 +250,15 @@ function simulateUpload(data, type) {
 function showProcessing(text) {
   processingText.textContent = text;
   processing.style.display = "flex";
+  processing.classList.add("mostrar");
 }
 
 // Esconder tela de processamento
 function hideProcessing() {
   processing.style.display = "none";
+  processing.classList.remove("mostrar");
 }
 
-// Fallback para moldura
+// Inicializar a moldura com imagem SVG (substitua pelo seu arquivo)
 moldura.onerror = function() {
-  console.log("Erro ao carregar moldura. Usando fallback.");
-  // Pode definir uma imagem de fallback aqui se quiser
-};
+  this.src = "dat
