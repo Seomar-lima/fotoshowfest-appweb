@@ -368,35 +368,34 @@ function createBoomerangVideo(frames) {
       // Adicionar à galeria
       addToGallery(localUrl, 'video');
       
-      // Enviar para o GoFile
-      if (goFileServer) {
-        showProcessing("Enviando para a nuvem...");
-        try {
-          const downloadUrl = await uploadToGoFile(mp4Blob, filename);
-          gerarQRCode(downloadUrl);
-        } catch (error) {
-          console.error("Erro ao enviar para GoFile:", error);
-          gerarQRCode(localUrl);
-        }
-      } else {
+        // Enviar para o GoFile
+    if (goFileServer) {
+      showProcessing("Enviando para a nuvem...");
+      try {
+        const downloadUrl = await uploadToGoFile(webmBlob, `bumerangue_${Date.now()}.webm`);
+        gerarQRCode(downloadUrl);
+      } catch (error) {
+        console.error("Erro ao enviar para GoFile:", error);
         gerarQRCode(localUrl);
       }
-    } catch (error) {
-      console.error("Erro na conversão para MP4:", error);
-      // Fallback: usar o WebM
-      const localUrl = URL.createObjectURL(webmBlob);
-      saveLocalFile(localUrl, `bumerangue_${Date.now()}.webm`);
-      addToGallery(localUrl, 'video');
+    } else {
       gerarQRCode(localUrl);
     }
-    
-    hideProcessing();
-  };
-  
-  mediaRecorder.start();
-  
-  // Renderizar frames no canvas
-  let frameIndex = 0;
+  } catch (error) {
+    console.error("Erro na conversão:", error);
+    // Fallback: usar o WebM
+    const localUrl = URL.createObjectURL(webmBlob);
+    saveLocalFile(localUrl, `bumerangue_${Date.now()}.webm`);
+    addToGallery(localUrl, 'video');
+    gerarQRCode(localUrl);
+  }
+  hideProcessing();
+};
+
+mediaRecorder.start();
+
+// Renderizar frames no canvas
+let frameIndex = 0;
   
   function renderFrame() {
     if (frameIndex >= boomerangFrames.length) {
