@@ -13,32 +13,34 @@
       <h2>15 anos Geovanna</h2>
     </div>
     
-    <div class="camera-container">
-      <video id="camera" autoplay muted playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura">
-      <div id="contador"></div>
-      <canvas id="canvas" style="display:none;"></canvas>
-      
-      <div id="processing" class="processing" style="display: none;">
-        <div class="spinner"></div>
-        <div id="processing-text">Processando...</div>
+    <div class="content">
+      <div class="camera-container">
+        <video id="camera" autoplay muted playsinline></video>
+        <img id="moldura" src="moldura.png" alt="Moldura">
+        <div id="contador"></div>
+        <canvas id="canvas" style="display:none;"></canvas>
+        
+        <div id="processing" class="processing">
+          <div class="spinner"></div>
+          <div id="processing-text">Processando...</div>
+        </div>
       </div>
-    </div>
-    
-    <div class="controls">
-      <button id="foto" class="btn">📸 Tirar Foto</button>
-      <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
-    </div>
-    
-    <div class="qr-section" id="qrDownload">
-      <div class="qr-title">Escaneie para compartilhar</div>
-      <div class="qr-container" id="qrCode"></div>
-      <div class="download-info">Seu download começará automaticamente</div>
-    </div>
-    
-    <div class="gallery-section">
-      <div class="gallery-title">📸 Galeria de Fotos</div>
-      <div id="galeria" class="gallery"></div>
+      
+      <div class="controls">
+        <button id="foto" class="btn">📸 Tirar Foto</button>
+        <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
+      </div>
+      
+      <div class="qr-section" id="qrDownload">
+        <div class="qr-title">Escaneie para compartilhar</div>
+        <div class="qr-container" id="qrCode"></div>
+        <div class="download-info">Seu download começará automaticamente</div>
+      </div>
+      
+      <div class="gallery-section">
+        <div class="gallery-title">📸 Galeria de Fotos</div>
+        <div id="galeria" class="gallery"></div>
+      </div>
     </div>
     
     <audio id="beep" preload="auto">
