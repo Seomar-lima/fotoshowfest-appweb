@@ -1,70 +1,82 @@
-// ===== CONFIGURAÇÕES GERAIS ===== const video = document.getElementById("camera"); const canvas = document.getElementById("canvas"); const fotoBtn = document.getElementById("foto"); const statusUpload = document.getElementById("status-upload"); const qrCodeContainer = document.getElementById("qrcode-container"); const galeria = document.getElementById("galeria"); const moldura = document.getElementById("moldura");
+const video = document.getElementById("camera");
+const canvas = document.getElementById("canvas");
+const fotoBtn = document.getElementById("foto");
+const statusUpload = document.getElementById("statusUpload");
+const qrCodeContainer = document.getElementById("qrCodeContainer");
+const galeria = document.getElementById("galeria");
 
-// Iniciar câmera navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false }) .then(stream => { video.srcObject = stream; video.play(); }) .catch(err => { console.error("Erro ao acessar a câmera:", err); });
-
-// Contagem regressiva function iniciarContagem(callback) { let contagem = 5; const contagemElemento = document.createElement("div"); contagemElemento.id = "contagem"; contagemElemento.innerText = contagem; document.body.appendChild(contagemElemento);
-
-const intervalo = setInterval(() => { contagem--; if (contagem === 0) { clearInterval(intervalo); document.body.removeChild(contagemElemento); callback(); } else { contagemElemento.innerText = contagem; } }, 1000); }
-
-// Tirar foto fotoBtn.addEventListener("click", () => { iniciarContagem(() => { const largura = 1080; const altura = 1920; canvas.width = largura; canvas.height = altura;
-
-const ctx = canvas.getContext("2d");
-ctx.drawImage(video, 0, 0, largura, altura);
-
-// Sobrepor moldura
-ctx.drawImage(moldura, 0, 0, largura, altura);
-
-// Mostrar status de upload
-statusUpload.innerText = "Enviando...";
-statusUpload.style.display = "block";
-
-// Converter imagem para blob e enviar para o imgbb
-canvas.toBlob(blob => {
-  const formData = new FormData();
-  formData.append("image", blob);
-
-  fetch("https://api.imgbb.com/1/upload?key=YOUR_IMGBB_API_KEY", {
-    method: "POST",
-    body: formData
+// Ativa a câmera
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+  .then(stream => {
+    video.srcObject = stream;
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      const imageUrl = data.data.url;
+  .catch(error => {
+    console.error("Erro ao acessar a câmera:", error);
+  });
 
-      // Gerar QR code apontando para o link de download
+fotoBtn.addEventListener("click", async () => {
+  statusUpload.innerText = "Capturando foto em 3...";
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  statusUpload.innerText = "2...";
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  statusUpload.innerText = "1...";
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  statusUpload.innerText = "Capturando...";
+
+  const context = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.translate(canvas.width, 0); // espelhar imagem
+  context.scale(-1, 1);
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const moldura = new Image();
+  moldura.src = "moldura.png";
+  await new Promise(resolve => {
+    moldura.onload = () => {
+      context.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+      resolve();
+    };
+  });
+
+  const dataUrl = canvas.toDataURL("image/jpeg");
+
+  // Mostra miniatura na galeria
+  const img = document.createElement("img");
+  img.src = dataUrl;
+  galeria.innerHTML = "";
+  galeria.appendChild(img);
+
+  // Salva local
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = "foto.jpg";
+  a.click();
+
+  // Envia ao imgbb
+  statusUpload.innerText = "Enviando ao servidor...";
+  const apiKey = "SUA_API_KEY_IMGBB";
+  const formData = new FormData();
+  formData.append("image", dataUrl.split(",")[1]);
+
+  try {
+    const response = await fetch("https://api.imgbb.com/1/upload?key=" + apiKey, {
+      method: "POST",
+      body: formData,
+    });
+    const result = await response.json();
+    if (result.success) {
+      const linkDownload = result.data.url;
       qrCodeContainer.innerHTML = "";
-      new QRCode(qrCodeContainer, {
-        text: imageUrl,
-        width: 200,
-        height: 200
+      QRCode.toCanvas(document.createElement("canvas"), linkDownload, (err, canvas) => {
+        if (!err) qrCodeContainer.appendChild(canvas);
       });
-
-      // Adicionar miniatura à galeria
-      const imgPreview = document.createElement("img");
-      imgPreview.src = imageUrl;
-      imgPreview.classList.add("miniatura");
-      galeria.appendChild(imgPreview);
-
-      statusUpload.innerText = "Enviado com sucesso!";
-      setTimeout(() => statusUpload.style.display = "none", 3000);
-
-      // Salvar localmente
-      const a = document.createElement("a");
-      a.href = imageUrl;
-      a.download = "foto_show_fest.jpg";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      statusUpload.innerText = "Foto enviada com sucesso!";
     } else {
       statusUpload.innerText = "Erro ao enviar imagem.";
     }
-  })
-  .catch(err => {
-    console.error("Erro:", err);
-    statusUpload.innerText = "Erro ao enviar.";
-  });
-}, "image/jpeg");
-
-}); });
-
+  } catch (err) {
+    console.error(err);
+    statusUpload.innerText = "Falha no envio.";
+  }
+});

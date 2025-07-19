@@ -1,54 +1,35 @@
-* {
+body {
+  font-family: Arial, sans-serif;
+  background-color: #111;
+  color: #fff;
+  text-align: center;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-body, html {
-  height: 100%;
-  overflow: hidden;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
 }
 
-/* Cabeçalho compacto */
-.header {
-  background: linear-gradient(90deg, #ff6b6b 0%, #ffc107 100%);
-  text-align: center;
-  padding: 8px 10px;
-  z-index: 100;
-  position: relative;
-}
-
-.header h1 {
-  font-size: 18px;
-  margin-bottom: 2px;
-}
-
-.header h2 {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-/* Área da câmera ocupando 70% da tela */
 .camera-container {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  background: #000;
+  width: 100%;
+  padding-top: 177.77%;
+  background-color: #000;
   overflow: hidden;
 }
 
 #camera {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -61,44 +42,32 @@ body, html {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
   pointer-events: none;
-  z-index: 2;
 }
 
-/* Controles flutuantes na parte inferior */
-.controls {
-  display: flex;
-  gap: 10px;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 50;
-}
-
-.btn {
-  flex: 1;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ffc107 100%);
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #ff4081;
   border: none;
-  border-radius: 50px;
-  color: #000;
-  font-weight: bold;
-  font-size: 16px;
-  padding: 15px 5px;
+  color: white;
+  border-radius: 5px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Área secundária com rolagem */
-.secondary-content {
-  flex: 0 0 30%;
-  overflow-y: auto;
-  padding: 10px 15px;
-  background: rgba(0, 0, 0, 0.5);
+#statusUpload {
+  margin: 15px 0;
+  color: #ccc;
 }
 
-/* Restante do CSS mantido (contador, galeria, qr, etc) */
-/* ... (o restante do CSS permanece igual ao original) ... */
+#qrCodeContainer {
+  margin: 15px 0;
+}
+
+#galeria img {
+  width: 100px;
+  margin: 10px auto;
+  display: block;
+  border: 2px solid #fff;
+}

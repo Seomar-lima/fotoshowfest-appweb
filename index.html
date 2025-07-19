@@ -1,58 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Foto Show Fest - 15 anos Geovanna</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Foto Show Fest</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <!-- Cabeçalho simplificado -->
-    <div class="header">
-      <h1>15 anos</h1>
-      <h2>Geovanna</h2>
-    </div>
-    
-    <!-- Área principal da câmera -->
+  <div class="container">
+    <h1>Foto Show Fest</h1>
     <div class="camera-container">
-      <video id="camera" autoplay muted playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura">
-      <div id="contador"></div>
-      <canvas id="canvas" style="display:none;"></canvas>
-      
-      <div id="processing" class="processing">
-        <div class="spinner"></div>
-        <div id="processing-text">Processando...</div>
-      </div>
+      <video id="camera" autoplay playsinline></video>
+      <img id="moldura" src="moldura.png" alt="Moldura" />
     </div>
-    
-    <!-- Controles flutuantes na parte inferior -->
-    <div class="controls">
-      <button id="foto" class="btn">📸 Tirar Foto</button>
-      <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
-    </div>
-    
-    <!-- Seções secundárias com rolagem -->
-    <div class="secondary-content">
-      <div class="qr-section" id="qrDownload">
-        <div class="qr-title">Escaneie para compartilhar</div>
-        <div class="qr-container" id="qrCode"></div>
-        <div class="download-info">Seu download começará automaticamente</div>
-      </div>
-      
-      <div class="gallery-section">
-        <div class="gallery-title">📸 Galeria de Fotos</div>
-        <div id="galeria" class="gallery"></div>
-      </div>
-    </div>
-    
-    <audio id="beep" preload="auto">
-      <source src="beep.mp3" type="audio/mpeg">
-    </audio>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="script.js"></script>
+    <button id="foto">📸 Tirar Foto</button>
+    <div id="statusUpload"></div>
+    <div id="qrCodeContainer"></div>
+    <div id="galeria"></div>
+    <canvas id="canvas" style="display: none;"></canvas>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
