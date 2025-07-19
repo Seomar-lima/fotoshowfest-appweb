@@ -19,28 +19,29 @@ let recordedChunks = [];
 let isRecording = false;
 let qrGenerated = false;
 
-// Chaves de API (substitua pelas suas próprias)
+// Chave de API do ImgBB
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
-const GOFILE_API_KEY = "YOUR_GOFILE_API_KEY"; // Obtenha em gofile.io/api
 
 // Inicializar a câmera
-navigator.mediaDevices.getUserMedia({ 
-  video: { 
-    facingMode: "user",
-    width: { ideal: 1280 },
-    height: { ideal: 720 }
-  }, 
-  audio: false 
-})
-.then(s => {
-  stream = s;
-  video.srcObject = stream;
-  video.play();
-})
-.catch(err => {
-  console.error("Erro ao acessar a câmera:", err);
-  alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
-});
+function iniciarCamera() {
+  navigator.mediaDevices.getUserMedia({ 
+    video: { 
+      facingMode: "user",
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }, 
+    audio: false 
+  })
+  .then(s => {
+    stream = s;
+    video.srcObject = stream;
+    video.play();
+  })
+  .catch(err => {
+    console.error("Erro ao acessar a câmera:", err);
+    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
+  });
+}
 
 // Função para rolar até a câmera
 function scrollToCamera() {
@@ -67,7 +68,12 @@ function takePhoto() {
   let count = 5;
   contador.innerText = count;
   contador.classList.add('visible');
-  beep.play().catch(err => console.log("Erro no áudio:", err));
+  
+  try {
+    beep.play();
+  } catch (err) {
+    console.log("Erro no áudio:", err);
+  }
   
   const interval = setInterval(() => {
     count--;
@@ -121,7 +127,7 @@ function enviarParaImgbb(imgData) {
   showProcessing("Enviando para o servidor...");
   
   // Extrair a parte base64 da imagem
-  const base64Data = imgData.replace(/^data:image\/(png|jpeg);base64,/, "");
+  const base64Data = imgData.split(',')[1];
   
   // Criar FormData para enviar
   const formData = new FormData();
@@ -138,7 +144,7 @@ function enviarParaImgbb(imgData) {
   .then(data => {
     if (data.data && data.data.url) {
       // Gerar QR code com URL real
-      gerarQRCode(data.data.url, data.data.url);
+      gerarQRCode(data.data.url);
       
       // Download automático
       const link = document.createElement('a');
@@ -160,81 +166,6 @@ function enviarParaImgbb(imgData) {
   });
 }
 
-// Processar bumerangue
-async function processBoomerang() {
-  showProcessing("Processando bumerangue...");
-  
-  try {
-    // Criar um blob do vídeo gravado
-    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-    
-    // Enviar para GoFile
-    enviarParaGoFile(blob);
-    
-  } catch (error) {
-    console.error("Erro ao processar bumerangue:", error);
-    hideProcessing();
-    alert("Erro ao processar bumerangue. Tente novamente.");
-  }
-}
-
-// Enviar vídeo para GoFile
-function enviarParaGoFile(blob) {
-  // Obter servidor
-  fetch('https://api.gofile.io/getServer')
-    .then(response => response.json())
-    .then(serverData => {
-      if (serverData.status !== 'ok') {
-        throw new Error('Erro ao obter servidor');
-      }
-      
-      const server = serverData.data.server;
-      
-      // Criar FormData
-      const formData = new FormData();
-      formData.append('file', blob, `bumerangue_${Date.now()}.mp4`);
-      
-      // Fazer upload
-      return fetch(`https://${server}.gofile.io/uploadFile`, {
-        method: 'POST',
-        body: formData
-      });
-    })
-    .then(response => response.json())
-    .then(uploadData => {
-      if (uploadData.status === 'ok') {
-        const fileUrl = uploadData.data.downloadPage;
-        
-        // Adicionar à galeria (thumbnail)
-        const video = document.createElement('video');
-        video.src = URL.createObjectURL(blob);
-        video.poster = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23ffc107' opacity='0.3'/%3E%3Cpath d='M40,30 L70,50 L40,70 Z' fill='%23ff6b6b'/%3E%3C/svg%3E";
-        video.classList.add("gallery-item");
-        galeria.appendChild(video);
-        
-        // Gerar QR code com URL real
-        gerarQRCode(fileUrl, fileUrl);
-        
-        // Download automático
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = `bumerangue_${Date.now()}.mp4`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        hideProcessing();
-      } else {
-        throw new Error('Erro no upload do vídeo');
-      }
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      hideProcessing();
-      alert("Erro ao enviar vídeo. Tente novamente.");
-    });
-}
-
 // Iniciar bumerangue
 function startBoomerang() {
   if (qrGenerated || isRecording) return;
@@ -242,7 +173,12 @@ function startBoomerang() {
   let count = 3;
   contador.innerText = count;
   contador.classList.add('visible');
-  beep.play().catch(err => console.log("Erro no áudio:", err));
+  
+  try {
+    beep.play();
+  } catch (err) {
+    console.log("Erro no áudio:", err);
+  }
   
   const countdown = setInterval(() => {
     count--;
@@ -289,8 +225,45 @@ function startBoomerangRecording() {
   }, 2000);
 }
 
+// Processar bumerangue
+function processBoomerang() {
+  showProcessing("Processando bumerangue...");
+  
+  try {
+    // Criar um blob do vídeo gravado
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    
+    // Criar URL para o vídeo
+    const videoUrl = URL.createObjectURL(blob);
+    
+    // Adicionar à galeria
+    const videoElement = document.createElement('video');
+    videoElement.src = videoUrl;
+    videoElement.controls = true;
+    videoElement.classList.add("gallery-item");
+    galeria.appendChild(videoElement);
+    
+    // Simular upload (em produção, usar GoFile ou similar)
+    gerarQRCode(videoUrl);
+    
+    // Download automático
+    const link = document.createElement('a');
+    link.href = videoUrl;
+    link.download = `bumerangue_${Date.now()}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    hideProcessing();
+  } catch (error) {
+    console.error("Erro ao processar bumerangue:", error);
+    hideProcessing();
+    alert("Erro ao processar bumerangue. Tente novamente.");
+  }
+}
+
 // Gerar QR code
-function gerarQRCode(url, downloadUrl) {
+function gerarQRCode(url) {
   // Exibir seção do QR code
   qrDiv.style.display = "block";
   qrContainer.innerHTML = "";
@@ -326,3 +299,6 @@ function hideProcessing() {
 moldura.onerror = function() {
   this.src = "moldura.png";
 };
+
+// Iniciar a câmera quando o script carregar
+document.addEventListener('DOMContentLoaded', iniciarCamera);
