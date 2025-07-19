@@ -7,7 +7,6 @@ const contador = document.getElementById("contador");
 const galeria = document.getElementById("galeria");
 const qrDiv = document.getElementById("qrDownload");
 const moldura = document.getElementById("moldura");
-const erroDiv = document.getElementById("erro");
 const limparBtn = document.getElementById("limpar-cache");
 
 let stream;
@@ -20,7 +19,8 @@ navigator.mediaDevices.getUserMedia({ video: { width: 1920, height: 1080 }, audi
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
-    alert("Erro ao acessar a câmera. Verifique permissões.");
+    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
+    if (limparBtn) limparBtn.style.display = "block";
   });
 
 fotoBtn.onclick = () => {
@@ -29,7 +29,11 @@ fotoBtn.onclick = () => {
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
-    try { beep.play(); } catch (err) {}
+    try {
+      beep.play();
+    } catch (err) {
+      console.warn("Erro ao tocar beep:", err);
+    }
     if (count === 0) {
       clearInterval(interval);
       contador.innerText = "";
@@ -51,10 +55,10 @@ function capturarFoto() {
     const imgData = canvas.toDataURL("image/png");
     const img = new Image();
     img.src = imgData;
-    img.classList.add("foto-miniatura");
+    img.style.cursor = "pointer";
     img.onclick = () => {
       const novaJanela = window.open();
-      novaJanela.document.write(`<img src="${imgData}" style="width:100%">`);
+      novaJanela.document.write(`<img src="${imgData}" style="width: 100%">`);
     };
     galeria.appendChild(img);
     enviarParaImgbb(imgData);
@@ -62,14 +66,13 @@ function capturarFoto() {
 }
 
 function enviarParaImgbb(imgData) {
-  const base64 = imgData.split(',')[1];
+  const base64 = imgData.replace(/^data:image\/png;base64,/, "");
   const formData = new FormData();
   formData.append("key", "586fe56b6fe8223c90078eae64e1d678");
   formData.append("image", base64);
   formData.append("name", "foto_showfest_" + Date.now());
 
   qrDiv.innerHTML = "Enviando imagem...";
-  erroDiv.style.display = "none";
 
   fetch("https://api.imgbb.com/1/upload", {
     method: "POST",
@@ -82,15 +85,16 @@ function enviarParaImgbb(imgData) {
     })
     .catch(error => {
       console.error("Erro no upload:", error);
-      erroDiv.style.display = "block";
-      qrDiv.innerText = "";
-      limparBtn.style.display = "inline-block";
+      qrDiv.innerText = "Erro ao gerar QRCode.";
+      qrDiv.style.color = "red";
+      if (limparBtn) limparBtn.style.display = "block";
     });
 }
 
 function gerarQRCode(link) {
   qrDiv.innerHTML = "";
   const qrContainer = document.createElement("div");
+  qrContainer.style.margin = "10px auto";
   qrDiv.appendChild(qrContainer);
 
   new QRCode(qrContainer, {
@@ -113,14 +117,10 @@ function gerarQRCode(link) {
 
 if (limparBtn) {
   limparBtn.onclick = async () => {
-    const confirmar = confirm("Deseja limpar o cache?");
-    if (!confirmar) return;
+    const confirmacao = confirm("Deseja limpar o cache?");
+    if (!confirmacao) return;
     const cacheNames = await caches.keys();
     await Promise.all(cacheNames.map(name => caches.delete(name)));
-    alert("Cache limpo. Recarregue a página.");
+    alert("Cache limpo. Atualize a página.");
   };
 }
-
-bumerangueBtn.onclick = () => {
-  alert("Modo Bumerangue em breve!");
-};
