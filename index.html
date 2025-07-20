@@ -2,56 +2,51 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Foto Show Fest - 15 anos Geovanna</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Bibliotecas necessárias -->
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
 </head>
 <body>
   <div class="app">
-    <!-- Cabeçalho -->
     <div class="header">
       <h1>FOTO SHOW FEST</h1>
       <h2>15 anos Geovanna</h2>
     </div>
     
-    <!-- Área da câmera ocupando toda a tela -->
     <div class="camera-container">
       <video id="camera" autoplay muted playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura">
+      <img id="moldura" src="assets/moldura.png" alt="Moldura">
       <div id="contador"></div>
       <canvas id="canvas" style="display:none;"></canvas>
       
-      <div id="processing" class="processing">
+      <div id="processing">
         <div class="spinner"></div>
         <div id="processing-text">Processando...</div>
       </div>
     </div>
     
-    <!-- Controles na parte inferior -->
     <div class="controls">
       <button id="foto" class="btn">📸 Tirar Foto</button>
-      <button id="bumerangue" class="btn">🎞️ Gravar Bumerangue</button>
+      <button id="bumerangue" class="btn">🎞️ Bumerangue</button>
     </div>
     
-    <!-- QR Code para compartilhamento -->
     <div class="qr-section" id="qrDownload">
-      <div class="qr-title">Escaneie para baixar a foto</div>
-      <div class="qr-container" id="qrCode"></div>
-      <div class="qr-subtitle">Compartilhe com seus amigos!</div>
+      <div class="qr-title">Escaneie para baixar</div>
+      <div id="qrCode"></div>
+      <a id="downloadLink" class="download-btn" download>📥 Baixar Direto</a>
     </div>
     
-    <!-- Galeria de fotos -->
     <div class="gallery-section">
-      <div class="gallery-title">📸 Galeria de Fotos</div>
+      <div class="gallery-title">📸 Galeria</div>
       <div id="galeria" class="gallery"></div>
     </div>
     
-    <audio id="beep" preload="auto">
-      <source src="beep.mp3" type="audio/mpeg">
-    </audio>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="script.js"></script>
+    <audio id="beep" src="assets/beep.mp3" preload="auto"></audio>
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
