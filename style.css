@@ -40,7 +40,7 @@ body, html {
   font-weight: 600;
 }
 
-/* Área da câmera ocupando toda a tela disponível */
+/* Área da câmera */
 .camera-container {
   flex: 1;
   position: relative;
@@ -91,11 +91,10 @@ body, html {
   opacity: 1;
 }
 
-/* Controles na parte inferior */
+/* Controles - Botão único centralizado */
 .controls {
   display: flex;
   justify-content: center;
-  gap: 15px;
   padding: 15px;
   background: rgba(0, 0, 0, 0.8);
   z-index: 5;
@@ -108,14 +107,11 @@ body, html {
   color: #000;
   font-weight: bold;
   font-size: 16px;
-  padding: 15px 20px;
+  padding: 15px 30px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  min-width: 160px;
+  width: 80%;
+  max-width: 300px;
 }
 
 /* Seção do QR Code */
@@ -168,7 +164,7 @@ body, html {
   gap: 10px;
 }
 
-.gallery img, .gallery video {
+.gallery img {
   width: 100%;
   border-radius: 8px;
   border: 2px solid #ffc107;
@@ -222,9 +218,8 @@ body, html {
   }
   
   .btn {
-    padding: 12px 15px;
+    padding: 12px 20px;
     font-size: 14px;
-    min-width: 140px;
   }
   
   #contador {
