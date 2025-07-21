@@ -1,10 +1,22 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Foto Show Fest - 15 anos Geovanna</title>
-  <link rel="stylesheet" href="style.css">
+  
+  <!-- Estilo -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Manifesto PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#000000" />
+
+  <!-- Ícones para adicionar à tela inicial (Android e iOS) -->
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
 </head>
 <body>
   <div class="app">
@@ -46,11 +58,23 @@
     </div>
     
     <audio id="beep" preload="auto">
-      <source src="beep.mp3" type="audio/mpeg">
+      <source src="beep.mp3" type="audio/mpeg" />
     </audio>
-    
+
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
+
+    <!-- Registrar o Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('service-worker.js')
+            .then(reg => console.log("Service Worker registrado:", reg.scope))
+            .catch(err => console.error("Erro ao registrar Service Worker:", err));
+        });
+      }
+    </script>
   </div>
 </body>
 </html>
