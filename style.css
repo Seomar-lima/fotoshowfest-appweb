@@ -56,29 +56,29 @@ html, body {
   flex-direction: column;
 }
 
-/* Seção da Câmera */
+/* Seção da Câmera - AJUSTE PRINCIPAL */
 .camera-section {
-  flex: 1;
+  height: calc(100vh - 150px); /* 100vh menos cabeçalho e botão */
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 60vh;
 }
 
 .camera-container {
   position: relative;
-  background: #000;
-  overflow: hidden;
-  margin: 0 auto;
   width: 100%;
-  max-width: 350px; /* Largura máxima para manter proporção 9:16 */
-  height: calc(350px * 16 / 9); /* Altura proporcional */
+  height: calc(100vw * 16 / 9); /* Proporção 9:16 vertical */
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #000;
 }
 
 #camera {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Cobre a área sem distorcer */
   transform: scaleX(-1);
 }
 
@@ -88,44 +88,17 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* Moldura ajustada sem cortes */
   pointer-events: none;
   z-index: 2;
 }
 
-#contador {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 80px;
-  font-weight: bold;
-  z-index: 3;
-  color: #ffc107;
-  text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
-  background: rgba(0, 0, 0, 0.7);
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-#contador.visible {
-  opacity: 1;
-}
-
-/* Container do Botão */
+/* Container do Botão - ajuste de posição */
 .btn-container {
-  display: flex;
-  justify-content: center;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.8);
   position: sticky;
-  top: 80px; /* Altura do cabeçalho */
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
   z-index: 50;
 }
 
