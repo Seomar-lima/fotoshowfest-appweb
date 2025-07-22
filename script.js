@@ -2,6 +2,7 @@
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
 const fotoBtn = document.getElementById("foto");
+const limparBtn = document.getElementById("limpar");
 const beep = document.getElementById("beep");
 const contador = document.getElementById("contador");
 const galeria = document.getElementById("galeria");
@@ -10,10 +11,12 @@ const qrContainer = document.getElementById("qrCode");
 const moldura = document.getElementById("moldura");
 const processing = document.getElementById("processing");
 const processingText = document.getElementById("processing-text");
+const scrollableContent = document.querySelector(".scrollable-content");
 
 // Variáveis globais
 let stream;
 let qrGenerated = false;
+let isCameraCentered = true;
 
 // Chave de API do ImgBB
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
@@ -39,8 +42,29 @@ function iniciarCamera() {
   });
 }
 
+// Centralizar a câmera
+function centerCamera() {
+  scrollableContent.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+  isCameraCentered = true;
+}
+
 // Botão de foto
-fotoBtn.addEventListener("click", takePhoto);
+fotoBtn.addEventListener("click", function() {
+  if (!isCameraCentered) {
+    centerCamera();
+    setTimeout(takePhoto, 500); // Espera a animação de scroll terminar
+  } else {
+    takePhoto();
+  }
+});
+
+// Botão limpar galeria
+limparBtn.addEventListener("click", () => {
+  galeria.innerHTML = "";
+});
 
 // Função para tirar foto
 function takePhoto() {
@@ -49,7 +73,7 @@ function takePhoto() {
     qrGenerated = false;
   }
   
-  let count = 3;
+  let count = 5; // Contagem regressiva de 5 segundos
   contador.innerText = count;
   contador.classList.add('visible');
   
@@ -99,6 +123,11 @@ function capturePhoto() {
     const img = new Image();
     img.src = imgData;
     img.classList.add("gallery-item");
+    
+    // Limitar a 30 fotos na galeria
+    if (galeria.children.length >= 30) {
+      galeria.removeChild(galeria.firstChild);
+    }
     galeria.appendChild(img);
     
     // Salvar localmente como backup
@@ -123,16 +152,12 @@ function saveLocalFile(data, filename) {
 function enviarParaImgbb(imgData) {
   showProcessing("Salvando sua foto...");
   
-  // Extrair a parte base64 da imagem
   const base64Data = imgData.split(',')[1];
-  
-  // Criar FormData para enviar
   const formData = new FormData();
   formData.append('key', IMGBB_API_KEY);
   formData.append('image', base64Data);
   formData.append('name', `foto_15anos_${Date.now()}`);
   
-  // Fazer upload para ImgBB
   fetch('https://api.imgbb.com/1/upload', {
     method: 'POST',
     body: formData
@@ -140,7 +165,6 @@ function enviarParaImgbb(imgData) {
   .then(response => response.json())
   .then(data => {
     if (data.data && data.data.url) {
-      // Gerar QR code com URL real
       gerarQRCode(data.data.url);
       hideProcessing();
     } else {
@@ -156,11 +180,9 @@ function enviarParaImgbb(imgData) {
 
 // Gerar QR code
 function gerarQRCode(url) {
-  // Exibir seção do QR code
   qrDiv.style.display = "block";
   qrContainer.innerHTML = "";
   
-  // Gerar QR code
   new QRCode(qrContainer, {
     text: url,
     width: 200,
@@ -171,7 +193,18 @@ function gerarQRCode(url) {
   });
   
   // Rolar para o QR code
-  qrDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  setTimeout(() => {
+    const qrPosition = qrDiv.offsetTop;
+    const controlsHeight = document.querySelector('.controls').offsetHeight;
+    const scrollPosition = qrPosition - controlsHeight - 20;
+    
+    scrollableContent.scrollTo({
+      top: scrollPosition,
+      behavior: 'smooth'
+    });
+    
+    isCameraCentered = false;
+  }, 100);
   
   qrGenerated = true;
 }
