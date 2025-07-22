@@ -11,19 +11,29 @@ body {
 .header {
     background-color: #000;
     padding: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.time-display {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 16px;
+    color: #FFA500;
 }
 
 .header h1 {
     font-size: 24px;
     margin: 5px 0;
-    color: #ff00ff;
+    color: #FFA500;
+    text-transform: uppercase;
 }
 
 .header h2 {
     font-size: 18px;
     margin: 5px 0;
-    color: #ff00ff;
+    color: #FFA500;
 }
 
 .camera-container {
@@ -64,13 +74,13 @@ body {
     justify-content: center;
     align-items: center;
     font-size: 40px;
-    color: #ff00ff;
+    color: #FFA500;
     display: none;
 }
 
 .capture-btn {
-    background-color: #ff00ff;
-    color: white;
+    background-color: #FFA500;
+    color: #000;
     border: none;
     padding: 15px 30px;
     font-size: 18px;
@@ -78,6 +88,8 @@ body {
     border-radius: 5px;
     cursor: pointer;
     display: block;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 .loading-screen {
@@ -88,12 +100,27 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 100;
-    color: white;
+    color: #FFA500;
     font-size: 24px;
     display: none;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 165, 0, 0.3);
+    border-radius: 50%;
+    border-top-color: #FFA500;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .result-container {
@@ -104,8 +131,14 @@ body {
 }
 
 .result-container h3 {
-    color: #ff00ff;
+    color: #FFA500;
     margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.result-container p {
+    color: #FFF;
+    margin-bottom: 20px;
 }
 
 #qrcode {
@@ -121,8 +154,9 @@ body {
 }
 
 .gallery-container h3 {
-    color: #ff00ff;
+    color: #FFA500;
     margin-bottom: 15px;
+    text-transform: uppercase;
 }
 
 .gallery {
@@ -139,15 +173,16 @@ body {
     width: 100px;
     height: 150px;
     object-fit: cover;
-    border: 2px solid #ff00ff;
+    border: 2px solid #FFA500;
 }
 
 .clear-btn {
     background-color: transparent;
-    color: #ff00ff;
-    border: 1px solid #ff00ff;
+    color: #FFA500;
+    border: 1px solid #FFA500;
     padding: 10px 20px;
     margin-top: 15px;
     border-radius: 5px;
     cursor: pointer;
+    text-transform: uppercase;
 }
