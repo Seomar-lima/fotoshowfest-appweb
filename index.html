@@ -5,72 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Foto Show Fest - 15 anos Geovanna</title>
   
+  <!-- Fontes do Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  
   <!-- Estilo -->
   <link rel="stylesheet" href="style.css" />
 
   <!-- Manifesto PWA -->
- <link rel="manifest" href="/manifest.json" />
- <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#000000" />
 
-  <!-- Ícones para adicionar à tela inicial (Android e iOS) -->
+  <!-- Ícones -->
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
- <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
 </head>
 <body>
-<!-- Substitua a estrutura principal no seu HTML -->
-<div class="app">
-  <!-- Cabeçalho -->
-  <div class="header">
-    <h1>FOTO SHOW FEST</h1>
-    <h2>15 anos Geovanna</h2>
-  </div>
-  
-  <!-- Área principal -->
-  <div class="main-content">
-    <!-- Área da câmera -->
-    <div class="camera-container">
-      <!-- Conteúdo da câmera permanece o mesmo -->
+  <div class="app">
+    <!-- Cabeçalho -->
+    <div class="header">
+      <h1>FOTO SHOW FEST</h1>
+      <h2>15 anos Geovanna</h2>
     </div>
     
-    <!-- Controles -->
-    <div class="controls">
-      <button id="foto" class="btn">📸 Tirar Foto</button>
-    </div>
-    
-    <!-- QR Code -->
-    <div class="qr-section" id="qrDownload">
-      <!-- Conteúdo do QR permanece o mesmo -->
-    </div>
-    
-    <!-- Galeria de fotos -->
-    <div class="gallery-section">
-      <div class="gallery-title">📸 Galeria de Fotos</div>
-      <div id="galeria" class="gallery"></div>
-    </div>
-  </div>
-  
-  <!-- Áudio e scripts permanecem iguais -->
-</div>
-    
-    <!-- Controle único centralizado -->
-    <div class="controls">
-      <button id="foto" class="btn">📸 Tirar Foto</button>
-    </div>
-    
-    <!-- QR Code para compartilhamento -->
-    <div class="qr-section" id="qrDownload">
-      <div class="qr-title">Escaneie para baixar a foto</div>
-      <div class="qr-container" id="qrCode"></div>
-      <div class="qr-subtitle">Compartilhe com seus amigos!</div>
-    </div>
-    
-    <!-- Galeria de fotos -->
-    <div class="gallery-section">
-      <div class="gallery-title">📸 Galeria de Fotos</div>
-      <div id="galeria" class="gallery"></div>
+    <!-- Área principal -->
+    <div class="main-content">
+      <!-- Área da câmera -->
+      <div class="camera-container">
+        <video id="camera" autoplay muted playsinline></video>
+        <img id="moldura" src="moldura.png" alt="Moldura">
+        <div id="contador"></div>
+        <canvas id="canvas" style="display:none;"></canvas>
+        
+        <div id="processing" class="processing">
+          <div class="spinner"></div>
+          <div id="processing-text">Processando...</div>
+        </div>
+      </div>
+      
+      <!-- Controles -->
+      <div class="controls">
+        <button id="foto" class="btn">📸 Tirar Foto</button>
+        <button id="limpar" class="btn">🗑️ Limpar Galeria</button>
+      </div>
+      
+      <!-- QR Code -->
+      <div class="qr-section" id="qrDownload">
+        <div class="qr-title">Escaneie para baixar a foto</div>
+        <div class="qr-container" id="qrCode"></div>
+        <div class="qr-subtitle">Compartilhe com seus amigos!</div>
+      </div>
+      
+      <!-- Galeria de fotos -->
+      <div class="gallery-section">
+        <div class="gallery-title">📸 Galeria de Fotos</div>
+        <div id="galeria" class="gallery"></div>
+      </div>
     </div>
     
     <audio id="beep" preload="auto">
@@ -80,18 +71,6 @@
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="script.js"></script>
-
-    <!-- Registrar o Service Worker -->
-    <!--
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('service-worker.js')
-            .then(reg => console.log("Service Worker registrado:", reg.scope))
-            .catch(err => console.error("Erro ao registrar Service Worker:", err)); -->
-        });
-      }
-    </script>
   </div>
 </body>
 </html>
