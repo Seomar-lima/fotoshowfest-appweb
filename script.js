@@ -1,4 +1,3 @@
-
 // Elementos DOM
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
@@ -28,7 +27,7 @@ function iniciarCamera() {
       facingMode: "user",
       width: { ideal: 720 },
       height: { ideal: 1280 },
-      aspectRatio: 9 / 16
+      aspectRatio: 9/16
     },
     audio: false
   };
@@ -40,17 +39,10 @@ function iniciarCamera() {
 
       video.onloadedmetadata = () => {
         console.log("Resolução da câmera:", video.videoWidth, "x", video.videoHeight);
-
-        // Correção de orientação se necessário
-        if (video.videoHeight < video.videoWidth) {
-          console.log("Aplicando rotação...");
-          video.style.transform = "rotate(90deg)";
-          video.style.width = "100%";
-          video.style.objectFit = "cover";
-        } else {
-          video.style.transform = "none";
-        }
-
+        video.style.transform = "";
+        video.style.width = "100%";
+        video.style.height = "100%";
+        video.style.objectFit = "cover";
         video.play();
       };
     })
@@ -78,7 +70,6 @@ function takePhoto() {
   let count = 3;
   contador.innerText = count;
   contador.classList.add('visible');
-
   playBeep();
 
   const interval = setInterval(() => {
@@ -94,20 +85,15 @@ function takePhoto() {
   }, 1000);
 }
 
-// Capturar foto (sem espelhar)
+// Capturar foto
 function capturePhoto() {
-  const width = video.videoHeight;
-  const height = video.videoWidth;
-
-  canvas.width = width;
-  canvas.height = height;
-
+  const targetHeight = video.videoWidth * (16/9);
+  canvas.width = video.videoWidth;
+  canvas.height = targetHeight;
   const ctx = canvas.getContext("2d");
-  ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.rotate(-90 * Math.PI / 180);
-  ctx.drawImage(video, -height / 2, -width / 2, height, width);
-  ctx.restore();
+  const sourceY = (video.videoHeight - targetHeight) / 2;
+
+  ctx.drawImage(video, 0, sourceY, canvas.width, targetHeight, 0, 0, canvas.width, canvas.height);
 
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
@@ -125,7 +111,6 @@ function addPhotoToGallery(imgData) {
   const img = document.createElement('img');
   img.src = imgData;
   img.classList.add('gallery-item');
-
   galeria.insertBefore(img, galeria.firstChild);
 
   if (galeria.children.length > 15) {
@@ -148,7 +133,6 @@ function saveLocalFile(data, filename) {
 // Enviar foto para ImgBB
 function enviarParaImgbb(imgData) {
   showProcessing("Salvando sua foto...");
-
   const base64Data = imgData.split(',')[1];
   const formData = new FormData();
   formData.append('key', IMGBB_API_KEY);
