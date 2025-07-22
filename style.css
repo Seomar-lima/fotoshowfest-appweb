@@ -62,8 +62,7 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: calc(100vh - 180px); 
-  /* Ajustado para ocupar a tela visível */
+  min-height: 60vh;
 }
 
 .camera-container {

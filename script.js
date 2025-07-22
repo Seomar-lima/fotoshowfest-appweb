@@ -97,10 +97,9 @@ function takePhoto() {
 // Capturar foto
 function capturePhoto() {
   // Ajustar canvas para proporção 9:16
-const qrPosition = qrDiv.offsetTop;
-const headerHeight = document.querySelector('.header').offsetHeight;
-const buttonHeight = document.querySelector('.btn-container').offsetHeight;
-const scrollPosition = qrPosition - headerHeight - buttonHeight - 20;
+  const targetHeight = video.videoWidth * (16/9);
+  canvas.width = video.videoWidth;
+  canvas.height = targetHeight;
   
   const ctx = canvas.getContext("2d");
   
