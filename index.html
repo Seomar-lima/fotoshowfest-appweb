@@ -1,70 +1,50 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Foto Show Fest - 15 anos Geovanna</title>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Foto Show Fest</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#000000" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
 <body>
-  <div class="app-container">
-    <!-- Cabeçalho Fixo -->
-    <div class="header">
+  <div id="camera-container">
+    <header class="header">
       <h1>FOTO SHOW FEST</h1>
-      <h2>15 anos Geovanna</h2>
+      <p>15 anos Geovanna</p>
+    </header>
+
+    <div class="preview-frame">
+      <video id="camera" autoplay playsinline></video>
+      <img src="moldura.png" alt="Moldura" id="overlay" />
+      <div id="countdown"></div>
     </div>
-    
-    <!-- Área Principal Rolável -->
-    <div class="scrollable-content">
-      <!-- Seção da Câmera -->
-      <div class="camera-section">
-        <div class="camera-container">
-          <video id="camera" autoplay muted playsinline></video>
-          <img id="moldura" src="moldura.png" alt="Moldura">
-          <div id="contador"></div>
-          <canvas id="canvas" style="display:none;"></canvas>
-        </div>
-      </div>
-      
-      <!-- Botão Centralizado -->
-      <div class="btn-container">
-        <button id="foto" class="btn">📸 TIRAR FOTO</button>
-      </div>
-      
-      <!-- QR Code -->
-      <div class="qr-section" id="qrDownload">
-        <div class="qr-title">Escaneie para baixar sua foto</div>
-        <div class="qr-container" id="qrCode"></div>
-        <div class="qr-subtitle">Compartilhe com seus amigos!</div>
-      </div>
-      
-      <!-- Galeria de Fotos -->
-      <div class="gallery-section">
-        <div class="gallery-title">📸 Galeria de Fotos</div>
-        <div id="galeria" class="gallery"></div>
-        <button id="limpar" class="btn-clean">🗑️ Limpar Galeria</button>
-      </div>
-    </div>
-    
-    <!-- Tela de Processamento -->
-    <div id="processing" class="processing">
-      <div class="spinner"></div>
-      <div id="processing-text">Processando...</div>
-    </div>
-    
-    <audio id="beep" preload="auto">
-      <source src="beep.mp3" type="audio/mpeg" />
-    </audio>
+
+    <button id="capture-button">📸 TIRAR FOTO</button>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <div id="loading" class="hidden">
+    <div class="loading-overlay">
+      <span>Salvando sua imagem...</span>
+    </div>
+  </div>
+
+  <div id="result" class="hidden">
+    <button id="capture-again">📸 TIRAR FOTO</button>
+
+    <div class="qrcode-container">
+      <p>Escaneie para baixar sua foto</p>
+      <div id="qrcode"></div>
+      <p>Compartilhe com seus amigos!</p>
+    </div>
+
+    <h3>📸 Galeria de Fotos</h3>
+    <div id="gallery-wrapper">
+      <div id="gallery"></div>
+    </div>
+    <button id="clear-gallery">🗑️ Limpar Galeria</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
