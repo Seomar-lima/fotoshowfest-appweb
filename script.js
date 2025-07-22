@@ -1,3 +1,4 @@
+
 // Elementos DOM
 const video = document.getElementById("camera");
 const canvas = document.getElementById("canvas");
@@ -27,7 +28,7 @@ function iniciarCamera() {
       facingMode: "user",
       width: { ideal: 720 },
       height: { ideal: 1280 },
-      aspectRatio: 9/16
+      aspectRatio: 9 / 16
     },
     audio: false
   };
@@ -36,20 +37,20 @@ function iniciarCamera() {
     .then(s => {
       stream = s;
       video.srcObject = stream;
-      
+
       video.onloadedmetadata = () => {
         console.log("Resolução da câmera:", video.videoWidth, "x", video.videoHeight);
-        
+
         // Correção de orientação se necessário
         if (video.videoHeight < video.videoWidth) {
-          console.log("Aplicando correção de orientação...");
-          video.style.transform = "scaleX(-1) rotate(90deg)";
+          console.log("Aplicando rotação...");
+          video.style.transform = "rotate(90deg)";
           video.style.width = "100%";
           video.style.objectFit = "cover";
         } else {
-          video.style.transform = "scaleX(-1)";
+          video.style.transform = "none";
         }
-        
+
         video.play();
       };
     })
@@ -73,18 +74,18 @@ function takePhoto() {
     qrDiv.style.display = "none";
     qrGenerated = false;
   }
-  
+
   let count = 3;
   contador.innerText = count;
   contador.classList.add('visible');
-  
+
   playBeep();
-  
+
   const interval = setInterval(() => {
     count--;
     contador.innerText = count;
     playBeep();
-    
+
     if (count === 0) {
       clearInterval(interval);
       contador.classList.remove('visible');
@@ -93,21 +94,25 @@ function takePhoto() {
   }, 1000);
 }
 
-// Capturar foto
+// Capturar foto (sem espelhar)
 function capturePhoto() {
-  const targetHeight = video.videoWidth * (16/9);
-  canvas.width = video.videoWidth;
-  canvas.height = targetHeight;
-  
+  const width = video.videoHeight;
+  const height = video.videoWidth;
+
+  canvas.width = width;
+  canvas.height = height;
+
   const ctx = canvas.getContext("2d");
-  const sourceY = (video.videoHeight - targetHeight) / 2;
-  
-  ctx.drawImage(video, 0, sourceY, canvas.width, targetHeight, 0, 0, canvas.width, canvas.height);
-  
+  ctx.save();
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate(-90 * Math.PI / 180);
+  ctx.drawImage(video, -height / 2, -width / 2, height, width);
+  ctx.restore();
+
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
-  
+
   setTimeout(() => {
     const imgData = canvas.toDataURL("image/jpeg", 0.9);
     addPhotoToGallery(imgData);
@@ -120,13 +125,13 @@ function addPhotoToGallery(imgData) {
   const img = document.createElement('img');
   img.src = imgData;
   img.classList.add('gallery-item');
-  
+
   galeria.insertBefore(img, galeria.firstChild);
-  
+
   if (galeria.children.length > 15) {
     galeria.removeChild(galeria.lastChild);
   }
-  
+
   saveLocalFile(imgData, `foto_15anos_${Date.now()}.jpg`);
 }
 
@@ -143,38 +148,38 @@ function saveLocalFile(data, filename) {
 // Enviar foto para ImgBB
 function enviarParaImgbb(imgData) {
   showProcessing("Salvando sua foto...");
-  
+
   const base64Data = imgData.split(',')[1];
   const formData = new FormData();
   formData.append('key', IMGBB_API_KEY);
   formData.append('image', base64Data);
   formData.append('name', `foto_15anos_${Date.now()}`);
-  
+
   fetch('https://api.imgbb.com/1/upload', {
     method: 'POST',
     body: formData
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.data?.url) {
-      gerarQRCode(data.data.url);
+    .then(response => response.json())
+    .then(data => {
+      if (data.data?.url) {
+        gerarQRCode(data.data.url);
+        hideProcessing();
+      } else {
+        throw new Error('Erro no upload da imagem');
+      }
+    })
+    .catch(error => {
+      console.error("Erro no upload:", error);
       hideProcessing();
-    } else {
-      throw new Error('Erro no upload da imagem');
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    hideProcessing();
-    alert("Erro ao enviar foto. Tente novamente.");
-  });
+      alert("Erro ao enviar foto. Tente novamente.");
+    });
 }
 
 // Gerar QR code
 function gerarQRCode(url) {
   qrDiv.style.display = "block";
   qrContainer.innerHTML = "";
-  
+
   new QRCode(qrContainer, {
     text: url,
     width: 200,
@@ -184,18 +189,18 @@ function gerarQRCode(url) {
     margin: 4,
     correctLevel: QRCode.CorrectLevel.L
   });
-  
+
   setTimeout(() => {
     const qrPosition = qrDiv.offsetTop;
     const btnHeight = document.querySelector('.btn-container').offsetHeight;
     const scrollPosition = qrPosition - btnHeight - 20;
-    
+
     scrollableContent.scrollTo({
       top: scrollPosition,
       behavior: 'smooth'
     });
   }, 100);
-  
+
   qrGenerated = true;
 }
 
