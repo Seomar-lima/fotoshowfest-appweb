@@ -1,210 +1,86 @@
-// Elementos DOM
 const video = document.getElementById("camera");
-const canvas = document.getElementById("canvas");
-const fotoBtn = document.getElementById("foto");
-const limparBtn = document.getElementById("limpar");
-const beep = document.getElementById("beep");
-const contador = document.getElementById("contador");
-const galeria = document.getElementById("galeria");
-const qrDiv = document.querySelector(".qr-section");
-const qrContainer = document.getElementById("qrCode");
-const moldura = document.getElementById("moldura");
-const processing = document.getElementById("processing");
-const processingText = document.getElementById("processing-text");
-const scrollableContent = document.querySelector(".scrollable-content");
+const overlay = document.getElementById("overlay");
+const captureButton = document.getElementById("capture-button");
+const loading = document.getElementById("loading");
+const result = document.getElementById("result");
+const qrcode = document.getElementById("qrcode");
+const countdown = document.getElementById("countdown");
+const gallery = document.getElementById("gallery");
+const clearGallery = document.getElementById("clear-gallery");
 
-// Variáveis globais
-let stream;
-let qrGenerated = false;
+let photos = JSON.parse(localStorage.getItem("gallery")) || [];
 
-// Chave de API do ImgBB
-const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+  .then(stream => video.srcObject = stream)
+  .catch(err => alert("Erro ao acessar a câmera: " + err));
 
-// Inicializar a câmera na vertical
-function iniciarCamera() {
-  const constraints = {
-    video: {
-      facingMode: "user",
-      width: { ideal: 720 },
-      height: { ideal: 1280 },
-      aspectRatio: 9/16
-    },
-    audio: false
-  };
-
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(s => {
-      stream = s;
-      video.srcObject = stream;
-
-      video.onloadedmetadata = () => {
-        console.log("Resolução da câmera:", video.videoWidth, "x", video.videoHeight);
-        video.style.transform = "";
-        video.style.width = "100%";
-        video.style.height = "100%";
-        video.style.objectFit = "cover";
-        video.play();
-      };
-    })
-    .catch(err => {
-      console.error("Erro ao acessar a câmera:", err);
-      alert("Erro ao acessar a câmera. Verifique as permissões.");
-    });
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Botão de foto
-fotoBtn.addEventListener("click", takePhoto);
+async function startCountdown() {
+  countdown.style.display = "block";
+  for (let i = 3; i > 0; i--) {
+    countdown.textContent = i;
+    await sleep(1000);
+  }
+  countdown.style.display = "none";
+}
 
-// Botão limpar galeria
-limparBtn.addEventListener("click", () => {
-  galeria.innerHTML = "";
-});
-
-// Função para tirar foto
 function takePhoto() {
-  if (qrGenerated) {
-    qrDiv.style.display = "none";
-    qrGenerated = false;
-  }
-
-  let count = 3;
-  contador.innerText = count;
-  contador.classList.add('visible');
-  playBeep();
-
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    playBeep();
-
-    if (count === 0) {
-      clearInterval(interval);
-      contador.classList.remove('visible');
-      capturePhoto();
-    }
-  }, 1000);
-}
-
-// Capturar foto
-function capturePhoto() {
-  const targetHeight = video.videoWidth * (16/9);
+  const canvas = document.createElement("canvas");
   canvas.width = video.videoWidth;
-  canvas.height = targetHeight;
+  canvas.height = video.videoHeight;
   const ctx = canvas.getContext("2d");
-  const sourceY = (video.videoHeight - targetHeight) / 2;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  ctx.drawImage(video, 0, sourceY, canvas.width, targetHeight, 0, 0, canvas.width, canvas.height);
-
-  if (moldura.complete && moldura.naturalHeight !== 0) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+  if (overlay.complete) {
+    ctx.drawImage(overlay, 0, 0, canvas.width, canvas.height);
   }
 
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/jpeg", 0.9);
-    addPhotoToGallery(imgData);
-    enviarParaImgbb(imgData);
-  }, 300);
+  return canvas.toDataURL("image/jpeg");
 }
 
-// Adicionar foto à galeria
-function addPhotoToGallery(imgData) {
-  const img = document.createElement('img');
-  img.src = imgData;
-  img.classList.add('gallery-item');
-  galeria.insertBefore(img, galeria.firstChild);
+function updateGallery(photoURL) {
+  photos.unshift(photoURL);
+  if (photos.length > 10) photos.pop();
+  localStorage.setItem("gallery", JSON.stringify(photos));
 
-  if (galeria.children.length > 15) {
-    galeria.removeChild(galeria.lastChild);
-  }
-
-  saveLocalFile(imgData, `foto_15anos_${Date.now()}.jpg`);
+  gallery.innerHTML = photos.map(url => `<img src="${url}" />`).join("");
 }
 
-// Salvar arquivo localmente
-function saveLocalFile(data, filename) {
-  const link = document.createElement('a');
-  link.href = data;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+clearGallery.onclick = () => {
+  photos = [];
+  localStorage.removeItem("gallery");
+  gallery.innerHTML = "";
+};
 
-// Enviar foto para ImgBB
-function enviarParaImgbb(imgData) {
-  showProcessing("Salvando sua foto...");
-  const base64Data = imgData.split(',')[1];
-  const formData = new FormData();
-  formData.append('key', IMGBB_API_KEY);
-  formData.append('image', base64Data);
-  formData.append('name', `foto_15anos_${Date.now()}`);
+captureButton.onclick = async () => {
+  await startCountdown();
+  loading.classList.remove("hidden");
 
-  fetch('https://api.imgbb.com/1/upload', {
-    method: 'POST',
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.data?.url) {
-        gerarQRCode(data.data.url);
-        hideProcessing();
-      } else {
-        throw new Error('Erro no upload da imagem');
-      }
-    })
-    .catch(error => {
-      console.error("Erro no upload:", error);
-      hideProcessing();
-      alert("Erro ao enviar foto. Tente novamente.");
-    });
-}
+  const photo = takePhoto();
 
-// Gerar QR code
-function gerarQRCode(url) {
-  qrDiv.style.display = "block";
-  qrContainer.innerHTML = "";
-
-  new QRCode(qrContainer, {
-    text: url,
-    width: 200,
-    height: 200,
-    colorDark: "#ff6b6b",
-    colorLight: "#ffffff",
-    margin: 4,
-    correctLevel: QRCode.CorrectLevel.L
+  const form = new FormData();
+  form.append("image", photo.replace(/^data:image\/\w+;base64,/, ""));
+  
+  const apiKey = "586fe56b6fe8223c90078eae64e1d678";
+  const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+    method: "POST",
+    body: form,
   });
 
-  setTimeout(() => {
-    const qrPosition = qrDiv.offsetTop;
-    const btnHeight = document.querySelector('.btn-container').offsetHeight;
-    const scrollPosition = qrPosition - btnHeight - 20;
+  const data = await response.json();
+  const imageUrl = data.data.url;
 
-    scrollableContent.scrollTo({
-      top: scrollPosition,
-      behavior: 'smooth'
-    });
-  }, 100);
+  QRCode.toCanvas(document.getElementById("qrcode"), imageUrl);
 
-  qrGenerated = true;
-}
+  updateGallery(imageUrl);
 
-// Mostrar tela de processamento
-function showProcessing(text) {
-  processingText.textContent = text;
-  processing.style.display = "flex";
-}
+  loading.classList.add("hidden");
+  result.classList.remove("hidden");
+  result.scrollIntoView({ behavior: "smooth" });
+};
 
-// Esconder tela de processamento
-function hideProcessing() {
-  processing.style.display = "none";
-}
-
-// Tocar som do beep
-function playBeep() {
-  beep.currentTime = 0;
-  beep.play().catch(e => console.log("Erro no áudio:", e));
-}
-
-// Inicializar
-moldura.onerror = () => moldura.src = "moldura.png";
-document.addEventListener('DOMContentLoaded', iniciarCamera);
+// Inicializar galeria
+updateGallery();
