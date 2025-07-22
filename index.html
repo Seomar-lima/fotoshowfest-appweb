@@ -4,10 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Foto Show Fest - 15 anos Geovanna</title>
+  
+  <!-- Fontes do Google -->
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Estilo -->
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Manifesto PWA -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
+
+  <!-- Ícones -->
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,9 +29,9 @@
       <h2>15 anos Geovanna</h2>
     </div>
     
-    <!-- Área Principal Rolável -->
+    <!-- Conteúdo Rolável -->
     <div class="scrollable-content">
-      <!-- Seção da Câmera -->
+      <!-- Área da Câmera -->
       <div class="camera-section">
         <div class="camera-container">
           <video id="camera" autoplay muted playsinline></video>
@@ -33,14 +41,15 @@
         </div>
       </div>
       
-      <!-- Botão Centralizado -->
-      <div class="btn-container">
-        <button id="foto" class="btn">📸 TIRAR FOTO</button>
+      <!-- Controles -->
+      <div class="controls">
+        <button id="foto" class="btn">📸 Tirar Foto</button>
+        <button id="limpar" class="btn">🗑️ Limpar Galeria</button>
       </div>
       
       <!-- QR Code -->
       <div class="qr-section" id="qrDownload">
-        <div class="qr-title">Escaneie para baixar sua foto</div>
+        <div class="qr-title">Escaneie para baixar a foto</div>
         <div class="qr-container" id="qrCode"></div>
         <div class="qr-subtitle">Compartilhe com seus amigos!</div>
       </div>
@@ -49,7 +58,6 @@
       <div class="gallery-section">
         <div class="gallery-title">📸 Galeria de Fotos</div>
         <div id="galeria" class="gallery"></div>
-        <button id="limpar" class="btn-clean">🗑️ Limpar Galeria</button>
       </div>
     </div>
     
@@ -64,6 +72,7 @@
     </audio>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="script.js"></script>
 </body>
