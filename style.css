@@ -2,7 +2,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body, html {
@@ -10,8 +9,6 @@ body, html {
   overflow: hidden;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
-
-/* Substitua estas classes no seu arquivo style.css */
 
 .app {
   display: flex;
@@ -22,7 +19,33 @@ body, html {
   backdrop-filter: blur(5px);
 }
 
-/* Área principal que contém câmera e galeria */
+/* Cabeçalho com fonte cursiva */
+.header {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ffc107 100%);
+  text-align: center;
+  padding: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+.header h1 {
+  font-family: 'Dancing Script', cursive;
+  font-size: 28px;
+  margin-bottom: 5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  color: #fff;
+}
+
+.header h2 {
+  font-family: 'Dancing Script', cursive;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Área principal flexível */
 .main-content {
   flex: 1;
   display: flex;
@@ -30,25 +53,21 @@ body, html {
   overflow: hidden;
 }
 
-/* Área da câmera com altura fixa (60% da tela) */
+/* Área da câmera com altura fixa */
 .camera-container {
-  height: 60vh; /* Altura fixa para a câmera */
-  min-height: 60vh; /* Garante que não vai encolher */
+  height: 60vh;
+  min-height: 60vh;
   position: relative;
   background: #000;
   overflow: hidden;
 }
 
-/* Galeria com altura limitada e scroll */
-.gallery-section {
-  flex: 1;
-  padding: 15px;
-  background: rgba(0, 0, 0, 0.7);
-  overflow-y: auto; /* Adiciona scroll vertical quando necessário */
-  max-height: 40vh; /* Altura máxima */
+#camera {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
 }
-
-/* Mantenha o resto do CSS como está */
 
 #moldura {
   position: absolute;
@@ -86,7 +105,7 @@ body, html {
   opacity: 1;
 }
 
-/* Controles na parte inferior */
+/* Controles */
 .controls {
   display: flex;
   justify-content: center;
@@ -94,6 +113,7 @@ body, html {
   padding: 15px;
   background: rgba(0, 0, 0, 0.8);
   z-index: 5;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -103,7 +123,7 @@ body, html {
   color: #000;
   font-weight: bold;
   font-size: 16px;
-  padding: 15px 20px;
+  padding: 12px 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -111,6 +131,7 @@ body, html {
   gap: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   min-width: 160px;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Seção do QR Code */
@@ -126,6 +147,7 @@ body, html {
   margin-bottom: 15px;
   color: #ffc107;
   font-weight: 600;
+  font-family: 'Roboto', sans-serif;
 }
 
 .qr-container {
@@ -141,12 +163,16 @@ body, html {
   margin-top: 15px;
   font-size: 16px;
   color: #ffc107;
+  font-family: 'Roboto', sans-serif;
 }
 
 /* Galeria de fotos */
 .gallery-section {
+  flex: 1;
   padding: 15px;
   background: rgba(0, 0, 0, 0.7);
+  overflow-y: auto;
+  max-height: 30vh;
 }
 
 .gallery-title {
@@ -155,6 +181,7 @@ body, html {
   color: #ffc107;
   font-weight: 600;
   text-align: center;
+  font-family: 'Dancing Script', cursive;
 }
 
 .gallery {
@@ -170,6 +197,11 @@ body, html {
   aspect-ratio: 9/16;
   object-fit: cover;
   cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.gallery img:hover, .gallery video:hover {
+  transform: scale(1.05);
 }
 
 /* Processando */
@@ -188,6 +220,7 @@ body, html {
   color: #ffc107;
   flex-direction: column;
   gap: 20px;
+  font-family: 'Roboto', sans-serif;
 }
 
 .spinner {
@@ -204,20 +237,16 @@ body, html {
 }
 
 @media (max-width: 600px) {
-  .header {
-    padding: 8px;
-  }
-  
   .header h1 {
-    font-size: 16px;
+    font-size: 24px;
   }
   
   .header h2 {
-    font-size: 14px;
+    font-size: 20px;
   }
   
   .btn {
-    padding: 12px 15px;
+    padding: 10px 15px;
     font-size: 14px;
     min-width: 140px;
   }
@@ -230,5 +259,9 @@ body, html {
   
   .gallery {
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+  
+  .gallery-section {
+    max-height: 25vh;
   }
 }
