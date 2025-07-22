@@ -20,12 +20,13 @@ let qrGenerated = false;
 // Chave de API do ImgBB
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
 
-// Inicializar a câmera com proporção 9:16
+// Inicializar a câmera - AJUSTE PARA VERTICAL
 function iniciarCamera() {
   navigator.mediaDevices.getUserMedia({ 
     video: { 
       facingMode: "user",
-      aspectRatio: 9/16
+      width: { ideal: 720 },
+      height: { ideal: 1280 } // Força proporção vertical
     }, 
     audio: false 
   })
@@ -36,35 +37,38 @@ function iniciarCamera() {
   })
   .catch(err => {
     console.error("Erro ao acessar a câmera:", err);
-    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
+    alert("Erro ao acessar a câmera. Verifique as permissões.");
   });
 }
 
-// Centralizar a câmera
-function centerCamera() {
-  scrollableContent.scrollTo({
-    top: 0,
-    behavior: 'smooth'
+// Gerar QR Code - AJUSTE DE POSICIONAMENTO
+function gerarQRCode(url) {
+  qrDiv.style.display = "block";
+  qrContainer.innerHTML = "";
+  
+  new QRCode(qrContainer, {
+    text: url,
+    width: 200,
+    height: 200,
+    colorDark: "#ff6b6b",
+    colorLight: "#ffffff",
+    margin: 4
   });
+
+  // Rolagem para mostrar QR code abaixo do botão
+  setTimeout(() => {
+    const qrPosition = qrDiv.offsetTop;
+    const btnHeight = document.querySelector('.btn-container').offsetHeight;
+    const scrollPosition = qrPosition - btnHeight - 20;
+    
+    scrollableContent.scrollTo({
+      top: scrollPosition,
+      behavior: 'smooth'
+    });
+  }, 100);
+  
+  qrGenerated = true;
 }
-
-// Botão de foto
-fotoBtn.addEventListener("click", function() {
-  centerCamera();
-  setTimeout(takePhoto, 300); // Pequeno delay para garantir o scroll
-});
-
-// Botão limpar galeria
-limparBtn.addEventListener("click", () => {
-  galeria.innerHTML = "";
-});
-
-// Função para tirar foto
-function takePhoto() {
-  if (qrGenerated) {
-    qrDiv.style.display = "none";
-    qrGenerated = false;
-  }
   
   let count = 5; // Contagem regressiva de 5 segundos
   contador.innerText = count;
