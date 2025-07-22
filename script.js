@@ -1,229 +1,308 @@
-// Elementos DOM
-const video = document.getElementById("camera");
-const canvas = document.getElementById("canvas");
-const fotoBtn = document.getElementById("foto");
-const limparBtn = document.getElementById("limpar");
-const beep = document.getElementById("beep");
-const contador = document.getElementById("contador");
-const galeria = document.getElementById("galeria");
-const qrDiv = document.querySelector(".qr-section");
-const qrContainer = document.getElementById("qrCode");
-const moldura = document.getElementById("moldura");
-const processing = document.getElementById("processing");
-const processingText = document.getElementById("processing-text");
-const scrollableContent = document.querySelector(".scrollable-content");
-
-// Variáveis globais
-let stream;
-let qrGenerated = false;
-let isCameraCentered = true;
-
-// Chave de API do ImgBB
-const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
-
-// Inicializar a câmera
-function iniciarCamera() {
-  navigator.mediaDevices.getUserMedia({ 
-    video: { 
-      facingMode: "user",
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
-    }, 
-    audio: false 
-  })
-  .then(s => {
-    stream = s;
-    video.srcObject = stream;
-    video.play();
-  })
-  .catch(err => {
-    console.error("Erro ao acessar a câmera:", err);
-    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
-  });
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-// Centralizar a câmera
-function centerCamera() {
-  scrollableContent.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-  isCameraCentered = true;
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
-// Botão de foto
-fotoBtn.addEventListener("click", function() {
-  if (!isCameraCentered) {
-    centerCamera();
-    setTimeout(takePhoto, 500); // Espera a animação de scroll terminar
-  } else {
-    takePhoto();
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(5px);
+}
+
+/* Cabeçalho Fixo */
+.header {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ffc107 100%);
+  text-align: center;
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  font-family: 'Dancing Script', cursive;
+  font-size: 28px;
+  margin-bottom: 5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  color: #fff;
+}
+
+.header h2 {
+  font-family: 'Dancing Script', cursive;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Conteúdo Rolável */
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Seção da Câmera */
+.camera-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.camera-container {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 350px; /* Largura máxima para manter proporção 9:16 */
+  height: calc(350px * 16 / 9); /* Altura proporcional */
+}
+
+#camera {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+#moldura {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#contador {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 80px;
+  font-weight: bold;
+  z-index: 3;
+  color: #ffc107;
+  text-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.7);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#contador.visible {
+  opacity: 1;
+}
+
+/* Container do Botão */
+.btn-container {
+  display: flex;
+  justify-content: center;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.8);
+  position: sticky;
+  top: 80px; /* Altura do cabeçalho */
+  z-index: 50;
+}
+
+.btn {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ffc107 100%);
+  border: none;
+  border-radius: 50px;
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 12px 25px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  font-family: 'Roboto', sans-serif;
+  transition: transform 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+/* Seção do QR Code */
+.qr-section {
+  display: none;
+  text-align: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  margin: 0 auto;
+  width: 100%;
+  max-width: 350px;
+}
+
+.qr-title {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #ffc107;
+  font-weight: 600;
+  font-family: 'Roboto', sans-serif;
+}
+
+.qr-container {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  display: inline-block;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.qr-subtitle {
+  margin-top: 15px;
+  font-size: 16px;
+  color: #ffc107;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Galeria de Fotos */
+.gallery-section {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  margin-top: auto;
+}
+
+.gallery-title {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #ffc107;
+  font-weight: 600;
+  text-align: center;
+  font-family: 'Dancing Script', cursive;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.gallery img, .gallery video {
+  width: 100%;
+  border-radius: 8px;
+  border: 2px solid #ffc107;
+  aspect-ratio: 9/16;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.gallery img:hover, .gallery video:hover {
+  transform: scale(1.05);
+}
+
+.btn-clean {
+  background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+  border: none;
+  border-radius: 50px;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 12px 25px;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 20px auto 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  font-family: 'Roboto', sans-serif;
+  transition: transform 0.2s;
+}
+
+.btn-clean:active {
+  transform: scale(0.95);
+}
+
+/* Processando */
+.processing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  font-size: 24px;
+  color: #ffc107;
+  flex-direction: column;
+  gap: 20px;
+  font-family: 'Roboto', sans-serif;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffc107;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .header h1 {
+    font-size: 24px;
   }
-});
-
-// Botão limpar galeria
-limparBtn.addEventListener("click", () => {
-  galeria.innerHTML = "";
-});
-
-// Função para tirar foto
-function takePhoto() {
-  if (qrGenerated) {
-    qrDiv.style.display = "none";
-    qrGenerated = false;
+  
+  .header h2 {
+    font-size: 20px;
   }
   
-  let count = 5; // Contagem regressiva de 5 segundos
-  contador.innerText = count;
-  contador.classList.add('visible');
-  
-  try {
-    beep.play();
-  } catch (err) {
-    console.log("Erro no áudio:", err);
+  .btn, .btn-clean {
+    padding: 10px 20px;
+    font-size: 14px;
   }
   
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
-    
-    try {
-      beep.play();
-    } catch (err) {
-      console.warn("Erro ao tocar beep:", err);
-    }
-    
-    if (count === 0) {
-      clearInterval(interval);
-      contador.classList.remove('visible');
-      capturePhoto();
-    }
-  }, 1000);
-}
-
-// Capturar foto
-function capturePhoto() {
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext("2d");
-  
-  // Desenhar a imagem da câmera
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-  
-  // Aplicar moldura se estiver carregada
-  if (moldura.complete && moldura.naturalHeight !== 0) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+  #contador {
+    font-size: 60px;
+    width: 100px;
+    height: 100px;
   }
   
-  // Processar após um pequeno delay
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
-    
-    // Adicionar à galeria
-    const img = new Image();
-    img.src = imgData;
-    img.classList.add("gallery-item");
-    
-    // Limitar a 30 fotos na galeria
-    if (galeria.children.length >= 30) {
-      galeria.removeChild(galeria.firstChild);
-    }
-    galeria.appendChild(img);
-    
-    // Salvar localmente como backup
-    saveLocalFile(imgData, `foto_15anos_${Date.now()}.png`);
-    
-    // Enviar para o servidor e gerar QR code
-    enviarParaImgbb(imgData);
-  }, 300);
-}
-
-// Salvar arquivo localmente
-function saveLocalFile(data, filename) {
-  const link = document.createElement('a');
-  link.href = data;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-// Enviar foto para ImgBB e gerar QR code
-function enviarParaImgbb(imgData) {
-  showProcessing("Salvando sua foto...");
+  .gallery {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
   
-  const base64Data = imgData.split(',')[1];
-  const formData = new FormData();
-  formData.append('key', IMGBB_API_KEY);
-  formData.append('image', base64Data);
-  formData.append('name', `foto_15anos_${Date.now()}`);
-  
-  fetch('https://api.imgbb.com/1/upload', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.data && data.data.url) {
-      gerarQRCode(data.data.url);
-      hideProcessing();
-    } else {
-      throw new Error('Erro no upload da imagem');
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    hideProcessing();
-    alert("Erro ao enviar foto. Tente novamente.");
-  });
+  .camera-container {
+    max-width: 300px;
+    height: calc(300px * 16 / 9);
+  }
 }
-
-// Gerar QR code
-function gerarQRCode(url) {
-  qrDiv.style.display = "block";
-  qrContainer.innerHTML = "";
-  
-  new QRCode(qrContainer, {
-    text: url,
-    width: 200,
-    height: 200,
-    colorDark: "#ff6b6b",
-    colorLight: "#ffffff",
-    margin: 4
-  });
-  
-  // Rolar para o QR code
-  setTimeout(() => {
-    const qrPosition = qrDiv.offsetTop;
-    const controlsHeight = document.querySelector('.controls').offsetHeight;
-    const scrollPosition = qrPosition - controlsHeight - 20;
-    
-    scrollableContent.scrollTo({
-      top: scrollPosition,
-      behavior: 'smooth'
-    });
-    
-    isCameraCentered = false;
-  }, 100);
-  
-  qrGenerated = true;
-}
-
-// Mostrar tela de processamento
-function showProcessing(text) {
-  processingText.textContent = text;
-  processing.style.display = "flex";
-}
-
-// Esconder tela de processamento
-function hideProcessing() {
-  processing.style.display = "none";
-}
-
-// Inicializar a moldura
-moldura.onerror = function() {
-  this.src = "moldura.png";
-};
-
-// Iniciar a câmera quando o script carregar
-document.addEventListener('DOMContentLoaded', iniciarCamera);
