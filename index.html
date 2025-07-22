@@ -30,11 +30,13 @@
     </div>
     
     <!-- Área da Câmera -->
-    <div class="camera-container">
-      <video id="camera" autoplay muted playsinline></video>
-      <img id="moldura" src="moldura.png" alt="Moldura">
-      <div id="contador"></div>
-      <canvas id="canvas" style="display:none;"></canvas>
+    <div class="camera-wrapper">
+      <div class="camera-container">
+        <video id="camera" autoplay muted playsinline></video>
+        <img id="moldura" src="moldura.png" alt="Moldura">
+        <div id="contador"></div>
+        <canvas id="canvas" style="display:none;"></canvas>
+      </div>
     </div>
     
     <!-- Botão Grande -->
@@ -42,16 +44,11 @@
       <button id="foto" class="btn">📸 TIRAR FOTO</button>
     </div>
     
-    <!-- QR Code (inicialmente oculto) -->
-    <div class="qr-section" id="qrDownload" style="display:none;">
+    <!-- QR Code -->
+    <div class="qr-section" id="qrDownload">
       <div class="qr-title">Escaneie para baixar sua foto</div>
       <div class="qr-container" id="qrCode"></div>
-    </div>
-    
-    <!-- Galeria (inicialmente oculta) -->
-    <div class="gallery-section" id="gallerySection" style="display:none;">
-      <div class="gallery-title">📸 Galeria de Fotos</div>
-      <div id="galeria" class="gallery"></div>
+      <button id="voltar" class="btn">⬅️ Voltar para Câmera</button>
     </div>
     
     <!-- Tela de Processamento -->
