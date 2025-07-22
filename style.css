@@ -52,29 +52,24 @@ html, body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: column;
+  padding-bottom: 20px;
 }
 
 /* Seção da Câmera */
 .camera-section {
-  flex: 1;
+  min-height: 60vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 60vh;
-  position: relative;
 }
 
 .camera-container {
   position: relative;
-  width: 100%;
-  height: calc(100vw * 16 / 9); /* Proporção 9:16 vertical */
-  max-width: 100%;
-  max-height: 70vh;
-  margin: 0 auto;
-  overflow: hidden;
   background: #000;
+  overflow: hidden;
+  margin: 0 auto;
+  width: 100%;
+  height: 60vh;
 }
 
 #camera {
@@ -90,7 +85,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   pointer-events: none;
   z-index: 2;
 }
@@ -120,14 +115,17 @@ html, body {
   opacity: 1;
 }
 
-/* Container do Botão - Centralizado */
-.btn-container {
+/* Controles */
+.controls {
   display: flex;
   justify-content: center;
+  gap: 15px;
   padding: 15px;
   background: rgba(0, 0, 0, 0.8);
+  z-index: 5;
+  flex-wrap: wrap;
   position: sticky;
-  bottom: 0;
+  top: 80px; /* Altura do cabeçalho */
   z-index: 50;
 }
 
@@ -137,14 +135,17 @@ html, body {
   border-radius: 50px;
   color: #000;
   font-weight: bold;
-  font-size: 20px;
-  padding: 15px 30px;
+  font-size: 16px;
+  padding: 12px 20px;
   cursor: pointer;
-  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  min-width: 160px;
   font-family: 'Roboto', sans-serif;
   transition: transform 0.2s;
-  text-align: center;
 }
 
 .btn:active {
@@ -157,9 +158,7 @@ html, body {
   text-align: center;
   padding: 20px;
   background: rgba(0, 0, 0, 0.7);
-  margin: 0 auto;
-  width: 100%;
-  max-width: 350px;
+  margin-top: 10px;
 }
 
 .qr-title {
@@ -188,9 +187,8 @@ html, body {
 
 /* Galeria de Fotos */
 .gallery-section {
-  padding: 20px;
+  padding: 15px;
   background: rgba(0, 0, 0, 0.7);
-  margin-top: auto;
 }
 
 .gallery-title {
@@ -206,7 +204,6 @@ html, body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 10px;
-  margin-bottom: 20px;
 }
 
 .gallery img, .gallery video {
@@ -221,28 +218,6 @@ html, body {
 
 .gallery img:hover, .gallery video:hover {
   transform: scale(1.05);
-}
-
-.btn-clean {
-  background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
-  border: none;
-  border-radius: 50px;
-  color: white;
-  font-weight: bold;
-  font-size: 16px;
-  padding: 12px 25px;
-  cursor: pointer;
-  display: block;
-  width: 100%;
-  max-width: 200px;
-  margin: 20px auto 0;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  font-family: 'Roboto', sans-serif;
-  transition: transform 0.2s;
-}
-
-.btn-clean:active {
-  transform: scale(0.95);
 }
 
 /* Processando */
@@ -287,13 +262,9 @@ html, body {
   }
   
   .btn {
-    font-size: 18px;
-    padding: 12px 25px;
-  }
-  
-  .btn-clean {
-    padding: 10px 20px;
+    padding: 10px 15px;
     font-size: 14px;
+    min-width: 140px;
   }
   
   #contador {
@@ -307,7 +278,10 @@ html, body {
   }
   
   .camera-container {
-    max-width: 300px;
-    height: calc(300px * 16 / 9);
+    height: 50vh;
+  }
+  
+  .camera-section {
+    min-height: 50vh;
   }
 }
