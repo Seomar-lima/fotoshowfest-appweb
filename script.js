@@ -20,13 +20,13 @@ let qrGenerated = false;
 // Chave de API do ImgBB
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
 
-// Inicializar a câmera - AJUSTE PARA VERTICAL
+// Inicializar a câmera
 function iniciarCamera() {
   navigator.mediaDevices.getUserMedia({ 
     video: { 
       facingMode: "user",
       width: { ideal: 720 },
-      height: { ideal: 1280 } // Força proporção vertical
+      height: { ideal: 1280 }
     }, 
     audio: false 
   })
@@ -41,36 +41,22 @@ function iniciarCamera() {
   });
 }
 
-// Gerar QR Code - AJUSTE DE POSICIONAMENTO
-function gerarQRCode(url) {
-  qrDiv.style.display = "block";
-  qrContainer.innerHTML = "";
-  
-  new QRCode(qrContainer, {
-    text: url,
-    width: 200,
-    height: 200,
-    colorDark: "#ff6b6b",
-    colorLight: "#ffffff",
-    margin: 4
+// Centralizar a câmera
+function centerCamera() {
+  scrollableContent.scrollTo({
+    top: 0,
+    behavior: 'smooth'
   });
-
-  // Rolagem para mostrar QR code abaixo do botão
-  setTimeout(() => {
-    const qrPosition = qrDiv.offsetTop;
-    const btnHeight = document.querySelector('.btn-container').offsetHeight;
-    const scrollPosition = qrPosition - btnHeight - 20;
-    
-    scrollableContent.scrollTo({
-      top: scrollPosition,
-      behavior: 'smooth'
-    });
-  }, 100);
-  
-  qrGenerated = true;
 }
+
+// Função para tirar foto
+function takePhoto() {
+  if (qrGenerated) {
+    qrDiv.style.display = "none";
+    qrGenerated = false;
+  }
   
-  let count = 5; // Contagem regressiva de 5 segundos
+  let count = 3; // Contagem regressiva reduzida para 3 segundos
   contador.innerText = count;
   contador.classList.add('visible');
   
@@ -100,50 +86,39 @@ function gerarQRCode(url) {
 
 // Capturar foto
 function capturePhoto() {
-  // Ajustar canvas para proporção 9:16
   const targetHeight = video.videoWidth * (16/9);
   canvas.width = video.videoWidth;
   canvas.height = targetHeight;
   
   const ctx = canvas.getContext("2d");
-  
-  // Cortar a imagem para manter 9:16
   const sourceY = (video.videoHeight - targetHeight) / 2;
+  
   ctx.drawImage(video, 0, sourceY, canvas.width, targetHeight, 0, 0, canvas.width, canvas.height);
   
-  // Aplicar moldura se estiver carregada
   if (moldura.complete && moldura.naturalHeight !== 0) {
     ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
   }
   
-  // Processar após um pequeno delay
   setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = canvas.toDataURL("image/jpeg", 0.9);
     addPhotoToGallery(imgData);
     enviarParaImgbb(imgData);
   }, 300);
 }
 
-// Adicionar foto à galeria (mais recente primeiro)
+// Adicionar foto à galeria
 function addPhotoToGallery(imgData) {
   const img = document.createElement('img');
   img.src = imgData;
   img.classList.add('gallery-item');
   
-  // Inserir no início da galeria
-  if (galeria.firstChild) {
-    galeria.insertBefore(img, galeria.firstChild);
-  } else {
-    galeria.appendChild(img);
-  }
+  galeria.insertBefore(img, galeria.firstChild);
   
-  // Limitar a 30 fotos na galeria
-  if (galeria.children.length > 30) {
+  if (galeria.children.length > 15) {
     galeria.removeChild(galeria.lastChild);
   }
   
-  // Salvar localmente como backup
-  saveLocalFile(imgData, `foto_15anos_${Date.now()}.png`);
+  saveLocalFile(imgData, `foto_15anos_${Date.now()}.jpg`);
 }
 
 // Salvar arquivo localmente
@@ -156,7 +131,7 @@ function saveLocalFile(data, filename) {
   document.body.removeChild(link);
 }
 
-// Enviar foto para ImgBB e gerar QR code
+// Enviar foto para ImgBB
 function enviarParaImgbb(imgData) {
   showProcessing("Salvando sua foto...");
   
@@ -172,7 +147,7 @@ function enviarParaImgbb(imgData) {
   })
   .then(response => response.json())
   .then(data => {
-    if (data.data && data.data.url) {
+    if (data.data?.url) {
       gerarQRCode(data.data.url);
       hideProcessing();
     } else {
@@ -197,14 +172,14 @@ function gerarQRCode(url) {
     height: 200,
     colorDark: "#ff6b6b",
     colorLight: "#ffffff",
-    margin: 4
+    margin: 4,
+    correctLevel: QRCode.CorrectLevel.L
   });
   
-  // Rolar suavemente para o QR code
   setTimeout(() => {
     const qrPosition = qrDiv.offsetTop;
-    const headerHeight = document.querySelector('.header').offsetHeight;
-    const scrollPosition = qrPosition - headerHeight - 20;
+    const btnHeight = document.querySelector('.btn-container').offsetHeight;
+    const scrollPosition = qrPosition - btnHeight - 20;
     
     scrollableContent.scrollTo({
       top: scrollPosition,
@@ -226,10 +201,12 @@ function hideProcessing() {
   processing.style.display = "none";
 }
 
-// Inicializar a moldura
-moldura.onerror = function() {
-  this.src = "moldura.png";
-};
+// Event listeners
+fotoBtn.addEventListener("click", takePhoto);
+limparBtn.addEventListener("click", () => {
+  galeria.innerHTML = "";
+});
 
-// Iniciar a câmera quando o script carregar
+// Inicializar
+moldura.onerror = () => moldura.src = "moldura.png";
 document.addEventListener('DOMContentLoaded', iniciarCamera);
