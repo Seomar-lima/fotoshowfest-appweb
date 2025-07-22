@@ -1,250 +1,70 @@
-// Elementos DOM
-const video = document.getElementById("camera");
-const canvas = document.getElementById("canvas");
-const fotoBtn = document.getElementById("foto");
-const limparBtn = document.getElementById("limpar");
-const beep = document.getElementById("beep");
-const contador = document.getElementById("contador");
-const galeria = document.getElementById("galeria");
-const qrDiv = document.querySelector(".qr-section");
-const qrContainer = document.getElementById("qrCode");
-const moldura = document.getElementById("moldura");
-const processing = document.getElementById("processing");
-const processingText = document.getElementById("processing-text");
-
-// Variáveis globais
-let stream;
-let qrGenerated = false;
-let isCameraCentered = false;
-
-// Chave de API do ImgBB
-const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
-
-// Inicializar a câmera com proporção 9:16
-function iniciarCamera() {
-  navigator.mediaDevices.getUserMedia({ 
-    video: { 
-      facingMode: "user",
-      aspectRatio: 9/16
-    }, 
-    audio: false 
-  })
-  .then(s => {
-    stream = s;
-    video.srcObject = stream;
-    video.play();
-  })
-  .catch(err => {
-    console.error("Erro ao acessar a câmera:", err);
-    alert("Erro ao acessar a câmera. Verifique as permissões do navegador.");
-  });
-}
-
-// Centralizar a câmera na tela
-function centerCamera() {
-  const cameraSection = document.querySelector('.camera-section');
-  const cameraPosition = cameraSection.getBoundingClientRect().top;
-  const headerHeight = document.querySelector('.header').offsetHeight;
-  const scrollPosition = cameraPosition + window.scrollY - headerHeight - 20;
-  
-  window.scrollTo({
-    top: scrollPosition,
-    behavior: 'smooth'
-  });
-  
-  isCameraCentered = true;
-}
-
-// Verificar se a câmera está centralizada
-function checkCameraPosition() {
-  const cameraRect = document.querySelector('.camera-container').getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  isCameraCentered = (cameraRect.top >= 0 && cameraRect.bottom <= viewportHeight);
-}
-
-// Botão de foto
-fotoBtn.addEventListener("click", function() {
-  if (!isCameraCentered) {
-    centerCamera();
-  }
-  setTimeout(takePhoto, 500); // Delay para garantir a rolagem
-});
-
-// Botão limpar galeria
-limparBtn.addEventListener("click", () => {
-  galeria.innerHTML = "";
-});
-
-// Função para tirar foto
-function takePhoto() {
-  if (qrGenerated) {
-    qrDiv.style.display = "none";
-    qrGenerated = false;
-  }
-  
-  let count = 5; // Contagem regressiva de 5 segundos
-  contador.innerText = count;
-  contador.classList.add('visible');
-  
-  try {
-    beep.play();
-  } catch (err) {
-    console.log("Erro no áudio:", err);
-  }
-  
-  const interval = setInterval(() => {
-    count--;
-    contador.innerText = count;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Foto Show Fest - 15 anos Geovanna</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Cabeçalho Fixo -->
+    <div class="header">
+      <h1>FOTO SHOW FEST</h1>
+      <h2>15 anos Geovanna</h2>
+    </div>
     
-    try {
-      beep.play();
-    } catch (err) {
-      console.warn("Erro ao tocar beep:", err);
-    }
+    <!-- Área Principal Rolável -->
+    <div class="scrollable-content">
+      <!-- Seção da Câmera -->
+      <div class="camera-section">
+        <div class="camera-container">
+          <video id="camera" autoplay muted playsinline></video>
+          <img id="moldura" src="moldura.png" alt="Moldura">
+          <div id="contador"></div>
+          <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+      </div>
+      
+      <!-- Botão Centralizado -->
+      <div class="btn-container">
+        <button id="foto" class="btn">📸 TIRAR FOTO</button>
+      </div>
+      
+      <!-- QR Code -->
+      <div class="qr-section" id="qrDownload">
+        <div class="qr-title">Escaneie para baixar sua foto</div>
+        <div class="qr-container" id="qrCode"></div>
+        <div class="qr-subtitle">Compartilhe com seus amigos!</div>
+      </div>
+      
+      <!-- Galeria de Fotos -->
+      <div class="gallery-section">
+        <div class="gallery-title">📸 Galeria de Fotos</div>
+        <div id="galeria" class="gallery"></div>
+        <button id="limpar" class="btn-clean">🗑️ Limpar Galeria</button>
+      </div>
+    </div>
     
-    if (count === 0) {
-      clearInterval(interval);
-      contador.classList.remove('visible');
-      capturePhoto();
-    }
-  }, 1000);
-}
-
-// Capturar foto
-function capturePhoto() {
-  // Ajustar canvas para proporção 9:16
-  const targetHeight = video.videoWidth * (16/9);
-  canvas.width = video.videoWidth;
-  canvas.height = targetHeight;
-  
-  const ctx = canvas.getContext("2d");
-  
-  // Cortar a imagem para manter 9:16
-  const sourceY = (video.videoHeight - targetHeight) / 2;
-  ctx.drawImage(video, 0, sourceY, canvas.width, targetHeight, 0, 0, canvas.width, canvas.height);
-  
-  // Aplicar moldura se estiver carregada
-  if (moldura.complete && moldura.naturalHeight !== 0) {
-    ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-  }
-  
-  // Processar após um pequeno delay
-  setTimeout(() => {
-    const imgData = canvas.toDataURL("image/png");
-    addPhotoToGallery(imgData);
-    enviarParaImgbb(imgData);
-  }, 300);
-}
-
-// Adicionar foto à galeria (mais recente primeiro)
-function addPhotoToGallery(imgData) {
-  const img = document.createElement('img');
-  img.src = imgData;
-  img.classList.add('gallery-item');
-  
-  // Inserir no início da galeria
-  if (galeria.firstChild) {
-    galeria.insertBefore(img, galeria.firstChild);
-  } else {
-    galeria.appendChild(img);
-  }
-  
-  // Limitar a 30 fotos na galeria
-  if (galeria.children.length > 30) {
-    galeria.removeChild(galeria.lastChild);
-  }
-  
-  // Salvar localmente como backup
-  saveLocalFile(imgData, `foto_15anos_${Date.now()}.png`);
-}
-
-// Salvar arquivo localmente
-function saveLocalFile(data, filename) {
-  const link = document.createElement('a');
-  link.href = data;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-// Enviar foto para ImgBB e gerar QR code
-function enviarParaImgbb(imgData) {
-  showProcessing("Salvando sua foto...");
-  
-  const base64Data = imgData.split(',')[1];
-  const formData = new FormData();
-  formData.append('key', IMGBB_API_KEY);
-  formData.append('image', base64Data);
-  formData.append('name', `foto_15anos_${Date.now()}`);
-  
-  fetch('https://api.imgbb.com/1/upload', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.data && data.data.url) {
-      gerarQRCode(data.data.url);
-      hideProcessing();
-    } else {
-      throw new Error('Erro no upload da imagem');
-    }
-  })
-  .catch(error => {
-    console.error("Erro no upload:", error);
-    hideProcessing();
-    alert("Erro ao enviar foto. Tente novamente.");
-  });
-}
-
-// Gerar QR code
-function gerarQRCode(url) {
-  qrDiv.style.display = "block";
-  qrContainer.innerHTML = "";
-  
-  new QRCode(qrContainer, {
-    text: url,
-    width: 200,
-    height: 200,
-    colorDark: "#ff6b6b",
-    colorLight: "#ffffff",
-    margin: 4
-  });
-  
-  // Rolar suavemente para o QR code
-  setTimeout(() => {
-    const qrPosition = qrDiv.getBoundingClientRect().top;
-    const headerHeight = document.querySelector('.header').offsetHeight;
-    const scrollPosition = qrPosition + window.scrollY - headerHeight - 20;
+    <!-- Tela de Processamento -->
+    <div id="processing" class="processing">
+      <div class="spinner"></div>
+      <div id="processing-text">Processando...</div>
+    </div>
     
-    window.scrollTo({
-      top: scrollPosition,
-      behavior: 'smooth'
-    });
-  }, 100);
-  
-  qrGenerated = true;
-}
+    <audio id="beep" preload="auto">
+      <source src="beep.mp3" type="audio/mpeg" />
+    </audio>
+  </div>
 
-// Mostrar tela de processamento
-function showProcessing(text) {
-  processingText.textContent = text;
-  processing.style.display = "flex";
-}
-
-// Esconder tela de processamento
-function hideProcessing() {
-  processing.style.display = "none";
-}
-
-// Inicializar a moldura
-moldura.onerror = function() {
-  this.src = "moldura.png";
-};
-
-// Verificar posição da câmera ao rolar
-window.addEventListener('scroll', checkCameraPosition);
-
-// Iniciar a câmera quando o script carregar
-document.addEventListener('DOMContentLoaded', iniciarCamera);
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
