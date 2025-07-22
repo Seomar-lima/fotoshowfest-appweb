@@ -16,18 +16,16 @@ const scrollableContent = document.querySelector(".scrollable-content");
 // Variáveis globais
 let stream;
 let qrGenerated = false;
-let isCameraCentered = true;
 
 // Chave de API do ImgBB
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
 
-// Inicializar a câmera
+// Inicializar a câmera com proporção 9:16
 function iniciarCamera() {
   navigator.mediaDevices.getUserMedia({ 
     video: { 
       facingMode: "user",
-      width: { ideal: 1920 },
-      height: { ideal: 1080 }
+      aspectRatio: 9/16
     }, 
     audio: false 
   })
@@ -48,17 +46,12 @@ function centerCamera() {
     top: 0,
     behavior: 'smooth'
   });
-  isCameraCentered = true;
 }
 
 // Botão de foto
 fotoBtn.addEventListener("click", function() {
-  if (!isCameraCentered) {
-    centerCamera();
-    setTimeout(takePhoto, 500); // Espera a animação de scroll terminar
-  } else {
-    takePhoto();
-  }
+  centerCamera();
+  setTimeout(takePhoto, 300); // Pequeno delay para garantir o scroll
 });
 
 // Botão limpar galeria
@@ -103,12 +96,16 @@ function takePhoto() {
 
 // Capturar foto
 function capturePhoto() {
+  // Ajustar canvas para proporção 9:16
+  const targetHeight = video.videoWidth * (16/9);
   canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.height = targetHeight;
+  
   const ctx = canvas.getContext("2d");
   
-  // Desenhar a imagem da câmera
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // Cortar a imagem para manter 9:16
+  const sourceY = (video.videoHeight - targetHeight) / 2;
+  ctx.drawImage(video, 0, sourceY, canvas.width, targetHeight, 0, 0, canvas.width, canvas.height);
   
   // Aplicar moldura se estiver carregada
   if (moldura.complete && moldura.naturalHeight !== 0) {
@@ -118,24 +115,31 @@ function capturePhoto() {
   // Processar após um pequeno delay
   setTimeout(() => {
     const imgData = canvas.toDataURL("image/png");
-    
-    // Adicionar à galeria
-    const img = new Image();
-    img.src = imgData;
-    img.classList.add("gallery-item");
-    
-    // Limitar a 30 fotos na galeria
-    if (galeria.children.length >= 30) {
-      galeria.removeChild(galeria.firstChild);
-    }
-    galeria.appendChild(img);
-    
-    // Salvar localmente como backup
-    saveLocalFile(imgData, `foto_15anos_${Date.now()}.png`);
-    
-    // Enviar para o servidor e gerar QR code
+    addPhotoToGallery(imgData);
     enviarParaImgbb(imgData);
   }, 300);
+}
+
+// Adicionar foto à galeria (mais recente primeiro)
+function addPhotoToGallery(imgData) {
+  const img = document.createElement('img');
+  img.src = imgData;
+  img.classList.add('gallery-item');
+  
+  // Inserir no início da galeria
+  if (galeria.firstChild) {
+    galeria.insertBefore(img, galeria.firstChild);
+  } else {
+    galeria.appendChild(img);
+  }
+  
+  // Limitar a 30 fotos na galeria
+  if (galeria.children.length > 30) {
+    galeria.removeChild(galeria.lastChild);
+  }
+  
+  // Salvar localmente como backup
+  saveLocalFile(imgData, `foto_15anos_${Date.now()}.png`);
 }
 
 // Salvar arquivo localmente
@@ -192,18 +196,16 @@ function gerarQRCode(url) {
     margin: 4
   });
   
-  // Rolar para o QR code
+  // Rolar suavemente para o QR code
   setTimeout(() => {
     const qrPosition = qrDiv.offsetTop;
-    const controlsHeight = document.querySelector('.controls').offsetHeight;
-    const scrollPosition = qrPosition - controlsHeight - 20;
+    const headerHeight = document.querySelector('.header').offsetHeight;
+    const scrollPosition = qrPosition - headerHeight - 20;
     
     scrollableContent.scrollTo({
       top: scrollPosition,
       behavior: 'smooth'
     });
-    
-    isCameraCentered = false;
   }, 100);
   
   qrGenerated = true;
