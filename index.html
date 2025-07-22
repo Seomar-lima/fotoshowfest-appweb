@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOTOSHOWFEST - 15 anos Geovanna</title>
+    <title>TOTOSHOWFEST - 15 anos Goswanna</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <div class="header">
+        <div class="time-display" id="current-time"></div>
         <h1>TOTOSHOWFEST</h1>
-        <h2>15 anos Geovanna</h2>
+        <h2>15 anos Goswanna</h2>
     </div>
 
     <div class="camera-container">
@@ -22,6 +23,7 @@
     <button id="capture-btn" class="capture-btn">TIRAR FOTO</button>
 
     <div id="loading" class="loading-screen">
+        <div class="spinner"></div>
         <p>Salvando sua foto...</p>
     </div>
 
@@ -32,7 +34,7 @@
     </div>
 
     <div class="gallery-container">
-        <h3>Galeria de Telos</h3>
+        <h3>Galeria de Fotos</h3>
         <div id="gallery" class="gallery"></div>
         <button id="clear-gallery" class="clear-btn">Limpar Galeria</button>
     </div>
