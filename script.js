@@ -11,11 +11,11 @@ const qrContainer = document.getElementById("qrCode");
 const moldura = document.getElementById("moldura");
 const processing = document.getElementById("processing");
 const processingText = document.getElementById("processing-text");
-const scrollableContent = document.querySelector(".scrollable-content");
 
 // Variáveis globais
 let stream;
 let qrGenerated = false;
+let isCameraCentered = false;
 
 // Chave de API do ImgBB
 const IMGBB_API_KEY = "586fe56b6fe8223c90078eae64e1d678";
@@ -40,18 +40,34 @@ function iniciarCamera() {
   });
 }
 
-// Centralizar a câmera
+// Centralizar a câmera na tela
 function centerCamera() {
-  scrollableContent.scrollTo({
-    top: 0,
+  const cameraSection = document.querySelector('.camera-section');
+  const cameraPosition = cameraSection.getBoundingClientRect().top;
+  const headerHeight = document.querySelector('.header').offsetHeight;
+  const scrollPosition = cameraPosition + window.scrollY - headerHeight - 20;
+  
+  window.scrollTo({
+    top: scrollPosition,
     behavior: 'smooth'
   });
+  
+  isCameraCentered = true;
+}
+
+// Verificar se a câmera está centralizada
+function checkCameraPosition() {
+  const cameraRect = document.querySelector('.camera-container').getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  isCameraCentered = (cameraRect.top >= 0 && cameraRect.bottom <= viewportHeight);
 }
 
 // Botão de foto
 fotoBtn.addEventListener("click", function() {
-  centerCamera();
-  setTimeout(takePhoto, 300); // Pequeno delay para garantir o scroll
+  if (!isCameraCentered) {
+    centerCamera();
+  }
+  setTimeout(takePhoto, 500); // Delay para garantir a rolagem
 });
 
 // Botão limpar galeria
@@ -198,11 +214,11 @@ function gerarQRCode(url) {
   
   // Rolar suavemente para o QR code
   setTimeout(() => {
-    const qrPosition = qrDiv.offsetTop;
+    const qrPosition = qrDiv.getBoundingClientRect().top;
     const headerHeight = document.querySelector('.header').offsetHeight;
-    const scrollPosition = qrPosition - headerHeight - 20;
+    const scrollPosition = qrPosition + window.scrollY - headerHeight - 20;
     
-    scrollableContent.scrollTo({
+    window.scrollTo({
       top: scrollPosition,
       behavior: 'smooth'
     });
@@ -226,6 +242,9 @@ function hideProcessing() {
 moldura.onerror = function() {
   this.src = "moldura.png";
 };
+
+// Verificar posição da câmera ao rolar
+window.addEventListener('scroll', checkCameraPosition);
 
 // Iniciar a câmera quando o script carregar
 document.addEventListener('DOMContentLoaded', iniciarCamera);
