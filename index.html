@@ -29,26 +29,36 @@
       <h2>15 anos Geovanna</h2>
     </div>
     
-    <!-- Área da Câmera -->
-    <div class="camera-wrapper">
-      <div class="camera-container">
-        <video id="camera" autoplay muted playsinline></video>
-        <img id="moldura" src="moldura.png" alt="Moldura">
-        <div id="contador"></div>
-        <canvas id="canvas" style="display:none;"></canvas>
+    <!-- Área Principal Rolável -->
+    <div class="scrollable-content">
+      <!-- Seção da Câmera -->
+      <div class="camera-section">
+        <div class="camera-container">
+          <video id="camera" autoplay muted playsinline></video>
+          <img id="moldura" src="moldura.png" alt="Moldura">
+          <div id="contador"></div>
+          <canvas id="canvas" style="display:none;"></canvas>
+        </div>
       </div>
-    </div>
-    
-    <!-- Botão Grande -->
-    <div class="btn-container">
-      <button id="foto" class="btn">📸 TIRAR FOTO</button>
-    </div>
-    
-    <!-- QR Code -->
-    <div class="qr-section" id="qrDownload">
-      <div class="qr-title">Escaneie para baixar sua foto</div>
-      <div class="qr-container" id="qrCode"></div>
-      <button id="voltar" class="btn">⬅️ Voltar para Câmera</button>
+      
+      <!-- Botão Centralizado -->
+      <div class="btn-container">
+        <button id="foto" class="btn">📸 Tirar Foto</button>
+      </div>
+      
+      <!-- QR Code -->
+      <div class="qr-section" id="qrDownload">
+        <div class="qr-title">Escaneie para baixar sua foto</div>
+        <div class="qr-container" id="qrCode"></div>
+        <div class="qr-subtitle">Compartilhe com seus amigos!</div>
+      </div>
+      
+      <!-- Galeria de Fotos -->
+      <div class="gallery-section">
+        <div class="gallery-title">📸 Galeria de Fotos</div>
+        <div id="galeria" class="gallery"></div>
+        <button id="limpar" class="btn-clean">🗑️ Limpar Galeria</button>
+      </div>
     </div>
     
     <!-- Tela de Processamento -->
