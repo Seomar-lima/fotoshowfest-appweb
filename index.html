@@ -1,50 +1,42 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Foto Show Fest</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOTOSHOWFEST - 15 anos Geovanna</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-  <div id="camera-container">
-    <header class="header">
-      <h1>FOTO SHOW FEST</h1>
-      <p>15 anos Geovanna</p>
-    </header>
-
-    <div class="preview-frame">
-      <video id="camera" autoplay playsinline></video>
-      <img src="moldura.png" alt="Moldura" id="overlay" />
-      <div id="countdown"></div>
+    <div class="header">
+        <h1>TOTOSHOWFEST</h1>
+        <h2>15 anos Geovanna</h2>
     </div>
 
-    <button id="capture-button">📸 TIRAR FOTO</button>
-  </div>
-
-  <div id="loading" class="hidden">
-    <div class="loading-overlay">
-      <span>Salvando sua imagem...</span>
-    </div>
-  </div>
-
-  <div id="result" class="hidden">
-    <button id="capture-again">📸 TIRAR FOTO</button>
-
-    <div class="qrcode-container">
-      <p>Escaneie para baixar sua foto</p>
-      <div id="qrcode"></div>
-      <p>Compartilhe com seus amigos!</p>
+    <div class="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <img id="moldura" src="moldura.png" alt="Moldura">
+        <div id="countdown" class="countdown"></div>
     </div>
 
-    <h3>📸 Galeria de Fotos</h3>
-    <div id="gallery-wrapper">
-      <div id="gallery"></div>
-    </div>
-    <button id="clear-gallery">🗑️ Limpar Galeria</button>
-  </div>
+    <button id="capture-btn" class="capture-btn">TIRAR FOTO</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script src="script.js"></script>
+    <div id="loading" class="loading-screen">
+        <p>Salvando sua foto...</p>
+    </div>
+
+    <div id="result" class="result-container">
+        <h3>Escaneie para baixar sua foto</h3>
+        <p>Compartilhe com seus amigos!</p>
+        <div id="qrcode"></div>
+    </div>
+
+    <div class="gallery-container">
+        <h3>Galeria de Telos</h3>
+        <div id="gallery" class="gallery"></div>
+        <button id="clear-gallery" class="clear-btn">Limpar Galeria</button>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
