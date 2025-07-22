@@ -1,112 +1,74 @@
-@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
-
 body {
   margin: 0;
-  background-color: #000;
-  color: #fff;
-  font-family: 'Bungee', cursive;
+  padding: 0;
+  background-color: black;
+  font-family: Arial, sans-serif;
   overflow: hidden;
-  touch-action: none;
 }
 
-h1 {
-  font-size: 24px;
+header {
+  color: white;
   text-align: center;
-  color: #fff;
-  margin: 10px 0;
+  padding: 10px;
+  font-size: 20px;
 }
 
-#camera-container {
+.camera-container {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  aspect-ratio: 9 / 16;
   overflow: hidden;
-  background-color: #000;
+  margin: 0 auto;
+  background-color: black;
 }
 
-video {
-  width: 100vh;
-  height: 100vw;
-  object-fit: cover;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(90deg); /* REMOVIDO scaleX(-1) */
-  border-radius: 10px;
-}
-
-#overlay {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100vh;
-  height: 100vw;
-  transform: translate(-50%, -50%) rotate(90deg);
-  z-index: 2;
-  pointer-events: none;
-}
-
-#overlay img {
+#camera {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 1;
+  transform: scaleX(-1); /* espelha apenas na visualização da câmera */
 }
 
-#controls {
+#canvas {
+  display: none;
+}
+
+.moldura {
   position: absolute;
-  bottom: 10px;
+  top: 0;
+  left: 0;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  object-fit: cover;
+}
+
+#countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 72px;
+  font-weight: bold;
   z-index: 3;
+  text-shadow: 2px 2px 4px #000;
+  display: none;
 }
 
 button {
-  background-color: #fff;
-  color: #000;
-  border: none;
-  padding: 10px 20px;
+  display: block;
+  margin: 20px auto;
+  padding: 10px 30px;
   font-size: 18px;
+  background-color: #1e90ff;
+  color: white;
+  border: none;
   border-radius: 10px;
-  font-family: 'Bungee', cursive;
   cursor: pointer;
-  transition: background-color 0.3s;
 }
 
 button:hover {
-  background-color: #ddd;
-}
-
-#galeria {
-  position: absolute;
-  bottom: 80px;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  z-index: 2;
-  gap: 5px;
-}
-
-.galeria-img {
-  width: 60px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 5px;
-}
-
-#status {
-  position: absolute;
-  top: 10px;
-  width: 100%;
-  text-align: center;
-  font-size: 18px;
-  z-index: 4;
-}
-
-canvas {
-  display: none;
+  background-color: #1c86ee;
 }
