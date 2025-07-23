@@ -36,8 +36,10 @@ document.addEventListener('DOMContentLoaded', function() {
     captureBtn.addEventListener('click', function() {
         const cameraContainer = document.querySelector('.camera-container');
         const cameraRect = cameraContainer.getBoundingClientRect();
+        const headerHeight = document.querySelector('.header').offsetHeight;
         
-        if (cameraRect.top < 0 || cameraRect.top > 100) {
+        // Verifica se a câmera está escondida atrás do cabeçalho
+        if (cameraRect.top < headerHeight) {
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'
@@ -143,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `totoshowfest_${new Date().getTime()}.jpg`;
+            a.download = `fotoshowfest_${new Date().getTime()}.jpg`;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
@@ -201,12 +203,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function showResult() {
         resultContainer.style.display = 'block';
         
-        // Calcula a posição onde o botão "Tirar Foto" ficará no topo
+        // Calcula a posição onde o botão "Tirar Foto" ficará logo abaixo do cabeçalho
+        const header = document.querySelector('.header');
+        const headerHeight = header.offsetHeight;
         const captureBtn = document.getElementById('capture-btn');
-        const btnPosition = captureBtn.getBoundingClientRect().top + window.pageYOffset;
+        const btnPosition = captureBtn.getBoundingClientRect().top + window.pageYOffset - headerHeight;
         
-        // Rola até essa posição (botão no topo) ou até o QR code, o que for menor
-        const qrPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset;
+        // Rola até essa posição (botão abaixo do cabeçalho) ou até o QR code, o que for menor
+        const qrPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
         const scrollToPosition = Math.min(btnPosition, qrPosition);
         
         window.scrollTo({
