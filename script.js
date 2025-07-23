@@ -32,6 +32,19 @@ document.addEventListener('DOMContentLoaded', function() {
     captureBtn.addEventListener('click', takePhoto);
     clearGalleryBtn.addEventListener('click', clearGallery);
     
+    // Adiciona evento para rolar para o topo quando clicar no botão
+    captureBtn.addEventListener('click', function() {
+        const cameraContainer = document.querySelector('.camera-container');
+        const cameraRect = cameraContainer.getBoundingClientRect();
+        
+        if (cameraRect.top < 0 || cameraRect.top > 100) {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    });
+    
     async function startCamera() {
         try {
             stream = await navigator.mediaDevices.getUserMedia({
@@ -187,7 +200,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showResult() {
         resultContainer.style.display = 'block';
-        resultContainer.scrollIntoView({ behavior: 'smooth' });
+        
+        // Calcula a posição onde o botão "Tirar Foto" ficará no topo
+        const captureBtn = document.getElementById('capture-btn');
+        const btnPosition = captureBtn.getBoundingClientRect().top + window.pageYOffset;
+        
+        // Rola até essa posição (botão no topo) ou até o QR code, o que for menor
+        const qrPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset;
+        const scrollToPosition = Math.min(btnPosition, qrPosition);
+        
+        window.scrollTo({
+            top: scrollToPosition,
+            behavior: 'smooth'
+        });
     }
     
     function loadGallery() {
