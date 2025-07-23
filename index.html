@@ -43,14 +43,21 @@
         <button id="clear-gallery" class="clear-btn">Limpar Galeria</button>
     </div>
 
+    <audio id="beep-sound" src="beep.mp3" preload="auto"></audio>
+
     <script>
         // Registra Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(err => console.log('SW registration failed: ', err));
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => console.log('SW registered: scope', registration.scope))
+                    .catch(err => console.log('SW registration failed:', err));
             });
+        }
+        
+        // Verifica se está em modo standalone
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+            console.log('Running in standalone mode');
         }
     </script>
     <script src="script.js"></script>
