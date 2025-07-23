@@ -1,7 +1,7 @@
 {
-  "name": "FOTOSHOWFEST",
-  "short_name": "FSF",
-  "start_url": "/index.html",
+  "name": "FOTOSHOWFEST - 15 anos Geovanna",
+  "short_name": "FOTOSHOW",
+  "start_url": "/index.html?source=pwa",
   "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
