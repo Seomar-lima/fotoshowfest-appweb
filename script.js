@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Elementos DOM
     const video = document.getElementById('video');
     const captureBtn = document.getElementById('capture-btn');
     const countdown = document.getElementById('countdown');
@@ -9,43 +10,63 @@ document.addEventListener('DOMContentLoaded', function() {
     const clearGalleryBtn = document.getElementById('clear-gallery');
     const currentTimeDisplay = document.getElementById('current-time');
     
+    // Configurações
     const IMGBB_API_KEY = '586fe56b6fe8223c90078eae64e1d678';
     const MAX_PHOTOS = 10;
     let stream = null;
+    let backButtonCount = 0;
     
-    // Atualiza o relógio
+    // Controle de Navegação
+    function setupNavigationControls() {
+        // Tratamento do botão voltar
+        document.addEventListener('backbutton', handleBackButton, false);
+        
+        // Impede fechar o app com gestos
+        window.addEventListener('beforeunload', function(e) {
+            if (!confirm('Deseja realmente sair do app?')) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+        
+        // Força modo standalone
+        if (window.navigator.standalone === false) {
+            window.location.href = 'index.html';
+        }
+    }
+    
+    function handleBackButton(e) {
+        e.preventDefault();
+        
+        // Se estiver mostrando o QR code, volta para a câmera
+        if (resultContainer.style.display === 'block') {
+            resultContainer.style.display = 'none';
+            backButtonCount = 0;
+            return;
+        }
+        
+        // Se estiver na câmera, conta os cliques para sair
+        backButtonCount++;
+        
+        if (backButtonCount === 1) {
+            alert('Pressione Voltar novamente para sair');
+            setTimeout(() => { backButtonCount = 0; }, 2000);
+        } else if (backButtonCount >= 2) {
+            if (confirm('Deseja realmente sair do app?')) {
+                navigator.app.exitApp?.(); // Para Cordova/PhoneGap
+                window.close?.(); // Para navegadores
+            } else {
+                backButtonCount = 0;
+            }
+        }
+    }
+    
+    // Funções do App
     function updateClock() {
         const now = new Date();
         const timeString = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
         currentTimeDisplay.textContent = timeString;
     }
-    
-    setInterval(updateClock, 1000);
-    updateClock();
-    
-    // Carrega a galeria do localStorage
-    loadGallery();
-    
-    // Inicia a câmera
-    startCamera();
-    
-    captureBtn.addEventListener('click', takePhoto);
-    clearGalleryBtn.addEventListener('click', clearGallery);
-    
-    // Adiciona evento para rolar para o topo quando clicar no botão
-    captureBtn.addEventListener('click', function() {
-        const cameraContainer = document.querySelector('.camera-container');
-        const cameraRect = cameraContainer.getBoundingClientRect();
-        const headerHeight = document.querySelector('.header').offsetHeight;
-        
-        // Verifica se a câmera está escondida atrás do cabeçalho
-        if (cameraRect.top < headerHeight) {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-    });
     
     async function startCamera() {
         try {
@@ -65,8 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function takePhoto() {
-        resetCameraPosition();
-        
         let counter = 3;
         countdown.textContent = counter;
         countdown.style.display = 'flex';
@@ -83,10 +102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
     
-    function resetCameraPosition() {
-        // Implementação para redefinir a posição da câmera se necessário
-    }
-    
     async function captureImage() {
         loadingScreen.style.display = 'flex';
         
@@ -100,15 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const moldura = document.getElementById('moldura');
         ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
         
-        // Obter a imagem em dois formatos
         const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
         
         try {
-            // 1. Salvar localmente no dispositivo
             await saveToDeviceGallery(imageDataUrl);
             
-            // 2. Enviar para o ImgBB
             const formData = new FormData();
             formData.append('image', blob);
             
@@ -120,13 +132,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.success) {
-                // 3. Salvar na galeria interna do app
                 savePhotoLocally(data.data.url, canvas);
-                
-                // 4. Gerar QR Code
                 generateQRCode(data.data.url);
-                
-                // Mostrar resultado
                 showResult();
             } else {
                 throw new Error('Falha ao enviar para o ImgBB');
@@ -152,11 +159,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
-            return url;
         } catch (error) {
             console.error('Erro ao fazer download:', error);
         }
-        return null;
     }
     
     function dataURLtoBlob(dataURL) {
@@ -203,13 +208,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function showResult() {
         resultContainer.style.display = 'block';
         
-        // Calcula a posição onde o botão "Tirar Foto" ficará logo abaixo do cabeçalho
         const header = document.querySelector('.header');
         const headerHeight = header.offsetHeight;
         const captureBtn = document.getElementById('capture-btn');
         const btnPosition = captureBtn.getBoundingClientRect().top + window.pageYOffset - headerHeight;
         
-        // Rola até essa posição (botão abaixo do cabeçalho) ou até o QR code, o que for menor
         const qrPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
         const scrollToPosition = Math.min(btnPosition, qrPosition);
         
@@ -237,4 +240,28 @@ document.addEventListener('DOMContentLoaded', function() {
             gallery.innerHTML = '';
         }
     }
+    
+    // Inicialização
+    setupNavigationControls();
+    setInterval(updateClock, 1000);
+    updateClock();
+    loadGallery();
+    startCamera();
+    
+    // Event Listeners
+    captureBtn.addEventListener('click', takePhoto);
+    clearGalleryBtn.addEventListener('click', clearGallery);
+    
+    captureBtn.addEventListener('click', function() {
+        const cameraContainer = document.querySelector('.camera-container');
+        const cameraRect = cameraContainer.getBoundingClientRect();
+        const headerHeight = document.querySelector('.header').offsetHeight;
+        
+        if (cameraRect.top < headerHeight) {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    });
 });
