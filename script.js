@@ -9,63 +9,159 @@ document.addEventListener('DOMContentLoaded', function() {
     const gallery = document.getElementById('gallery');
     const clearGalleryBtn = document.getElementById('clear-gallery');
     const currentTimeDisplay = document.getElementById('current-time');
-    const beepSound = document.getElementById('beep-sound');
+    const backWarning = document.getElementById('back-warning');
     
     // Configurações
     const IMGBB_API_KEY = '586fe56b6fe8223c90078eae64e1d678';
     const MAX_PHOTOS = 10;
     let stream = null;
+    let showingResult = false;
     let backButtonCount = 0;
+    let backWarningTimeout;
     
-    // Controle de Navegação
-    function setupNavigationControls() {
-        // Tratamento do botão voltar (para Cordova/PhoneGap)
-        document.addEventListener('backbutton', handleBackButton, false);
+    // Atualiza o relógio
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
+        currentTimeDisplay.textContent = timeString;
+    }
+    
+    // Inicialização
+    function initApp() {
+        // Atualiza o relógio a cada minuto
+        setInterval(updateClock, 60000);
+        updateClock();
         
-        // Tratamento do botão voltar (para navegador)
-        window.onpopstate = function(event) {
-            if (resultContainer.style.display === 'block') {
-                resultContainer.style.display = 'none';
-                history.pushState(null, null, window.location.pathname);
-            } else {
-                handleBackButton({preventDefault: () => {}});
-            }
-        };
+        // Carrega a galeria
+        loadGallery();
         
-        // Impede fechar o app com gestos
-        window.addEventListener('beforeunload', function(e) {
-            if (!confirm('Deseja realmente sair do app?')) {
-                e.preventDefault();
-                e.returnValue = '';
+        // Inicia a câmera
+        startCamera();
+        
+        // Configura eventos
+        setupEventListeners();
+        
+        // Configura navegação
+        setupNavigationControls();
+        
+        // Registra o Service Worker
+        registerServiceWorker();
+    }
+    
+    // Configura eventos
+    function setupEventListeners() {
+        captureBtn.addEventListener('click', takePhoto);
+        clearGalleryBtn.addEventListener('click', clearGallery);
+        
+        // Botão de voltar personalizado
+        captureBtn.addEventListener('click', function() {
+            const cameraContainer = document.querySelector('.camera-container');
+            const cameraRect = cameraContainer.getBoundingClientRect();
+            const headerHeight = document.querySelector('.header').offsetHeight;
+            
+            if (cameraRect.top < headerHeight) {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
             }
         });
     }
     
-    function handleBackButton(e) {
-        e.preventDefault();
-        
-        // Se estiver mostrando o QR code, volta para a câmera
-        if (resultContainer.style.display === 'block') {
-            resultContainer.style.display = 'none';
-            backButtonCount = 0;
-            return;
+    // Registra o Service Worker
+    function registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js')
+                .then(reg => {
+                    console.log('Service Worker registrado com sucesso!', reg);
+                    
+                    // Verifica atualizações periodicamente
+                    setInterval(() => reg.update(), 60 * 60 * 1000);
+                    
+                    // Atualização quando novo service worker estiver pronto
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('Nova versão disponível!');
+                                if (confirm('Uma nova versão do app está disponível. Atualizar agora?')) {
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(err => {
+                    console.error('Erro ao registrar Service Worker:', err);
+                });
         }
+    }
+    
+    // Controle de navegação
+    function setupNavigationControls() {
+        // Tratamento do botão voltar do navegador
+        window.addEventListener('popstate', function(event) {
+            if (showingResult) {
+                hideResult();
+            } else {
+                handleBackNavigation();
+            }
+        });
         
-        // Se estiver na câmera, conta os cliques para sair
+        // Tratamento do botão voltar físico (Android)
+        document.addEventListener('backbutton', function(e) {
+            e.preventDefault();
+            if (showingResult) {
+                hideResult();
+            } else {
+                handleBackNavigation();
+            }
+        }, false);
+        
+        // Prevenir gesto de voltar (swipe)
+        let touchStartX = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+        
+        document.addEventListener('touchend', function(e) {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diffX = touchEndX - touchStartX;
+            
+            // Detecta gesto de voltar (swipe da direita para esquerda)
+            if (diffX < -100) {
+                e.preventDefault();
+                showBackWarning();
+            }
+        }, false);
+    }
+    
+    // Mostra aviso de navegação
+    function showBackWarning() {
+        backWarning.style.display = 'flex';
+        
+        // Oculta após 3 segundos
+        clearTimeout(backWarningTimeout);
+        backWarningTimeout = setTimeout(() => {
+            backWarning.style.display = 'none';
+        }, 3000);
+    }
+    
+    // Trata navegação para trás
+    function handleBackNavigation() {
         backButtonCount++;
         
         if (backButtonCount === 1) {
-            alert('Pressione Voltar novamente para sair');
+            showBackWarning();
             setTimeout(() => { backButtonCount = 0; }, 2000);
         } else if (backButtonCount >= 2) {
             if (confirm('Deseja realmente sair do app?')) {
-                // Tenta fechar o app de diferentes formas
+                // Tenta fechar o app
                 if (typeof navigator.app !== 'undefined' && navigator.app.exitApp) {
                     navigator.app.exitApp();
                 } else if (window.close) {
                     window.close();
-                } else {
-                    window.location.href = 'about:blank';
                 }
             } else {
                 backButtonCount = 0;
@@ -73,13 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Funções principais do app
-    function updateClock() {
-        const now = new Date();
-        const timeString = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
-        currentTimeDisplay.textContent = timeString;
-    }
-    
+    // Inicia a câmera
     async function startCamera() {
         try {
             stream = await navigator.mediaDevices.getUserMedia({
@@ -97,9 +187,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Tira foto
     function takePhoto() {
-        beepSound.play().catch(e => console.log("Não foi possível reproduzir som:", e));
-        
         let counter = 3;
         countdown.textContent = counter;
         countdown.style.display = 'flex';
@@ -107,7 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const countdownInterval = setInterval(() => {
             counter--;
             countdown.textContent = counter;
-            if (counter > 0) beepSound.play().catch(e => {});
             
             if (counter <= 0) {
                 clearInterval(countdownInterval);
@@ -117,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
     
+    // Captura a imagem
     async function captureImage() {
         loadingScreen.style.display = 'flex';
         
@@ -126,24 +215,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const ctx = canvas.getContext('2d');
         
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.drawImage(document.getElementById('moldura'), 0, 0, canvas.width, canvas.height);
+        
+        // Desenha a moldura
+        const moldura = document.getElementById('moldura');
+        if (moldura.complete) {
+            ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
+        }
         
         try {
-            // Salva localmente
-            const imageUrl = await saveToDevice(canvas);
+            // Salva localmente no dispositivo
+            await saveToDeviceGallery(canvas);
             
-            // Envia para ImgBB e gera QR Code
-            await uploadToImgBB(canvas, imageUrl);
+            // Envia para o ImgBB
+            const imgbbUrl = await uploadToImgBB(canvas);
             
+            // Salva na galeria interna
+            savePhotoLocally(imgbbUrl, canvas);
+            
+            // Gera QR Code
+            generateQRCode(imgbbUrl);
+            
+            // Mostra resultado
+            showResult();
         } catch (error) {
-            console.error('Erro:', error);
-            alert('Ocorreu um erro ao processar sua foto.');
+            console.error('Erro ao processar imagem:', error);
+            alert('Ocorreu um erro ao processar sua foto. Por favor, tente novamente.');
         } finally {
             loadingScreen.style.display = 'none';
         }
     }
     
-    async function saveToDevice(canvas) {
+    // Salva no dispositivo
+    async function saveToDeviceGallery(canvas) {
         return new Promise((resolve) => {
             canvas.toBlob(async (blob) => {
                 const url = URL.createObjectURL(blob);
@@ -161,7 +264,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    async function uploadToImgBB(canvas, imageUrl) {
+    // Envia para o ImgBB
+    async function uploadToImgBB(canvas) {
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
         const formData = new FormData();
         formData.append('image', blob);
@@ -174,18 +278,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = await response.json();
         
         if (data.success) {
-            savePhotoLocally(data.data.url, canvas);
-            generateQRCode(data.data.url);
-            showResult();
+            return data.data.url;
         } else {
-            throw new Error('Falha no upload');
+            throw new Error('Falha ao enviar para o ImgBB');
         }
     }
     
+    // Salva localmente
     function savePhotoLocally(imageUrl, canvas) {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        let photos = JSON.parse(localStorage.getItem('photos') || '[]');
         
+        let photos = JSON.parse(localStorage.getItem('photos') || '[]');
         photos.unshift({
             url: dataUrl,
             timestamp: Date.now()
@@ -199,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadGallery();
     }
     
+    // Gera QR Code
     function generateQRCode(url) {
         qrcodeContainer.innerHTML = '';
         new QRCode(qrcodeContainer, {
@@ -211,9 +315,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Mostra resultado
     function showResult() {
+        showingResult = true;
         resultContainer.style.display = 'block';
-        history.pushState({ showingResult: true }, null);
         
         const header = document.querySelector('.header');
         const headerHeight = header.offsetHeight;
@@ -228,9 +333,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Oculta resultado
+    function hideResult() {
+        showingResult = false;
+        resultContainer.style.display = 'none';
+        backButtonCount = 0;
+    }
+    
+    // Carrega galeria
     function loadGallery() {
-        gallery.innerHTML = '';
         const photos = JSON.parse(localStorage.getItem('photos') || '[]');
+        gallery.innerHTML = '';
         
         photos.forEach(photo => {
             const img = document.createElement('img');
@@ -241,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Limpa galeria
     function clearGallery() {
         if (confirm('Tem certeza que deseja limpar toda a galeria?')) {
             localStorage.removeItem('photos');
@@ -248,21 +362,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Inicialização
-    setupNavigationControls();
-    setInterval(updateClock, 1000);
-    updateClock();
-    loadGallery();
-    startCamera();
-    
-    // Event Listeners
-    captureBtn.addEventListener('click', takePhoto);
-    clearGalleryBtn.addEventListener('click', clearGallery);
-    
-    // Restaura estado ao carregar
-    window.addEventListener('load', () => {
-        if (history.state?.showingResult) {
-            resultContainer.style.display = 'block';
-        }
-    });
+    // Inicializa o app
+    initApp();
 });
