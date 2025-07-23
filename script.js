@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const gallery = document.getElementById('gallery');
     const clearGalleryBtn = document.getElementById('clear-gallery');
     const currentTimeDisplay = document.getElementById('current-time');
+    const beepSound = document.getElementById('beep-sound');
     
     // Configurações
     const IMGBB_API_KEY = '586fe56b6fe8223c90078eae64e1d678';
@@ -18,8 +19,18 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Controle de Navegação
     function setupNavigationControls() {
-        // Tratamento do botão voltar
+        // Tratamento do botão voltar (para Cordova/PhoneGap)
         document.addEventListener('backbutton', handleBackButton, false);
+        
+        // Tratamento do botão voltar (para navegador)
+        window.onpopstate = function(event) {
+            if (resultContainer.style.display === 'block') {
+                resultContainer.style.display = 'none';
+                history.pushState(null, null, window.location.pathname);
+            } else {
+                handleBackButton({preventDefault: () => {}});
+            }
+        };
         
         // Impede fechar o app com gestos
         window.addEventListener('beforeunload', function(e) {
@@ -28,11 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.returnValue = '';
             }
         });
-        
-        // Força modo standalone
-        if (window.navigator.standalone === false) {
-            window.location.href = 'index.html';
-        }
     }
     
     function handleBackButton(e) {
@@ -53,15 +59,21 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => { backButtonCount = 0; }, 2000);
         } else if (backButtonCount >= 2) {
             if (confirm('Deseja realmente sair do app?')) {
-                navigator.app.exitApp?.(); // Para Cordova/PhoneGap
-                window.close?.(); // Para navegadores
+                // Tenta fechar o app de diferentes formas
+                if (typeof navigator.app !== 'undefined' && navigator.app.exitApp) {
+                    navigator.app.exitApp();
+                } else if (window.close) {
+                    window.close();
+                } else {
+                    window.location.href = 'about:blank';
+                }
             } else {
                 backButtonCount = 0;
             }
         }
     }
     
-    // Funções do App
+    // Funções principais do app
     function updateClock() {
         const now = new Date();
         const timeString = now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes();
@@ -86,6 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function takePhoto() {
+        beepSound.play().catch(e => console.log("Não foi possível reproduzir som:", e));
+        
         let counter = 3;
         countdown.textContent = counter;
         countdown.style.display = 'flex';
@@ -93,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const countdownInterval = setInterval(() => {
             counter--;
             countdown.textContent = counter;
+            if (counter > 0) beepSound.play().catch(e => {});
             
             if (counter <= 0) {
                 clearInterval(countdownInterval);
@@ -111,78 +126,69 @@ document.addEventListener('DOMContentLoaded', function() {
         const ctx = canvas.getContext('2d');
         
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const moldura = document.getElementById('moldura');
-        ctx.drawImage(moldura, 0, 0, canvas.width, canvas.height);
-        
-        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+        ctx.drawImage(document.getElementById('moldura'), 0, 0, canvas.width, canvas.height);
         
         try {
-            await saveToDeviceGallery(imageDataUrl);
+            // Salva localmente
+            const imageUrl = await saveToDevice(canvas);
             
-            const formData = new FormData();
-            formData.append('image', blob);
+            // Envia para ImgBB e gera QR Code
+            await uploadToImgBB(canvas, imageUrl);
             
-            const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                savePhotoLocally(data.data.url, canvas);
-                generateQRCode(data.data.url);
-                showResult();
-            } else {
-                throw new Error('Falha ao enviar para o ImgBB');
-            }
         } catch (error) {
-            console.error('Erro ao processar imagem:', error);
-            alert('Ocorreu um erro ao processar sua foto. Por favor, tente novamente.');
+            console.error('Erro:', error);
+            alert('Ocorreu um erro ao processar sua foto.');
         } finally {
             loadingScreen.style.display = 'none';
         }
     }
     
-    async function saveToDeviceGallery(imageData) {
-        try {
-            const blob = dataURLtoBlob(imageData);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `fotoshowfest_${new Date().getTime()}.jpg`;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-        } catch (error) {
-            console.error('Erro ao fazer download:', error);
-        }
+    async function saveToDevice(canvas) {
+        return new Promise((resolve) => {
+            canvas.toBlob(async (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fotoshowfest_${Date.now()}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                resolve(url);
+            }, 'image/jpeg', 0.9);
+        });
     }
     
-    function dataURLtoBlob(dataURL) {
-        const arr = dataURL.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
+    async function uploadToImgBB(canvas, imageUrl) {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+        const formData = new FormData();
+        formData.append('image', blob);
+        
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            savePhotoLocally(data.data.url, canvas);
+            generateQRCode(data.data.url);
+            showResult();
+        } else {
+            throw new Error('Falha no upload');
         }
-        return new Blob([u8arr], { type: mime });
     }
     
     function savePhotoLocally(imageUrl, canvas) {
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        
         let photos = JSON.parse(localStorage.getItem('photos') || '[]');
+        
         photos.unshift({
             url: dataUrl,
-            timestamp: new Date().getTime()
+            timestamp: Date.now()
         });
         
         if (photos.length > MAX_PHOTOS) {
@@ -207,29 +213,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showResult() {
         resultContainer.style.display = 'block';
+        history.pushState({ showingResult: true }, null);
         
         const header = document.querySelector('.header');
         const headerHeight = header.offsetHeight;
-        const captureBtn = document.getElementById('capture-btn');
-        const btnPosition = captureBtn.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-        
-        const qrPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-        const scrollToPosition = Math.min(btnPosition, qrPosition);
+        const scrollPosition = Math.min(
+            captureBtn.getBoundingClientRect().top + window.scrollY - headerHeight,
+            resultContainer.getBoundingClientRect().top + window.scrollY - headerHeight
+        );
         
         window.scrollTo({
-            top: scrollToPosition,
+            top: scrollPosition,
             behavior: 'smooth'
         });
     }
     
     function loadGallery() {
-        const photos = JSON.parse(localStorage.getItem('photos') || '[]');
         gallery.innerHTML = '';
+        const photos = JSON.parse(localStorage.getItem('photos') || '[]');
         
         photos.forEach(photo => {
             const img = document.createElement('img');
             img.src = photo.url;
             img.alt = 'Foto da galeria';
+            img.onclick = () => window.open(photo.url, '_blank');
             gallery.appendChild(img);
         });
     }
@@ -252,16 +259,10 @@ document.addEventListener('DOMContentLoaded', function() {
     captureBtn.addEventListener('click', takePhoto);
     clearGalleryBtn.addEventListener('click', clearGallery);
     
-    captureBtn.addEventListener('click', function() {
-        const cameraContainer = document.querySelector('.camera-container');
-        const cameraRect = cameraContainer.getBoundingClientRect();
-        const headerHeight = document.querySelector('.header').offsetHeight;
-        
-        if (cameraRect.top < headerHeight) {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+    // Restaura estado ao carregar
+    window.addEventListener('load', () => {
+        if (history.state?.showingResult) {
+            resultContainer.style.display = 'block';
         }
     });
 });
