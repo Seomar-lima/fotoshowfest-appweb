@@ -8,58 +8,61 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#FFA500">
     <title>FOTOSHOWFEST - 15 anos Geovanna</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icons/icon-192.png">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
     <div class="header">
-        <div class="time-display" id="current-time">00:00</div>
+        <div class="time-display" id="current-time"></div>
         <h1>FOTOSHOWFEST</h1>
         <h2>15 anos Geovanna</h2>
     </div>
 
-    <div class="main-container">
-        <div class="camera-container">
-            <video id="video" autoplay playsinline></video>
-            <img id="moldura" src="moldura.png" alt="Moldura">
-            <div id="countdown" class="countdown">3</div>
-        </div>
-
-        <button id="capture-btn" class="capture-btn">
-            <i class="fas fa-camera"></i> TIRAR FOTO
-        </button>
-
-        <div id="result" class="result-container">
-            <h3><i class="fas fa-qrcode"></i> Escaneie para baixar sua foto</h3>
-            <p>Compartilhe essa lembrança especial com seus amigos!</p>
-            <div id="qrcode"></div>
-        </div>
-
-        <div class="gallery-container">
-            <h3><i class="fas fa-images"></i> Galeria de Fotos</h3>
-            <div id="gallery" class="gallery"></div>
-            <button id="clear-gallery" class="clear-btn">Limpar Galeria</button>
-        </div>
+    <div class="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <img id="moldura" src="moldura.png" alt="Moldura">
+        <div id="countdown" class="countdown"></div>
     </div>
+
+    <button id="capture-btn" class="capture-btn">TIRAR FOTO</button>
 
     <div id="loading" class="loading-screen">
         <div class="spinner"></div>
-        <p>Processando sua foto...</p>
+        <p>Salvando sua foto...</p>
     </div>
 
-    <div id="back-warning" class="back-warning">
-        <i class="fas fa-exclamation-triangle"></i> Use o botão "Voltar" abaixo para navegar
+    <div id="result" class="result-container">
+        <h3>Escaneie para baixar sua foto</h3>
+        <p>Compartilhe com seus amigos!</p>
+        <div id="qrcode"></div>
     </div>
 
-    <div class="footer">
-        FOTOSHOWFEST &copy; 2023 - Todos os direitos reservados
+    <div class="gallery-container">
+        <h3>Galeria de Fotos</h3>
+        <div id="gallery" class="gallery"></div>
+        <button id="clear-gallery" class="clear-btn">Limpar Galeria</button>
     </div>
 
-    <!-- Inclua a biblioteca Font Awesome no seu HTML -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <audio id="beep-sound" src="beep.mp3" preload="auto"></audio>
+
+    <script>
+        // Registra Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => console.log('SW registered: scope', registration.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+        
+        // Verifica se está em modo standalone
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+            console.log('Running in standalone mode');
+        }
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
