@@ -191,6 +191,37 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function generateQRCode(url) {
         qrcodeContainer.innerHTML = '';
+        // Início da contagem regressiva
+let tempoRestante = 20;
+const qrTimer = document.getElementById("qr-timer");
+
+const intervalo = setInterval(() => {
+  if (tempoRestante > 0) {
+    qrTimer.textContent = `QR Code expira em ${tempoRestante--}s`;
+  } else {
+    clearInterval(intervalo);
+
+    // Remove o QR Code e mostra mensagem
+    qrcodeContainer.innerHTML = `
+      <p style="color: orange; max-width: 300px; margin: 20px auto; font-size: 16px; text-align: center;">
+        Caso não tenha conseguido baixar sua foto, entre em contato com o responsável pelo evento, ou tire outra foto!
+      </p>
+    `;
+    qrTimer.textContent = "";
+
+    // Rola de volta até a câmera
+    const header = document.querySelector('.header');
+    const headerHeight = header.offsetHeight;
+    const cameraContainer = document.querySelector('.camera-container');
+    const cameraPosition = cameraContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+
+    window.scrollTo({
+      top: cameraPosition,
+      behavior: 'smooth'
+    });
+  }
+}, 1000);
+        
         new QRCode(qrcodeContainer, {
             text: url,
             width: 200,
