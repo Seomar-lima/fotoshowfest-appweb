@@ -67,7 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function takePhoto() {
         resetCameraPosition();
         
-        let counter = 3;
+        let counter = 7;
+        
         countdown.textContent = counter;
         countdown.style.display = 'flex';
         
