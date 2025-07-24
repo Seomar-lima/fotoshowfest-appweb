@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Inicia contagem regressiva
-    let tempo = 20;
+    let tempo = 30;
     qrTimer.textContent = `${tempo}s`;
 
     const interval = setInterval(() => {
@@ -236,10 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostra a nova mensagem
         qrExpiredMsg.style.display = 'block';
 
-        // Altera botão
-        captureBtn.textContent = 'NOVA FOTO';
-
-        // Rola até a câmera (logo abaixo do cabeçalho)
+          // Rola até a câmera (logo abaixo do cabeçalho)
         const headerHeight = document.querySelector('.header').offsetHeight;
         const cameraContainer = document.querySelector('.camera-container');
         const cameraTop = cameraContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
