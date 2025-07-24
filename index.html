@@ -27,11 +27,22 @@
         <p>Salvando sua foto...</p>
     </div>
 
+    <!-- ✅ Bloco de resultado -->
     <div id="result" class="result-container">
-        <h3>Escaneie para baixar sua foto</h3>
-        <p>Compartilhe com seus amigos!</p>
+        <h3 id="qr-title">Escaneie para baixar sua foto</h3>
+        <p id="qr-subtitle">Compartilhe com seus amigos!</p>
         <div id="qrcode"></div>
-        <div id="qr-timer" style="margin-top: 10px; color: orange; font-size: 16px;"></div>
+
+        <!-- ✅ Frase "QR code expira em:" -->
+        <div id="qr-expire-label" style="margin-top: 10px; color: white; font-size: 16px;">QR code expira em:</div>
+
+        <!-- ✅ Contagem regressiva em destaque -->
+        <div id="qr-timer" style="font-size: 40px; color: white; font-weight: bold;"></div>
+
+        <!-- ✅ Mensagem substituta após expiração -->
+        <div id="qr-expired-msg" style="display: none; margin-top: 20px; color: white; font-size: 18px; text-align: center; text-transform: uppercase;">
+            CASO NÃO TENHA CONSEGUIDO BAIXAR SUA FOTO, ENTRE EM CONTATO COM O RESPONSÁVEL PELO EVENTO OU TIRE OUTRA FOTO.
+        </div>
     </div>
 
     <div class="gallery-container">
