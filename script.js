@@ -8,10 +8,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const gallery = document.getElementById('gallery');
     const clearGalleryBtn = document.getElementById('clear-gallery');
     const currentTimeDisplay = document.getElementById('current-time');
+    const backToCameraBtn = document.getElementById('back-to-camera');
+    const header = document.querySelector('.header');
     
     const IMGBB_API_KEY = '586fe56b6fe8223c90078eae64e1d678';
     const MAX_PHOTOS = 10;
     let stream = null;
+    let isCameraAtTop = true;
     
     // Atualiza o relógio
     function updateClock() {
@@ -31,21 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     captureBtn.addEventListener('click', takePhoto);
     clearGalleryBtn.addEventListener('click', clearGallery);
-    
-    // Adiciona evento para rolar para o topo quando clicar no botão
-    captureBtn.addEventListener('click', function() {
-        const cameraContainer = document.querySelector('.camera-container');
-        const cameraRect = cameraContainer.getBoundingClientRect();
-        const headerHeight = document.querySelector('.header').offsetHeight;
-        
-        // Verifica se a câmera está escondida atrás do cabeçalho
-        if (cameraRect.top < headerHeight) {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-    });
+    backToCameraBtn.addEventListener('click', backToCamera);
     
     async function startCamera() {
         try {
@@ -65,8 +54,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function takePhoto() {
-        resetCameraPosition();
+        const cameraContainer = document.querySelector('.camera-container');
+        const cameraRect = cameraContainer.getBoundingClientRect();
+        const headerHeight = header.offsetHeight;
         
+        // Calcula a posição ideal da câmera (logo abaixo do cabeçalho)
+        const cameraTopPosition = headerHeight + 10;
+        
+        // Verifica se a câmera está na posição correta (com margem de 10px)
+        isCameraAtTop = Math.abs(cameraRect.top - cameraTopPosition) < 10;
+        
+        // Se não estiver na posição correta, apenas rola para a posição ideal
+        if (!isCameraAtTop) {
+            // Calcula a posição absoluta para rolar
+            const scrollPosition = cameraContainer.offsetTop - headerHeight;
+            
+            window.scrollTo({
+                top: scrollPosition,
+                behavior: 'smooth'
+            });
+            
+            // Atualiza o estado após a rolagem
+            setTimeout(() => {
+                isCameraAtTop = true;
+            }, 1000);
+            return;
+        }
+        
+        // Se já estiver na posição correta, inicia a contagem
+        startCountdown();
+    }
+    
+    function startCountdown() {
         let counter = 3;
         countdown.textContent = counter;
         countdown.style.display = 'flex';
@@ -81,10 +100,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 captureImage();
             }
         }, 1000);
-    }
-    
-    function resetCameraPosition() {
-        // Implementação para redefinir a posição da câmera se necessário
     }
     
     async function captureImage() {
@@ -203,20 +218,39 @@ document.addEventListener('DOMContentLoaded', function() {
     function showResult() {
         resultContainer.style.display = 'block';
         
-        // Calcula a posição onde o botão "Tirar Foto" ficará logo abaixo do cabeçalho
-        const header = document.querySelector('.header');
         const headerHeight = header.offsetHeight;
-        const captureBtn = document.getElementById('capture-btn');
-        const btnPosition = captureBtn.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-        
-        // Rola até essa posição (botão abaixo do cabeçalho) ou até o QR code, o que for menor
-        const qrPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-        const scrollToPosition = Math.min(btnPosition, qrPosition);
+        const resultPosition = resultContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
         
         window.scrollTo({
-            top: scrollToPosition,
+            top: resultPosition,
             behavior: 'smooth'
         });
+        
+        detectQRCodeRead();
+    }
+    
+    function detectQRCodeRead() {
+        const qrElement = document.getElementById('qrcode');
+        qrElement.addEventListener('mouseover', () => {
+            setTimeout(() => {
+                backToCamera();
+            }, 3000); // Volta após 3 segundos
+        });
+    }
+    
+    function backToCamera() {
+        resultContainer.style.display = 'none';
+        
+        const cameraContainer = document.querySelector('.camera-container');
+        const headerHeight = header.offsetHeight;
+        const scrollPosition = cameraContainer.offsetTop - headerHeight;
+        
+        window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+        });
+        
+        isCameraAtTop = true;
     }
     
     function loadGallery() {
