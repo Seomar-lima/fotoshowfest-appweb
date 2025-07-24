@@ -189,38 +189,70 @@ document.addEventListener('DOMContentLoaded', function() {
         loadGallery();
     }
     
-    function generateQRCode(url) {
-        qrcodeContainer.innerHTML = '';
-        // Início da contagem regressiva
-let tempoRestante = 20;
-const qrTimer = document.getElementById("qr-timer");
+function generateQRCode(url) {
+    qrcodeContainer.innerHTML = '';
+    
+    const qrTimer = document.getElementById("qr-timer");
+    const qrExpireLabel = document.getElementById("qr-expire-label");
+    const qrTitle = document.getElementById("qr-title");
+    const qrSubtitle = document.getElementById("qr-subtitle");
+    const qrExpiredMsg = document.getElementById("qr-expired-msg");
+    const captureBtn = document.getElementById("capture-btn");
 
-const intervalo = setInterval(() => {
-  if (tempoRestante > 0) {
-    qrTimer.textContent = `QR Code expira em ${tempoRestante--}s`;
-  } else {
-    clearInterval(intervalo);
+    // Mostrar o título e legendas enquanto o QR está ativo
+    qrTitle.style.display = 'block';
+    qrSubtitle.style.display = 'block';
+    qrExpireLabel.style.display = 'block';
+    qrTimer.style.display = 'block';
+    qrExpiredMsg.style.display = 'none';
+    captureBtn.textContent = "TIRAR FOTO";
 
-    // Remove o QR Code e mostra mensagem
-    qrcodeContainer.innerHTML = `
-      <p style="color: orange; max-width: 300px; margin: 20px auto; font-size: 16px; text-align: center;">
-        Caso não tenha conseguido baixar sua foto, entre em contato com o responsável pelo evento, ou tire outra foto!
-      </p>
-    `;
-    qrTimer.textContent = "";
-
-    // Rola de volta até a câmera
-    const header = document.querySelector('.header');
-    const headerHeight = header.offsetHeight;
-    const cameraContainer = document.querySelector('.camera-container');
-    const cameraPosition = cameraContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-
-    window.scrollTo({
-      top: cameraPosition,
-      behavior: 'smooth'
+    // Gera o QR Code
+    new QRCode(qrcodeContainer, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: "#FFA500",
+        colorLight: "#000000",
+        correctLevel: QRCode.CorrectLevel.H
     });
-  }
-}, 1000);
+
+    // Inicia contagem regressiva
+    let tempo = 20;
+    qrTimer.textContent = `${tempo}s`;
+
+    const interval = setInterval(() => {
+        tempo--;
+        qrTimer.textContent = `${tempo}s`;
+
+        if (tempo <= 0) {
+            clearInterval(interval);
+
+            // Oculta elementos do QR
+            qrcodeContainer.innerHTML = '';
+            qrTitle.style.display = 'none';
+            qrSubtitle.style.display = 'none';
+            qrExpireLabel.style.display = 'none';
+            qrTimer.style.display = 'none';
+
+            // Mostra a nova mensagem
+            qrExpiredMsg.style.display = 'block';
+
+            // Altera botão
+            captureBtn.textContent = 'NOVA FOTO';
+
+            // Rola até a câmera (logo abaixo do cabeçalho)
+            const headerHeight = document.querySelector('.header').offsetHeight;
+            const cameraContainer = document.querySelector('.camera-container');
+            const cameraTop = cameraContainer.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+
+            window.scrollTo({
+                top: cameraTop,
+                behavior: 'smooth'
+            });
+        }
+    }, 1000);
+}
         
         new QRCode(qrcodeContainer, {
             text: url,
